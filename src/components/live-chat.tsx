@@ -247,7 +247,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   const whatsapp = settings.whatsapp.replace(/\D/g, "");
   return (
     <>
-      {view === "open" && conversation && (
+      {view === "open" && (
         <ChatWindow
           dir={dir}
           dict={dict}
@@ -355,7 +355,7 @@ function ChatWindow(props: {
   dir: string;
   dict: ReturnType<typeof useLocale>["dict"];
   phase: Phase;
-  conversation: Conversation;
+  conversation: Conversation | null;
   messages: Message[];
   agentTyping: boolean;
   reconnecting: boolean;
@@ -393,7 +393,7 @@ function ChatWindow(props: {
         <div className="flex-1">
           <p className="text-sm font-bold">{dict.chat.title}</p>
           <p className="text-xs opacity-80">
-            {phase === "active" && conversation.agent_name
+            {phase === "active" && conversation?.agent_name
               ? `${conversation.agent_name} • ${dict.chat.connected}`
               : dict.chat.subtitle}
           </p>
@@ -478,7 +478,7 @@ function ChatWindow(props: {
       {phase === "active" && (
         <>
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
-            {conversation.agent_name && (
+            {conversation?.agent_name && (
               <div className="mb-2 flex items-center gap-2 rounded-xl bg-brand-50 p-2">
                 {conversation.agent_avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element

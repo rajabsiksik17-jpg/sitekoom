@@ -1,13 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { defaultLocale, isLocale } from "@/lib/i18n/config";
+import { defaultLocale } from "@/lib/i18n/config";
 
 const PROTECTED_PREFIXES = ["/admin", "/api/admin"];
 const PUBLIC_PATHS = ["/admin/login", "/admin/forgot-password"];
-
-function hasLocalePrefix(pathname: string) {
-  return /^\/(ar|en)(?=\/|$)/.test(pathname);
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -80,29 +76,30 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 4) Locale routing (as-needed prefix: ar has no prefix, en has /en).
-  if (hasLocalePrefix(pathname)) {
-    const locale = pathname.split("/")[1];
-    response.cookies.set("NEXT_LOCALE", locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+  // 4) Locale routing.
+  // Arabic is the DEFAULT locale and uses clean URLs (no prefix).
+  // English uses the explicit `/en` prefix. The URL is the source of truth —
+  // a no-prefix URL is ALWAYS Arabic, so navigation never flips languages.
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    response.cookies.set("NEXT_LOCALE", "en", { path: "/", maxAge: 60 * 60 * 24 * 365 });
     return response;
   }
 
-  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
-  const locale = isLocale(cookieLocale ?? "") ? cookieLocale! : defaultLocale;
-
-  if (locale === defaultLocale) {
-    // Arabic: rewrite internally, keep the clean URL.
+  // `/ar/...` → redirect to the clean (no-prefix) Arabic URL.
+  if (pathname === "/ar" || pathname.startsWith("/ar/")) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
+    url.pathname = pathname.replace(/^\/ar(?=\/|$)/, "") || "/";
     url.search = search;
-    return NextResponse.rewrite(url);
+    response.cookies.set("NEXT_LOCALE", "ar", { path: "/", maxAge: 60 * 60 * 24 * 365 });
+    return NextResponse.redirect(url);
   }
 
-  // English (or other non-default): redirect to a prefixed URL.
+  // Default Arabic: rewrite internally, keep the clean URL.
+  response.cookies.set("NEXT_LOCALE", "ar", { path: "/", maxAge: 60 * 60 * 24 * 365 });
   const url = request.nextUrl.clone();
-  url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+  url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
   url.search = search;
-  return NextResponse.redirect(url);
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
