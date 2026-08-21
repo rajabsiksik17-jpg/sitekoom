@@ -2,7 +2,7 @@ import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { createClient } from "@/lib/supabase/server";
+import { getPageBySlug } from "@/lib/queries";
 
 const defaults = {
   privacy: {
@@ -15,12 +15,6 @@ const defaults = {
   },
 };
 
-async function getLegalContent(key: "privacy" | "terms") {
-  const supabase = createClient();
-  const { data } = await supabase.from("site_settings").select("value").eq("key", key).single();
-  return data?.value as { ar?: string; en?: string } | null;
-}
-
 export default async function LegalPage({
   params,
   kind,
@@ -30,9 +24,9 @@ export default async function LegalPage({
 }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
-  const custom = await getLegalContent(kind);
-  const label = kind === "privacy" ? dict.footer.privacy : dict.footer.terms;
-  const content = localize(locale, custom?.ar ?? defaults[kind].ar, custom?.en ?? defaults[kind].en);
+  const page = await getPageBySlug(kind);
+  const label = localize(locale, page?.title_ar, page?.title_en) || (kind === "privacy" ? dict.footer.privacy : dict.footer.terms);
+  const content = localize(locale, page?.content_ar, page?.content_en) || localize(locale, defaults[kind].ar, defaults[kind].en);
 
   return (
     <>

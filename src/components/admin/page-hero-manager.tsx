@@ -67,14 +67,17 @@ export function PageHeroManager() {
     setSaving(true);
     const supabase = createClient();
     const row = rows[selected] ?? empty(selected);
-    const { error } = await supabase.from("page_hero_settings").upsert({
-      page_key: row.page_key,
-      background_image: row.background_image || null,
-      background_gif: row.background_gif || null,
-      mobile_image: row.mobile_image || null,
-      overlay_color: row.overlay_color,
-      overlay_opacity: Number(row.overlay_opacity),
-    });
+    const { error } = await supabase.from("page_hero_settings").upsert(
+      {
+        page_key: row.page_key,
+        background_image: row.background_image || null,
+        background_gif: row.background_gif || null,
+        mobile_image: row.mobile_image || null,
+        overlay_color: row.overlay_color,
+        overlay_opacity: Number(row.overlay_opacity),
+      },
+      { onConflict: "page_key" },
+    );
     setSaving(false);
     if (error) push("error", error.message);
     else push("success", "تم حفظ خلفية رأس الصفحة");

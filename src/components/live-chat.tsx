@@ -157,10 +157,25 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
     };
   }, [conversation?.id, dict.chat.newMessage, showToast]);
 
+  function resetToForm() {
+    localStorage.removeItem(TOKEN_KEY);
+    setConversation(null);
+    setMessages([]);
+    setPhase("form");
+    setForm({ name: "", email: "", message: "" });
+    setPhone({ value: null, countryCode: "JO", nationalNumber: "" });
+    setUnread(0);
+  }
+
   function openChat() {
     trackEvent({ event_type: "live_chat_started" });
     setMenuOpen(false);
     setUnread(0);
+    // If the previous conversation is closed (or there is none), start fresh
+    // with the entry form instead of showing a stale "closed" screen.
+    if (phase === "closed" || !conversation) {
+      resetToForm();
+    }
     setView("open");
   }
 
@@ -227,13 +242,8 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   }
 
   function startNew() {
-    localStorage.removeItem(TOKEN_KEY);
-    setConversation(null);
-    setMessages([]);
-    setPhase("form");
-    setForm({ name: "", email: "", message: "" });
-    setPhone({ value: null, countryCode: "JO", nationalNumber: "" });
-    setView("closed");
+    resetToForm();
+    setView("open");
   }
 
   function onTyping() {
@@ -281,25 +291,6 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         />
       )}
 
-      {view === "minimized" && (
-        <button
-          type="button"
-          onClick={() => {
-            setUnread(0);
-            setView("open");
-          }}
-          className="fixed bottom-5 start-5 z-[70] flex h-14 w-14 items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-transform hover:scale-105"
-          aria-label={dict.chat.title}
-        >
-          <MessageCircle className="h-6 w-6" />
-          {unread > 0 && (
-            <span className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-              {unread}
-            </span>
-          )}
-        </button>
-      )}
-
       {toast && (
         <div className="fixed bottom-24 start-5 z-[80] flex items-center gap-2 rounded-xl bg-ink-900 px-4 py-3 text-sm font-medium text-white shadow-card">
           <span className="h-2 w-2 rounded-full bg-brand-400" />
@@ -307,10 +298,10 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         </div>
       )}
 
-      {view === "closed" && (
+      {(view === "closed" || view === "minimized") && (
         <Draggable storageKey="sitekoom_contact_pos" defaultSide="left">
           <div className="flex flex-col items-start gap-2">
-            {menuOpen && (
+            {view === "closed" && menuOpen && (
               <div className="mb-3 flex max-h-[60vh] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">
                 {whatsapp && (
                   <a
@@ -335,15 +326,34 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-3.5 text-sm font-bold text-white shadow-glow transition-transform hover:scale-105"
-              aria-label={dict.floating.contact}
-            >
-              {menuOpen ? <X className="h-5 w-5" /> : <Headset className="h-5 w-5" />}
-              <span className="hidden sm:inline">{dict.floating.contact}</span>
-            </button>
+            {view === "minimized" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setUnread(0);
+                  setView("open");
+                }}
+                className="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-transform hover:scale-105"
+                aria-label={dict.chat.title}
+              >
+                <MessageCircle className="h-6 w-6" />
+                {unread > 0 && (
+                  <span className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {unread}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-3.5 text-sm font-bold text-white shadow-glow transition-transform hover:scale-105"
+                aria-label={dict.floating.contact}
+              >
+                {menuOpen ? <X className="h-5 w-5" /> : <Headset className="h-5 w-5" />}
+                <span className="hidden sm:inline">{dict.floating.contact}</span>
+              </button>
+            )}
           </div>
         </Draggable>
       )}
@@ -501,22 +511,26 @@ function ChatWindow(props: {
               </div>
             )}
 
-            {messages.map((m) => (
-              <div key={m.id} className={cn("flex", m.sender_type === "visitor" ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
-                    m.sender_type === "visitor"
-                      ? "rounded-br-sm bg-brand-gradient text-white"
-                      : m.sender_type === "system"
-                        ? "bg-gray-100 text-gray-500"
-                        : "rounded-bl-sm bg-gray-100 text-ink-900",
-                  )}
-                >
-                  {m.body}
+            {messages.map((m) => {
+              const isRtl = dir === "rtl";
+              const isVisitor = m.sender_type === "visitor";
+              return (
+                <div key={m.id} className={cn("flex", isVisitor ? "justify-end" : "justify-start")}>
+                  <div
+                    className={cn(
+                      "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
+                      isVisitor
+                        ? cn("bg-brand-gradient text-white", isRtl ? "rounded-bl-sm" : "rounded-br-sm")
+                        : m.sender_type === "system"
+                          ? "bg-gray-100 text-gray-500"
+                          : cn("bg-gray-100 text-ink-900", isRtl ? "rounded-br-sm" : "rounded-bl-sm"),
+                    )}
+                  >
+                    {m.body}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {agentTyping && (
               <div className="flex justify-start">
                 <div className="flex gap-1 rounded-2xl bg-gray-100 px-3 py-2">

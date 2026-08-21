@@ -9,6 +9,7 @@ import type {
   HomepageSlider,
   MarqueeMessage,
   PageHeroSettings,
+  Page,
   Project,
   ProjectCategory,
   Service,
@@ -202,6 +203,20 @@ export const getPageHeroSettings = cache(async (pageKey: string): Promise<PageHe
     return page ? (page as PageHeroSettings) : null;
   } catch {
     // Table not present yet — fall back to the default gradient.
+    return null;
+  }
+});
+
+export const getPageBySlug = cache(async (slug: string): Promise<Page | null> => {
+  try {
+    const { data } = await supabase()
+      .from("pages")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    return (data as Page) ?? null;
+  } catch {
     return null;
   }
 });

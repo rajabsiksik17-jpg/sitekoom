@@ -117,6 +117,7 @@ export function ChatConsole() {
 
   async function sendMessage() {
     if (!selected || !input.trim() || sending) return;
+    if (selected.status === "closed") return push("error", "المحادثة مغلقة ولا يمكن إرسال رسائل");
     setSending(true);
     try {
       const supabase = supabaseRef.current;
@@ -131,7 +132,7 @@ export function ChatConsole() {
   async function closeConversation() {
     if (!selected) return;
     const supabase = supabaseRef.current;
-    await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString() }).eq("id", selected.id);
+    await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "admin" }).eq("id", selected.id);
     await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "system", body: "تم إنهاء المحادثة" });
     setSelected(null);
     setMessages([]);
@@ -211,7 +212,11 @@ export function ChatConsole() {
                       <button type="button" onClick={closeConversation} className="btn-secondary px-3 py-2 text-sm"><X className="h-4 w-4" /> إغلاق</button>
                     </>
                   )}
-                  {selected.status === "closed" && <Badge color="gray">مغلقة</Badge>}
+                  {selected.status === "closed" && (
+                    <Badge color="gray">
+                      {selected.closed_by === "customer" ? "مغلقة من قبل العميل" : "مغلقة من قبل الأدمن"}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -230,6 +235,12 @@ export function ChatConsole() {
                   <input className="input flex-1" placeholder="اكتب رسالتك..." value={input} onChange={(e) => setInput(e.target.value)} />
                   <button type="submit" className="btn-primary px-3" disabled={sending} aria-label="إرسال"><Send className="h-4 w-4" /></button>
                 </form>
+              )}
+
+              {selected.status === "closed" && (
+                <div className="border-t border-brand-100 p-3 text-center text-xs text-gray-500">
+                  المحادثة مغلقة {selected.closed_by === "customer" ? "من قبل العميل" : "من قبل الأدمن"} — لا يمكن إرسال رسائل جديدة.
+                </div>
               )}
             </div>
           )}

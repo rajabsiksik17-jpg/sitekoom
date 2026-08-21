@@ -99,112 +99,124 @@ export default async function ServiceDetailPage({
           ]}
         />
 
-        <div className="mx-auto max-w-3xl">
-          {service.main_image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={service.main_image}
-              alt={title}
-              className="mb-8 w-full rounded-2xl object-cover shadow-card"
-            />
-          )}
-          {fullDesc && (
-            <div
-              className="prose-site"
-              dangerouslySetInnerHTML={{ __html: fullDesc }}
-            />
-          )}
+        <div className="grid gap-10 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            {service.main_image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={service.main_image}
+                alt={title}
+                className="mb-8 w-full rounded-2xl object-cover shadow-card"
+              />
+            )}
+            {fullDesc && (
+              <div
+                className="prose-site"
+                dangerouslySetInnerHTML={{ __html: fullDesc }}
+              />
+            )}
 
-          {images.length > 0 && (
-            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {images.map((img) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt={img.alt ?? title}
-                  loading="lazy"
-                  className="aspect-square w-full rounded-xl object-cover"
-                />
-              ))}
-            </div>
-          )}
+            {images.length > 0 && (
+              <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {images.map((img) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={img.id}
+                    src={img.url}
+                    alt={img.alt ?? title}
+                    loading="lazy"
+                    className="aspect-square w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <aside className="space-y-6">
+            {byKind("feature").length > 0 && (
+              <Reveal className="card p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
+                  <Icon name="check-circle" className="h-5 w-5 text-brand-600" />
+                  {dict.service.features}
+                </h3>
+                <ul className="space-y-3">
+                  {byKind("feature").map((f, i) => (
+                    <li key={i} className="group flex gap-3 rounded-lg p-1.5 transition-colors hover:bg-brand-50">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-gradient group-hover:text-white">
+                        <Icon name={f.icon || "check-circle"} className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-ink-900">{f.title}</p>
+                        {f.description && <p className="text-xs text-gray-600">{f.description}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            )}
+
+            {byKind("benefit").length > 0 && (
+              <Reveal className="card p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
+                  <Icon name="trending-up" className="h-5 w-5 text-brand-600" />
+                  {dict.service.benefits}
+                </h3>
+                <ul className="space-y-3">
+                  {byKind("benefit").map((f, i) => (
+                    <li key={i} className="group flex gap-3 rounded-lg p-1.5 transition-colors hover:bg-brand-50">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-gradient group-hover:text-white">
+                        <Icon name={f.icon || "check-circle"} className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-ink-900">{f.title}</p>
+                        {f.description && <p className="text-xs text-gray-600">{f.description}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            )}
+
+            {byKind("process").length > 0 && (
+              <Reveal className="card p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
+                  <Icon name="target" className="h-5 w-5 text-brand-600" />
+                  {dict.service.process}
+                </h3>
+                <ol className="space-y-3">
+                  {byKind("process").map((f, i) => (
+                    <li key={i} className="flex gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-ink-900">{f.title}</p>
+                        {f.description && <p className="text-xs text-gray-600">{f.description}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </Reveal>
+            )}
+
+            {byKind("technology").length > 0 && (
+              <Reveal className="card p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
+                  <Icon name="code" className="h-5 w-5 text-brand-600" />
+                  {dict.service.technologies}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {byKind("technology").map((f, i) => (
+                    <span key={i} className="flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-600 hover:text-white">
+                      <Icon name={f.icon || "code"} className="h-3.5 w-3.5" />
+                      {f.title}
+                    </span>
+                  ))}
+                </div>
+              </Reveal>
+            )}
+          </aside>
         </div>
-
-        {byKind("feature").length > 0 && (
-          <section className="mt-16">
-            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.service.features}</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {byKind("feature").map((f, i) => (
-                <Reveal key={i} delay={i * 60}>
-                  <div className="card group h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
-                    <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-gradient group-hover:text-white">
-                      <Icon name={f.icon || "check-circle"} className="h-6 w-6" />
-                    </span>
-                    <h3 className="mb-2 text-base font-bold text-ink-900">{f.title}</h3>
-                    {f.description && <p className="text-sm text-gray-600">{f.description}</p>}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {byKind("benefit").length > 0 && (
-          <section className="mt-16">
-            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.service.benefits}</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {byKind("benefit").map((f, i) => (
-                <Reveal key={i} delay={i * 60}>
-                  <div className="card group h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
-                    <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-gradient group-hover:text-white">
-                      <Icon name={f.icon || "check-circle"} className="h-6 w-6" />
-                    </span>
-                    <h3 className="mb-2 text-base font-bold text-ink-900">{f.title}</h3>
-                    {f.description && <p className="text-sm text-gray-600">{f.description}</p>}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {byKind("process").length > 0 && (
-          <section className="mt-16">
-            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.service.process}</h2>
-            <ol className="space-y-4">
-              {byKind("process").map((f, i) => (
-                <Reveal key={i} delay={i * 50}>
-                  <li className="card flex items-center gap-4 p-5 transition-all hover:border-brand-300">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-lg font-extrabold text-white">
-                      {i + 1}
-                    </span>
-                    <div>
-                      <p className="font-bold text-ink-900">{f.title}</p>
-                      {f.description && <p className="text-sm text-gray-600">{f.description}</p>}
-                    </div>
-                  </li>
-                </Reveal>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        {byKind("technology").length > 0 && (
-          <section className="mt-16">
-            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.service.technologies}</h2>
-            <div className="flex flex-wrap gap-3">
-              {byKind("technology").map((f, i) => (
-                <Reveal key={i} delay={i * 30}>
-                  <span className="flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:border-brand-600 hover:bg-brand-600 hover:text-white">
-                    <Icon name={f.icon || "code"} className="h-4 w-4" />
-                    {f.title}
-                  </span>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-        )}
 
         {faqItems.length > 0 && (
           <section className="mt-16">

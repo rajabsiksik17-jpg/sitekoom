@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const { error } = await admin
     .from("live_chat_conversations")
-    .update({ status: "closed", closed_at: new Date().toISOString() })
+    .update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "customer" })
     .eq("visitor_token", body.visitor_token);
 
   if (error) return NextResponse.json({ error: "Failed to close conversation" }, { status: 500 });

@@ -189,6 +189,7 @@ export interface CompanyInfo {
   values_en: string[];
   why_ar: WhyItem[];
   why_en: WhyItem[];
+  video_url: string | null;
 }
 
 export interface WhyItem {
@@ -202,6 +203,7 @@ export interface CompanyImage {
   url: string;
   alt: string | null;
   caption: string | null;
+  kind: string;
   sort: number;
 }
 
@@ -404,6 +406,7 @@ export interface LiveChatConversation {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  closed_by: string | null;
   agent?: User | null;
 }
 
@@ -465,5 +468,19 @@ export interface PageHeroSettings {
   mobile_image: string | null;
   overlay_color: string;
   overlay_opacity: number;
+  updated_at: string;
+}
+
+export interface Page {
+  id: string;
+  slug: string;
+  title_ar: string;
+  title_en: string;
+  content_ar: string | null;
+  content_en: string | null;
+  status: string;
+  is_system: boolean;
+  sort: number;
+  created_at: string;
   updated_at: string;
 }

@@ -15,19 +15,28 @@ export function CategoriesManager() {
   const [tab, setTab] = useState<"article" | "project">("article");
   const [items, setItems] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [editing, setEditing] = useState<Partial<Cat> | null>(null);
   const [deleting, setDeleting] = useState<Cat | null>(null);
 
   const table = tab === "article" ? "article_categories" : "project_categories";
 
   const load = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase.from(table).select("*").order("sort");
-    setItems((data ?? []) as Cat[]);
-    setLoading(false);
+    setLoading(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { data, error: err } = await supabase.from(table).select("*").order("sort");
+      if (err) throw new Error(err.message);
+      setItems((data ?? []) as Cat[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "تعذر تحميل التصنيفات");
+    } finally {
+      setLoading(false);
+    }
   }, [table]);
 
-  useEffect(() => { setLoading(true); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   function update(field: string, value: unknown) {
     setEditing((prev) => ({ ...prev, [field]: value }));
@@ -68,7 +77,11 @@ export function CategoriesManager() {
         <button type="button" onClick={() => setTab("project")} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "project" ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700"}`}>تصنيفات المشاريع</button>
       </div>
 
-      {loading ? <div className="flex justify-center py-16"><Spinner /></div> : items.length === 0 ? (
+      {loading ? <div className="flex justify-center py-16"><Spinner /></div> : error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+          {error}
+        </div>
+      ) : items.length === 0 ? (
         <EmptyState title="لا توجد تصنيفات" />
       ) : (
         <div className="card divide-y divide-brand-50">

@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/toast";
 import { PageTitle, Spinner } from "@/components/admin/ui";
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { VideoUpload } from "@/components/admin/video-upload";
 import type { CompanyInfo, CompanyImage } from "@/lib/types";
 
 export function CompanyManager() {
@@ -45,7 +46,13 @@ export function CompanyManager() {
 
   async function addImage(url: string) {
     const supabase = createClient();
-    await supabase.from("company_images").insert({ url, sort: gallery.length });
+    await supabase.from("company_images").insert({ url, kind: "image", sort: gallery.length });
+    load();
+  }
+
+  async function addVideo(url: string) {
+    const supabase = createClient();
+    await supabase.from("company_images").insert({ url, kind: "video", sort: gallery.length });
     load();
   }
 
@@ -70,6 +77,9 @@ export function CompanyManager() {
           <textarea className="input min-h-[100px]" value={(info.values_ar ?? []).join("\n")} onChange={(e) => update("values_ar", e.target.value.split("\n"))} />
           <textarea className="input mt-2 min-h-[100px]" dir="ltr" value={(info.values_en ?? []).join("\n")} onChange={(e) => update("values_en", e.target.value.split("\n"))} />
         </Field>
+        <Field label="فيديو الشركة (يظهر في الصفحة الرئيسية)" hint="ارفع فيديو MP4/WebM ليظهر بجانب بيانات الشركة">
+          <VideoUpload value={info.video_url ?? ""} onChange={(url) => update("video_url", url)} folder="company" />
+        </Field>
       </div>
 
       <div className="card p-6">
@@ -77,13 +87,21 @@ export function CompanyManager() {
         <div className="flex flex-wrap gap-3">
           {gallery.map((img) => (
             <div key={img.id} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={img.alt ?? ""} className="h-24 w-32 rounded-lg border border-brand-100 object-cover" />
+              {img.kind === "video" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <video src={img.url} className="h-24 w-32 rounded-lg border border-brand-100 bg-black object-cover" muted />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img.url} alt={img.alt ?? ""} className="h-24 w-32 rounded-lg border border-brand-100 object-cover" />
+              )}
               <button type="button" onClick={() => removeImage(img.id)} className="absolute -end-1 -top-1 rounded-full bg-red-500 p-1 text-white"><Trash2 className="h-3 w-3" /></button>
             </div>
           ))}
           <div className="h-24 w-32">
             <ImageUpload value="" onChange={(url) => addImage(url)} folder="company" />
+          </div>
+          <div className="h-24 w-32">
+            <VideoUpload value="" onChange={(url) => addVideo(url)} folder="company" />
           </div>
         </div>
       </div>

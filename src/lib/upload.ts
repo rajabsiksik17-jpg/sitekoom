@@ -42,3 +42,12 @@ export function validateImage(file: File): string | null {
   if (file.size > MAX_IMAGE_SIZE) return "حجم الملف يتجاوز 8 ميجابايت";
   return null;
 }
+
+export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
+export const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+export function validateVideo(file: File): string | null {
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) return "نوع الفيديو غير مدعوم (MP4, WebM, MOV)";
+  if (file.size > MAX_VIDEO_SIZE) return "حجم الفيديو يتجاوز 100 ميجابايت";
+  return null;
+}
