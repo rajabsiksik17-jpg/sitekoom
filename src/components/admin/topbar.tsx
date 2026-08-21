@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { playNotificationSound } from "@/lib/sound";
 import type { Notification } from "@/lib/types";
-import { timeAgo } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 
 export function Topbar() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [pulse, setPulse] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const supabaseRef = useRef(createClient());
 
@@ -29,7 +31,12 @@ export function Topbar() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
-        (payload) => setItems((prev) => [payload.new as Notification, ...prev]),
+        (payload) => {
+          setItems((prev) => [payload.new as Notification, ...prev]);
+          setPulse(true);
+          playNotificationSound();
+          setTimeout(() => setPulse(false), 1500);
+        },
       )
       .subscribe();
 
@@ -57,7 +64,10 @@ export function Topbar() {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 text-gray-600 hover:bg-brand-50"
+            className={cn(
+              "relative flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 text-gray-600 hover:bg-brand-50",
+              pulse && "animate-pulse text-brand-600",
+            )}
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />

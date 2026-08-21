@@ -34,7 +34,10 @@ export const ar = {
   home: {
     servicesTitle: "خدماتنا",
     servicesSubtitle: "نقدّم حلولاً رقمية متكاملة تناسب أعمالك.",
+    viewMoreServices: "رؤية المزيد من الخدمات",
     whyTitle: "لماذا تختار سايتكم؟",
+    aboutTitle: "نصنع حلولاً رقمية تُبنى حول عملك",
+    aboutText: "في سايتكم، نعمل على تحويل الأفكار والأعمال إلى تجارب رقمية عملية تساعد الشركات والأفراد على الظهور بشكل أفضل، الوصول إلى عملائهم، وإدارة أعمالهم بكفاءة أكبر. من المواقع والمتاجر الإلكترونية إلى الأنظمة والمنصات الرقمية، نركز على بناء حلول واضحة، قابلة للتطوير، ومصممة بما يناسب احتياج كل مشروع.",
     projectsTitle: "أحدث أعمالنا",
     projectsSubtitle: "استكشف بعض مشاريعنا المميزة.",
     statsTitle: "أرقامنا",
@@ -204,7 +207,10 @@ export const en: Dictionary = {
   home: {
     servicesTitle: "Our Services",
     servicesSubtitle: "Complete digital solutions for your business.",
+    viewMoreServices: "View More Services",
     whyTitle: "Why Choose Sitekoom?",
+    aboutTitle: "We build digital solutions around your business",
+    aboutText: "At Sitekoom, we turn ideas and businesses into practical digital experiences that help companies and individuals stand out, reach their customers and manage their operations more efficiently. From websites and e-commerce stores to custom systems and digital platforms, we focus on building clear, scalable solutions designed around the needs of every project.",
     projectsTitle: "Latest Work",
     projectsSubtitle: "Explore some of our featured projects.",
     statsTitle: "Our Numbers",

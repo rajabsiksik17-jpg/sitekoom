@@ -177,28 +177,6 @@ export default async function ServiceDetailPage({
               </Reveal>
             )}
 
-            {byKind("process").length > 0 && (
-              <Reveal className="card p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
-                  <Icon name="target" className="h-5 w-5 text-brand-600" />
-                  {dict.service.process}
-                </h3>
-                <ol className="space-y-3">
-                  {byKind("process").map((f, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
-                        {i + 1}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-ink-900">{f.title}</p>
-                        {f.description && <p className="text-xs text-gray-600">{f.description}</p>}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </Reveal>
-            )}
-
             {byKind("technology").length > 0 && (
               <Reveal className="card p-6">
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink-900">
@@ -217,6 +195,30 @@ export default async function ServiceDetailPage({
             )}
           </aside>
         </div>
+
+        {byKind("process").length > 0 && (
+          <section className="mt-16">
+            <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{dict.service.process}</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {byKind("process").map((f, i) => (
+                <Reveal key={i} delay={i * 60}>
+                  <div className="card group relative h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-lg font-extrabold text-white">
+                        {i + 1}
+                      </span>
+                      {i < byKind("process").length - 1 && (
+                        <span className="hidden h-px flex-1 bg-brand-200 lg:block" />
+                      )}
+                    </div>
+                    <h3 className="mb-2 text-base font-bold text-ink-900">{f.title}</h3>
+                    {f.description && <p className="text-sm text-gray-600">{f.description}</p>}
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
 
         {faqItems.length > 0 && (
           <section className="mt-16">

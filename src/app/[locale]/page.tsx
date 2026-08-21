@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Phone, Mail, MapPin } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { HeroSlider } from "@/components/home/hero-slider";
 import { Marquee } from "@/components/home/marquee";
 import { Reveal } from "@/components/reveal";
@@ -21,14 +21,13 @@ import {
   getStatistics,
   getSocialLinks,
 } from "@/lib/queries";
-import { getSettings } from "@/lib/settings";
 
 export default async function HomePage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, projects, company, stats, social, settings] = await Promise.all([
+  const [sliders, marquee, sections, services, projects, company, stats, social] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
@@ -37,7 +36,6 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
     getCompanyInfo(),
     getStatistics(),
     getSocialLinks(),
-    getSettings(),
   ]);
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.key, s]));
@@ -45,9 +43,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const Arrow = locale === "ar" ? ArrowLeft : ArrowRight;
 
   const whyItems = (locale === "ar" ? company?.why_ar : company?.why_en) ?? [];
-  const featuredServices = services.filter((s) => s.is_featured).slice(0, 8);
+  const featuredServices = services.filter((s) => s.is_featured).slice(0, 4);
   const featuredProjects = projects.slice(0, 6);
-  const g = settings.general;
 
   return (
     <>
@@ -74,8 +71,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link href={p("/services")} className="btn-secondary px-6 py-3">
-              {dict.common.viewAll}
+            <Link href={p("/services")} className="btn-primary px-6 py-3">
+              {dict.home.viewMoreServices}
               <Arrow className="h-4 w-4" />
             </Link>
           </div>
@@ -133,36 +130,14 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <Reveal className="relative overflow-hidden rounded-2xl shadow-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <video src={company.video_url} controls className="aspect-video w-full bg-black object-cover" />
+              <video src={company.video_url} controls preload="metadata" className="aspect-video w-full bg-black object-cover" />
             </Reveal>
             <Reveal>
-              <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">
-                {localize(locale, g.company_name_ar, g.company_name_en)}
-              </h2>
-              <p className="mt-4 leading-relaxed text-gray-600">
-                {localize(locale, g.tagline_ar, g.tagline_en)}
-              </p>
-              <ul className="mt-6 space-y-3 text-sm text-gray-700">
-                {g.phone && (
-                  <li className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><Phone className="h-4 w-4" /></span>
-                    <a href={`tel:${g.phone}`} className="hover:text-brand-700" dir="ltr">{g.phone}</a>
-                  </li>
-                )}
-                {g.email && (
-                  <li className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><Mail className="h-4 w-4" /></span>
-                    <a href={`mailto:${g.email}`} className="hover:text-brand-700" dir="ltr">{g.email}</a>
-                  </li>
-                )}
-                <li className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><MapPin className="h-4 w-4" /></span>
-                  <span>{localize(locale, g.address_ar, g.address_en)}</span>
-                </li>
-              </ul>
+              <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">{dict.home.aboutTitle}</h2>
+              <p className="mt-5 leading-relaxed text-gray-600">{dict.home.aboutText}</p>
               {social.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2">
-                  <SocialIcons social={social} />
+                  <SocialIcons social={social} showLabel />
                 </div>
               )}
             </Reveal>
