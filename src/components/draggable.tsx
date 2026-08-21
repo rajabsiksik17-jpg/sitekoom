@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-function clamp(x: number, y: number, el?: HTMLElement | null) {
+interface Pos {
+  x: number; // distance from the anchored side edge
+  y: number; // distance from the viewport bottom
+}
+
+function clamp(side: "left" | "right", x: number, y: number, el?: HTMLElement | null): Pos {
   const w = typeof window !== "undefined" ? window.innerWidth : 0;
   const h = typeof window !== "undefined" ? window.innerHeight : 0;
   const ew = el?.offsetWidth ?? 60;
@@ -22,12 +27,13 @@ export function Draggable({
   defaultSide?: "left" | "right";
   children: React.ReactNode;
 }) {
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [pos, setPos] = useState<Pos | null>(null);
+  const side = defaultSide === "right" ? "right" : "left";
   const dragRef = useRef<{ startX: number; startY: number; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let initial: { x: number; y: number } | null = null;
+    let initial: Pos | null = null;
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
@@ -38,23 +44,28 @@ export function Draggable({
       /* ignore */
     }
     if (!initial) {
-      initial =
-        defaultSide === "left"
-          ? { x: 16, y: window.innerHeight - 120 }
-          : { x: window.innerWidth - 72, y: window.innerHeight - 120 };
+      initial = { x: 16, y: 96 };
     }
-    setPos(clamp(initial.x, initial.y));
+    setPos(clamp(side, initial.x, initial.y));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  // Keep the widget inside the viewport when the window is resized.
+  // Re-clamp when the widget resizes (e.g. a popup menu opens above the button)
+  // and when the window is resized, so it never leaves the viewport.
   useEffect(() => {
-    const onResize = () => {
-      setPos((p) => (p ? clamp(p.x, p.y, containerRef.current) : p));
+    const el = containerRef.current;
+    if (!el) return;
+    const doClamp = () => {
+      setPos((p) => (p ? clamp(side, p.x, p.y, el) : p));
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    const ro = new ResizeObserver(doClamp);
+    ro.observe(el);
+    window.addEventListener("resize", doClamp);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", doClamp);
+    };
+  }, [side]);
 
   useEffect(() => {
     if (pos) {
@@ -75,26 +86,31 @@ export function Draggable({
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    const next = clamp(
-      dragRef.current.x + dx,
-      dragRef.current.y + dy,
-      containerRef.current,
-    );
-    setPos(next);
-  }, []);
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragRef.current) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      const next = clamp(
+        side,
+        dragRef.current.x + (side === "right" ? -dx : dx),
+        dragRef.current.y - dy,
+        containerRef.current,
+      );
+      setPos(next);
+    },
+    [side],
+  );
 
   if (!pos) return null;
 
+  const style: React.CSSProperties =
+    side === "right"
+      ? { right: pos.x, bottom: pos.y, touchAction: "none" }
+      : { left: pos.x, bottom: pos.y, touchAction: "none" };
+
   return (
-    <div
-      ref={containerRef}
-      className="fixed z-[60]"
-      style={{ left: pos.x, top: pos.y, touchAction: "none" }}
-    >
+    <div ref={containerRef} className="fixed z-[60]" style={style}>
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

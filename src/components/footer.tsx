@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone, MessageCircle } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
+import { localizePath } from "@/lib/i18n/config";
 import { ar, en, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { GeneralSettings } from "@/lib/settings";
 import type { Service, SocialLink } from "@/lib/types";
-import { localize } from "@/lib/utils";
+import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { SocialIcons } from "@/components/social-icons";
 
 export function Footer({
@@ -21,6 +22,7 @@ export function Footer({
   const dict: Dictionary = locale === "ar" ? ar : en;
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
   const year = new Date().getFullYear();
+  const p = (path: string) => localizePath(path, locale);
 
   return (
     <footer className="bg-ink-900 text-white">
@@ -51,10 +53,11 @@ export function Footer({
               { label: dict.nav.services, href: "/services" },
               { label: dict.nav.projects, href: "/projects" },
               { label: dict.nav.blog, href: "/blog" },
+              { label: dict.nav.requestProject, href: "/request-project" },
               { label: dict.nav.contact, href: "/contact" },
             ].map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-white/70 transition-colors hover:text-white">
+                <Link href={p(l.href)} className="text-white/70 transition-colors hover:text-white">
                   {l.label}
                 </Link>
               </li>
@@ -70,7 +73,7 @@ export function Footer({
             {services.slice(0, 6).map((s) => (
               <li key={s.id}>
                 <Link
-                  href={`/services/${s.slug}`}
+                  href={p(`/services/${s.slug}`)}
                   className="text-white/70 transition-colors hover:text-white"
                 >
                   {localize(locale, s.title_ar, s.title_en)}
@@ -96,7 +99,7 @@ export function Footer({
             {settings.whatsapp && (
               <li className="flex items-center gap-3">
                 <MessageCircle className="h-4 w-4 text-brand-300" />
-                <a href={`https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`} className="hover:text-white">
+                <a href={buildWhatsAppUrl(settings.whatsapp)} target="_blank" rel="noopener noreferrer" className="hover:text-white">
                   {settings.whatsapp}
                 </a>
               </li>
@@ -123,10 +126,10 @@ export function Footer({
             © {year} {companyName}. {dict.footer.rights}
           </p>
           <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-white">
+            <Link href={p("/privacy")} className="hover:text-white">
               {dict.footer.privacy}
             </Link>
-            <Link href="/terms" className="hover:text-white">
+            <Link href={p("/terms")} className="hover:text-white">
               {dict.footer.terms}
             </Link>
           </div>

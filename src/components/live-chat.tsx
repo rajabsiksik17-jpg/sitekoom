@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/components/providers";
 import { Draggable } from "@/components/draggable";
 import { PhoneInput, type PhoneInputResult } from "@/components/phone-input";
-import { cn, isValidEmail } from "@/lib/utils";
+import { cn, isValidEmail, buildWhatsAppUrl } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 import { playNotificationSound, getSoundPref, setSoundPref } from "@/lib/sound";
 import type { GeneralSettings } from "@/lib/settings";
@@ -245,7 +245,6 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
 
   const dir = locale === "ar" ? "rtl" : "ltr";
   const whatsapp = settings.whatsapp.replace(/\D/g, "");
-
   return (
     <>
       {view === "open" && conversation && (
@@ -315,7 +314,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
               <div className="mb-3 flex max-h-[60vh] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">
                 {whatsapp && (
                   <a
-                    href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(settings.whatsapp_message)}`}
+                    href={buildWhatsAppUrl(settings.whatsapp, settings.whatsapp_message)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent({ event_type: "whatsapp_clicked" })}
@@ -387,7 +386,7 @@ function ChatWindow(props: {
   return (
     <div
       dir={dir}
-      className="fixed bottom-5 start-5 z-[70] flex h-[560px] w-[calc(100vw-2.5rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-card"
+      className="fixed bottom-0 start-0 z-[70] flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-card sm:bottom-5 sm:start-5 sm:h-[min(560px,calc(100dvh-6rem))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-brand-100"
     >
       <div className="flex items-center gap-2 bg-brand-gradient px-4 py-3 text-white">
         <Headset className="h-5 w-5" />
@@ -535,7 +534,7 @@ function ChatWindow(props: {
             </button>
           </div>
 
-          <form onSubmit={onSend} className="flex gap-2 border-t border-brand-100 p-3">
+          <form onSubmit={onSend} className="flex gap-2 border-t border-brand-100 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <input
               className="input flex-1"
               placeholder={dict.chat.typeMessage}

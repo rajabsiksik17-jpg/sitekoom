@@ -22,6 +22,7 @@ import {
   Target,
   Eye,
   Lightbulb,
+  CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +50,7 @@ const map: Record<string, LucideIcon> = {
   target: Target,
   eye: Eye,
   lightbulb: Lightbulb,
+  "check-circle": CheckCircle2,
 };
 
 export const ICON_NAMES = Object.keys(map);

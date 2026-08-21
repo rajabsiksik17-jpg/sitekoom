@@ -9,6 +9,7 @@ import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
+import { localizePath } from "@/lib/i18n/config";
 import {
   getSliders,
   getMarqueeMessages,
@@ -22,6 +23,7 @@ import {
 export default async function HomePage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
+  const p = (path: string) => localizePath(path, locale);
 
   const [sliders, marquee, sections, services, projects, company, stats] = await Promise.all([
     getSliders(),
@@ -66,7 +68,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link href="/services" className="btn-secondary px-6 py-3">
+            <Link href={p("/services")} className="btn-secondary px-6 py-3">
               {dict.common.viewAll}
               <Arrow className="h-4 w-4" />
             </Link>
@@ -134,7 +136,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
                     dict.home.projectsSubtitle}
                 </p>
               </div>
-              <Link href="/projects" className="btn-secondary px-5 py-2.5">
+              <Link href={p("/projects")} className="btn-secondary px-5 py-2.5">
                 {dict.common.viewAll}
                 <Arrow className="h-4 w-4" />
               </Link>
@@ -159,7 +161,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
                 {localize(locale, sectionMap.cta?.title_ar, sectionMap.cta?.title_en) ?? dict.home.ctaTitle}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-white/70">{dict.home.ctaSubtitle}</p>
-              <Link href="/contact" className="btn-primary mt-8 px-8 py-3.5 text-base">
+              <Link href={p("/contact")} className="btn-primary mt-8 px-8 py-3.5 text-base">
                 {dict.common.startProject}
               </Link>
             </div>

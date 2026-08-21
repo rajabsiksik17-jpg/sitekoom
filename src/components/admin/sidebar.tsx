@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LogOut, Menu, User, X } from "lucide-react";
 import { adminNav } from "@/components/admin/nav";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/admin/toast";
 import { cn } from "@/lib/utils";
+
+interface Badges {
+  contacts: number;
+  quotes: number;
+  chat: number;
+}
 
 export function Sidebar({
   permissions,
@@ -19,10 +26,48 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { push } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0 });
+  const supabaseRef = useRef(createClient());
+
+  const refreshBadges = useCallback(async () => {
+    const supabase = supabaseRef.current;
+    const [c, q, ch] = await Promise.all([
+      supabase.from("contact_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
+      supabase.from("project_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
+      supabase.from("live_chat_conversations").select("id", { count: "exact", head: true }).eq("status", "waiting"),
+    ]);
+    setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0 });
+  }, []);
+
+  useEffect(() => {
+    refreshBadges();
+
+    const supabase = supabaseRef.current;
+    const channel = supabase
+      .channel("admin-sidebar-badges")
+      .on("postgres_changes", { event: "*", schema: "public", table: "contact_requests" }, (payload) => {
+        if (payload.eventType === "INSERT") push("success", "طلب تواصل جديد");
+        refreshBadges();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "project_requests" }, (payload) => {
+        if (payload.eventType === "INSERT") push("success", "طلب تسعير جديد");
+        refreshBadges();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_conversations" }, (payload) => {
+        if (payload.eventType === "INSERT") push("success", "محادثة مباشرة جديدة");
+        refreshBadges();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshBadges, push]);
 
   async function handleSignOut() {
-    const supabase = createClient();
+    const supabase = supabaseRef.current;
     await supabase.auth.signOut();
     router.replace("/admin/login");
     router.refresh();
@@ -32,6 +77,13 @@ export function Sidebar({
   const profileItem = { key: "profile", label: "الملف الشخصي", href: "/admin/profile", icon: User };
 
   const allItems = [...items, profileItem];
+
+  const badgeFor = (key: string): number | null => {
+    if (key === "contacts") return badges.contacts;
+    if (key === "quotes") return badges.quotes;
+    if (key === "chat") return badges.chat;
+    return null;
+  };
 
   const nav = (
     <div className="flex h-full flex-col">
@@ -48,6 +100,7 @@ export function Sidebar({
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {allItems.map((item) => {
           const Icon = item.icon;
+          const count = badgeFor(item.key);
           const active =
             item.href === "/admin"
               ? pathname === "/admin"
@@ -63,7 +116,12 @@ export function Sidebar({
               )}
             >
               <Icon className="h-5 w-5" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {count != null && count > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
+                  {count}
+                </span>
+              )}
             </Link>
           );
         })}

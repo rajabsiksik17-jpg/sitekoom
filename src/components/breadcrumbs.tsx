@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Locale } from "@/lib/i18n/config";
+import { localizePath, type Locale } from "@/lib/i18n/config";
 import { jsonLdToString, breadcrumbSchema } from "@/lib/seo";
 
 export interface Crumb {
@@ -26,7 +26,7 @@ export function Breadcrumbs({ items, locale }: { items: Crumb[]; locale: Locale 
                 {item.name}
               </span>
             ) : (
-              <Link href={item.path} className="hover:text-brand-700">
+              <Link href={localizePath(item.path, locale)} className="hover:text-brand-700">
                 {item.name}
               </Link>
             )}

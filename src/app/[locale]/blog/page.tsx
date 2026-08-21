@@ -3,11 +3,13 @@ import { PageHero } from "@/components/page-hero";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
+import { localizePath } from "@/lib/i18n/config";
 import { getArticles, getArticleCategories } from "@/lib/queries";
 
 export default async function BlogPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
+  const p = (path: string) => localizePath(path, locale);
   const [articles, categories] = await Promise.all([getArticles(), getArticleCategories()]);
 
   return (
@@ -15,13 +17,13 @@ export default async function BlogPage({ params }: { params: { locale: "ar" | "e
       <PageHero title={dict.blog.title} subtitle={dict.blog.subtitle} pageKey="blog" />
       <div className="container-site py-12">
         <div className="mb-8 flex flex-wrap gap-2">
-          <Link href="/blog" className="rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white">
+          <Link href={p("/blog")} className="rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white">
             {dict.common.all}
           </Link>
           {categories.map((c) => (
             <Link
               key={c.id}
-              href={`/blog?category=${c.slug}`}
+              href={p(`/blog?category=${c.slug}`)}
               className="rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100"
             >
               {localize(locale, c.name_ar, c.name_en)}
@@ -35,7 +37,7 @@ export default async function BlogPage({ params }: { params: { locale: "ar" | "e
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map((a, i) => (
               <Reveal key={a.id} delay={i * 50}>
-                <Link href={`/blog/${a.slug}`} className="card group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
+                <Link href={p(`/blog/${a.slug}`)} className="card group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
                   <div className="aspect-[16/9] overflow-hidden bg-brand-50">
                     {a.cover_image ? (
                       // eslint-disable-next-line @next/next/no-img-element

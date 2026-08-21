@@ -84,3 +84,17 @@ export function localize<T = string>(
   if (useAr) return (arVal ?? enVal ?? "") as T;
   return (enVal ?? arVal ?? "") as T;
 }
+
+/**
+ * Build a WhatsApp deep link from a stored phone number. Normalizes local
+ * Jordanian numbers (e.g. "0791..." → "962791...") so the app/web opens
+ * correctly on mobile and desktop.
+ */
+export function buildWhatsAppUrl(phone: string | undefined | null, message?: string | null): string {
+  let digits = (phone ?? "").replace(/\D/g, "");
+  if (!digits) return "#";
+  if (digits.startsWith("0")) digits = digits.replace(/^0+/, "");
+  if (digits.length === 9 && digits.startsWith("7")) digits = `962${digits}`;
+  const url = `https://wa.me/${digits}`;
+  return message ? `${url}?text=${encodeURIComponent(message)}` : url;
+}

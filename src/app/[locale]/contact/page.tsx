@@ -3,7 +3,7 @@ import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContactForm } from "@/components/contact-form";
 import { socialIcon } from "@/components/social-icons";
-import { localize } from "@/lib/utils";
+import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
@@ -16,7 +16,7 @@ export default async function ContactPage({ params }: { params: { locale: "ar" |
 
   const info = [
     g.phone && { icon: Phone, label: dict.contact.phone, value: g.phone, href: `tel:${g.phone}` },
-    g.whatsapp && { icon: MessageCircle, label: dict.contact.whatsapp, value: g.whatsapp, href: `https://wa.me/${g.whatsapp.replace(/\D/g, "")}` },
+    g.whatsapp && { icon: MessageCircle, label: dict.contact.whatsapp, value: g.whatsapp, href: buildWhatsAppUrl(g.whatsapp) },
     g.email && { icon: Mail, label: dict.contact.email, value: g.email, href: `mailto:${g.email}` },
     { icon: MapPin, label: dict.contact.address, value: localize(locale, g.address_ar, g.address_en), href: g.google_maps_url },
     localize(locale, g.working_hours_ar, g.working_hours_en) && {

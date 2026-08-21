@@ -5,11 +5,13 @@ import { Reveal } from "@/components/reveal";
 import { Icon } from "@/components/icon";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
+import { localizePath } from "@/lib/i18n/config";
 import { getCompanyInfo, getTeamMembers, getStatistics } from "@/lib/queries";
 
 export default async function AboutPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
+  const p = (path: string) => localizePath(path, locale);
 
   const [company, team, stats] = await Promise.all([
     getCompanyInfo(),
@@ -141,7 +143,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
         )}
 
         <div className="mt-16 text-center">
-          <Link href="/contact" className="btn-primary px-8 py-3.5">
+          <Link href={p("/contact")} className="btn-primary px-8 py-3.5">
             {dict.common.startProject}
           </Link>
         </div>

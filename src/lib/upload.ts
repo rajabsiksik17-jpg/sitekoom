@@ -34,11 +34,11 @@ export async function uploadFile(
   return { url, path };
 }
 
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/svg+xml"];
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 export const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8MB
 
 export function validateImage(file: File): string | null {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "نوع الملف غير مدعوم (JPG, PNG, WebP, GIF, SVG)";
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "نوع الملف غير مدعوم (JPG, PNG, WebP, GIF)";
   if (file.size > MAX_IMAGE_SIZE) return "حجم الملف يتجاوز 8 ميجابايت";
   return null;
 }

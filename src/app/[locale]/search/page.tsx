@@ -5,6 +5,7 @@ import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
+import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Service, Project } from "@/lib/types";
 
@@ -28,6 +29,7 @@ export default async function SearchPage({
 }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
+  const p = (path: string) => localizePath(path, locale);
   const query = (searchParams.q ?? "").trim();
   const supabase = createClient();
 
@@ -104,7 +106,7 @@ export default async function SearchPage({
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {articles.map((a) => (
                     <Reveal key={a.id}>
-                      <Link href={`/blog/${a.slug}`} className="card block overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
+                      <Link href={p(`/blog/${a.slug}`)} className="card block overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
                         <div className="aspect-[16/9] overflow-hidden bg-brand-50">
                           {a.cover_image ? (
                             // eslint-disable-next-line @next/next/no-img-element

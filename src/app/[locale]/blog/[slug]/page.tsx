@@ -6,6 +6,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
+import { localizePath } from "@/lib/i18n/config";
 import { getArticleBySlug, getArticles } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { articleSchema, jsonLdToString } from "@/lib/seo";
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
 export default async function ArticlePage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
+  const p = (path: string) => localizePath(path, locale);
 
   const article = await getArticleBySlug(params.slug);
   if (!article) notFound();
@@ -101,7 +103,7 @@ export default async function ArticlePage({ params }: { params: { locale: "ar" |
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {fallbackRelated.map((a) => (
                 <Reveal key={a.id}>
-                  <Link href={`/blog/${a.slug}`} className="card group block overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
+                  <Link href={p(`/blog/${a.slug}`)} className="card group block overflow-hidden transition-all hover:-translate-y-1 hover:shadow-glow">
                     <div className="aspect-[16/9] overflow-hidden bg-brand-50">
                       {a.cover_image ? (
                         // eslint-disable-next-line @next/next/no-img-element

@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useLocale } from "@/components/providers";
+import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import { localize } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
 export function ProjectCard({ project }: { project: Project }) {
   const { locale } = useLocale();
+  const href = useLocalizedHref();
   const title = localize(locale, project.title_ar, project.title_en);
   const short = localize(locale, project.short_desc_ar, project.short_desc_en);
   const category = localize(locale, project.category?.name_ar, project.category?.name_en);
 
   return (
     <Link
-      href={`/projects/${project.slug}`}
+      href={href(`/projects/${project.slug}`)}
       className="group card flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-glow"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-brand-50">

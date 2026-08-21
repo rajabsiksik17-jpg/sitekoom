@@ -4,16 +4,18 @@ import Link from "next/link";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Icon } from "@/components/icon";
 import { useLocale } from "@/components/providers";
+import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import { localize } from "@/lib/utils";
 import type { Service } from "@/lib/types";
 
 export function ServiceCard({ service }: { service: Service }) {
   const { locale, dir } = useLocale();
+  const href = useLocalizedHref();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
 
   return (
     <Link
-      href={`/services/${service.slug}`}
+      href={href(`/services/${service.slug}`)}
       className="group card flex h-full flex-col gap-4 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow"
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white transition-transform group-hover:scale-110">

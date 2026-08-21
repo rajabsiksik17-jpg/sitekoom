@@ -5,10 +5,12 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, localize } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
+import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import type { HomepageSlider } from "@/lib/types";
 
 export function HeroSlider({ slides }: { slides: HomepageSlider[] }) {
   const { locale, dir } = useLocale();
+  const href = useLocalizedHref();
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
@@ -80,12 +82,12 @@ export function HeroSlider({ slides }: { slides: HomepageSlider[] }) {
           )}
           <div className="mt-8 flex flex-wrap gap-3">
             {ctaText && slide.cta_url && (
-              <Link href={slide.cta_url} className="btn-primary px-6 py-3 text-base">
+              <Link href={href(slide.cta_url)} className="btn-primary px-6 py-3 text-base">
                 {ctaText}
               </Link>
             )}
             {cta2Text && slide.cta2_url && (
-              <Link href={slide.cta2_url} className="btn-secondary bg-white/10 px-6 py-3 text-base text-white hover:bg-white/20">
+              <Link href={href(slide.cta2_url)} className="btn-secondary bg-white/10 px-6 py-3 text-base text-white hover:bg-white/20">
                 {cta2Text}
               </Link>
             )}

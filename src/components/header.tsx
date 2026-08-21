@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { Languages, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
+import { localizePath } from "@/lib/i18n/config";
+import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import type { GeneralSettings } from "@/lib/settings";
 
 const navKeys = [
@@ -24,6 +26,7 @@ function setLocaleCookie(locale: string) {
 
 export function Header({ settings }: { settings: GeneralSettings }) {
   const { locale, dict } = useLocale();
+  const href = useLocalizedHref();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -47,8 +50,8 @@ export function Header({ settings }: { settings: GeneralSettings }) {
   }, []);
 
   const otherLocale = locale === "ar" ? "en" : "ar";
-  const strippedPath = locale === "ar" ? pathname : pathname.replace(/^\/en(?=\/|$)/, "") || "/";
-  const switchHref = otherLocale === "ar" ? strippedPath : `/en${strippedPath === "/" ? "" : strippedPath}`;
+  const strippedPath = pathname.replace(/^\/(ar|en)(?=\/|$)/, "") || "/";
+  const switchHref = localizePath(strippedPath, otherLocale);
 
   const logo = settings.logo;
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
@@ -67,31 +70,32 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             : "border-brand-100/60 bg-white/70 backdrop-blur",
       )}
     >
-      <div className="container-site flex h-16 items-center justify-between gap-4 lg:h-20">
-        <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+      <div className="container-site flex h-16 items-center justify-between gap-2 lg:h-20">
+        <Link href={href("/")} className="flex min-w-0 items-center gap-2" onClick={() => setOpen(false)}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={logo} alt={companyName} className="h-9 w-auto" />
           ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
               S
             </span>
           )}
-          <span className={cn("text-xl font-extrabold tracking-tight", lightText ? "text-white" : "text-ink-900")}>
+          <span className={cn("truncate text-lg font-extrabold tracking-tight sm:text-xl", lightText ? "text-white" : "text-ink-900")}>
             {companyName}
           </span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
           {navKeys.map((item) => {
+            const itemHref = href(item.href);
             const active =
               item.href === "/"
-                ? pathname === "/" || pathname === "/en"
-                : pathname.startsWith(item.href);
+                ? strippedPath === "/"
+                : strippedPath === item.href || strippedPath.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.key}
-                href={item.href}
+                href={itemHref}
                 className={cn(
                   "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   lightText
@@ -111,7 +115,7 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             href={switchHref}
             onClick={() => setLocaleCookie(otherLocale)}
             className={cn(
-              "btn hidden px-3 py-2 text-sm sm:inline-flex",
+              "btn px-2.5 py-2 text-sm sm:px-3",
               lightText
                 ? "border border-white/30 bg-white/10 text-white hover:bg-white/20"
                 : "btn-secondary",
@@ -119,9 +123,9 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             aria-label="Switch language"
           >
             <Languages className="h-4 w-4" />
-            {otherLocale === "ar" ? "العربية" : "EN"}
+            <span className="font-semibold">{otherLocale === "ar" ? "العربية" : "EN"}</span>
           </Link>
-          <Link href="/request-project" className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
+          <Link href={href("/request-project")} className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
             {dict.common.startProject}
           </Link>
           <button
@@ -142,18 +146,14 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             {navKeys.map((item) => (
               <Link
                 key={item.key}
-                href={item.href}
+                href={href(item.href)}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-3 py-2.5 text-base font-medium text-ink-800 hover:bg-brand-50"
               >
                 {dict.nav[item.key]}
               </Link>
             ))}
-            <Link href={switchHref} onClick={() => setLocaleCookie(otherLocale)} className="btn-secondary mt-2 px-4 py-2.5 text-sm">
-              <Languages className="h-4 w-4" />
-              {otherLocale === "ar" ? "العربية" : "English"}
-            </Link>
-            <Link href="/request-project" className="btn-primary mt-2 px-4 py-2.5 text-sm">
+            <Link href={href("/request-project")} className="btn-primary mt-2 px-4 py-2.5 text-sm">
               {dict.common.startProject}
             </Link>
           </nav>
