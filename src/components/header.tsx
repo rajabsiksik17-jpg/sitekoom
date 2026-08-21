@@ -1,0 +1,164 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Languages, Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLocale } from "@/components/providers";
+import type { GeneralSettings } from "@/lib/settings";
+
+const navKeys = [
+  { key: "home", href: "/" },
+  { key: "about", href: "/about" },
+  { key: "services", href: "/services" },
+  { key: "projects", href: "/projects" },
+  { key: "blog", href: "/blog" },
+  { key: "requestProject", href: "/request-project" },
+  { key: "contact", href: "/contact" },
+] as const;
+
+function setLocaleCookie(locale: string) {
+  document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
+}
+
+export function Header({ settings }: { settings: GeneralSettings }) {
+  const { locale, dict } = useLocale();
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [heroTheme, setHeroTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const apply = () => {
+      const t = document.body.dataset.headerTheme;
+      setHeroTheme(t === "light" ? "light" : "dark");
+    };
+    apply();
+    window.addEventListener("header-theme-change", apply);
+    return () => window.removeEventListener("header-theme-change", apply);
+  }, []);
+
+  const otherLocale = locale === "ar" ? "en" : "ar";
+  const strippedPath = locale === "ar" ? pathname : pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  const switchHref = otherLocale === "ar" ? strippedPath : `/en${strippedPath === "/" ? "" : strippedPath}`;
+
+  const logo = settings.logo;
+  const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
+
+  // White text over a dark hero (top of page), dark text otherwise.
+  const lightText = !scrolled && heroTheme === "dark";
+
+  return (
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 border-b transition-all duration-300",
+        scrolled
+          ? "glass border-brand-100 shadow-soft"
+          : lightText
+            ? "border-white/10 bg-transparent"
+            : "border-brand-100/60 bg-white/70 backdrop-blur",
+      )}
+    >
+      <div className="container-site flex h-16 items-center justify-between gap-4 lg:h-20">
+        <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt={companyName} className="h-9 w-auto" />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
+              S
+            </span>
+          )}
+          <span className={cn("text-xl font-extrabold tracking-tight", lightText ? "text-white" : "text-ink-900")}>
+            {companyName}
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-1 lg:flex">
+          {navKeys.map((item) => {
+            const active =
+              item.href === "/"
+                ? pathname === "/" || pathname === "/en"
+                : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  lightText
+                    ? "text-white/85 hover:bg-white/10 hover:text-white"
+                    : "text-ink-800 hover:bg-brand-50 hover:text-brand-700",
+                  active && (lightText ? "text-white" : "text-brand-700"),
+                )}
+              >
+                {dict.nav[item.key]}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={switchHref}
+            onClick={() => setLocaleCookie(otherLocale)}
+            className={cn(
+              "btn hidden px-3 py-2 text-sm sm:inline-flex",
+              lightText
+                ? "border border-white/30 bg-white/10 text-white hover:bg-white/20"
+                : "btn-secondary",
+            )}
+            aria-label="Switch language"
+          >
+            <Languages className="h-4 w-4" />
+            {otherLocale === "ar" ? "العربية" : "EN"}
+          </Link>
+          <Link href="/request-project" className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
+            {dict.common.startProject}
+          </Link>
+          <button
+            type="button"
+            className={cn("btn p-2 lg:hidden", lightText ? "border border-white/30 bg-white/10 text-white" : "btn-secondary")}
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Menu"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="border-t border-brand-100 bg-white/95 backdrop-blur-xl lg:hidden">
+          <nav className="container-site flex flex-col gap-1 py-4">
+            {navKeys.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-base font-medium text-ink-800 hover:bg-brand-50"
+              >
+                {dict.nav[item.key]}
+              </Link>
+            ))}
+            <Link href={switchHref} onClick={() => setLocaleCookie(otherLocale)} className="btn-secondary mt-2 px-4 py-2.5 text-sm">
+              <Languages className="h-4 w-4" />
+              {otherLocale === "ar" ? "العربية" : "English"}
+            </Link>
+            <Link href="/request-project" className="btn-primary mt-2 px-4 py-2.5 text-sm">
+              {dict.common.startProject}
+            </Link>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}

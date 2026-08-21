@@ -1,0 +1,151 @@
+import Link from "next/link";
+import { PageHero } from "@/components/page-hero";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Reveal } from "@/components/reveal";
+import { Icon } from "@/components/icon";
+import { localize } from "@/lib/utils";
+import { ar, en } from "@/lib/i18n/dictionaries";
+import { getCompanyInfo, getTeamMembers, getStatistics } from "@/lib/queries";
+
+export default async function AboutPage({ params }: { params: { locale: "ar" | "en" } }) {
+  const locale = params.locale;
+  const dict = locale === "ar" ? ar : en;
+
+  const [company, team, stats] = await Promise.all([
+    getCompanyInfo(),
+    getTeamMembers(),
+    getStatistics(),
+  ]);
+
+  const about = localize(locale, company?.about_ar, company?.about_en);
+  const mission = localize(locale, company?.mission_ar, company?.mission_en);
+  const vision = localize(locale, company?.vision_ar, company?.vision_en);
+  const values = (locale === "ar" ? company?.values_ar : company?.values_en) ?? [];
+  const whyItems = (locale === "ar" ? company?.why_ar : company?.why_en) ?? [];
+
+  return (
+    <>
+      <PageHero title={dict.nav.about} subtitle={about} pageKey="about" />
+      <div className="container-site py-12">
+        <Breadcrumbs locale={locale} items={[{ name: dict.nav.about, path: "/about" }]} />
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {(mission || vision) && (
+            <>
+              {mission && (
+                <Reveal className="card p-8">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white">
+                    <Icon name="target" className="h-6 w-6" />
+                  </div>
+                  <h2 className="mb-2 text-xl font-bold text-ink-900">
+                    {locale === "ar" ? "رسالتنا" : "Our Mission"}
+                  </h2>
+                  <p className="leading-relaxed text-gray-600">{mission}</p>
+                </Reveal>
+              )}
+              {vision && (
+                <Reveal className="card p-8">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white">
+                    <Icon name="eye" className="h-6 w-6" />
+                  </div>
+                  <h2 className="mb-2 text-xl font-bold text-ink-900">
+                    {locale === "ar" ? "رؤيتنا" : "Our Vision"}
+                  </h2>
+                  <p className="leading-relaxed text-gray-600">{vision}</p>
+                </Reveal>
+              )}
+            </>
+          )}
+        </div>
+
+        {values.length > 0 && (
+          <section className="mt-16">
+            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
+              {locale === "ar" ? "قيمنا" : "Our Values"}
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {values.map((v, i) => (
+                <Reveal key={i} delay={i * 40}>
+                  <span className="rounded-full border border-brand-200 bg-brand-50 px-5 py-2.5 font-semibold text-brand-700">
+                    {v}
+                  </span>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {whyItems.length > 0 && (
+          <section className="mt-16">
+            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.home.whyTitle}</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {whyItems.map((w, i) => (
+                <Reveal key={i} delay={i * 50}>
+                  <div className="card h-full p-6">
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                      <Icon name={w.icon} className="h-6 w-6" />
+                    </div>
+                    <h3 className="mb-2 font-bold text-ink-900">{w.title}</h3>
+                    <p className="text-sm text-gray-600">{w.description}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {team.length > 0 && (
+          <section className="mt-16">
+            <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
+              {locale === "ar" ? "فريق العمل" : "Our Team"}
+            </h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {team.map((m, i) => (
+                <Reveal key={m.id} delay={i * 50}>
+                  <div className="card overflow-hidden text-center">
+                    <div className="aspect-square w-full overflow-hidden bg-brand-50">
+                      {m.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.photo} alt={localize(locale, m.name_ar, m.name_en)} loading="lazy" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-4xl font-bold text-brand-200">
+                          {localize(locale, m.name_ar, m.name_en)[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-ink-900">{localize(locale, m.name_ar, m.name_en)}</h3>
+                      <p className="text-sm text-gray-500">{localize(locale, m.position_ar, m.position_en)}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {stats.length > 0 && (
+          <section className="mt-16 rounded-3xl bg-ink-900 p-10">
+            <div className="grid grid-cols-2 gap-8 text-center lg:grid-cols-4">
+              {stats.map((s) => (
+                <div key={s.id}>
+                  <p className="text-4xl font-extrabold text-brand-300">
+                    {s.value}
+                    {s.suffix}
+                  </p>
+                  <p className="mt-1 text-sm text-white/70">{localize(locale, s.label_ar, s.label_en)}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className="mt-16 text-center">
+          <Link href="/contact" className="btn-primary px-8 py-3.5">
+            {dict.common.startProject}
+          </Link>
+        </div>
+      </div>
+    </>
+  );
+}

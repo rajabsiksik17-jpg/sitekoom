@@ -1,0 +1,65 @@
+-- ============================================================================
+-- Sitekoom — Content population (Service SEO EN)
+-- ============================================================================
+
+insert into public.seo_metadata (entity_type, entity_id, locale, seo_title, meta_description, focus_keyword, keywords, canonical_url, og_title, og_description)
+select 'service', s.id, 'en', v.seo_title, v.meta, v.focus, v.keywords, v.canonical, v.seo_title, v.meta
+from public.services s
+join (values
+  ('web-development',
+   $c$Web Design & Development Company in Jordan | Sitekoom$c$,
+   $c$Sitekoom provides professional web design and development services in Jordan, creating fast, responsive and scalable websites for businesses and organizations.$c$,
+   $c$web design Jordan$c$,
+   ARRAY[$c$web design Jordan$c$,$c$web development Jordan$c$,$c$website company Jordan$c$,$c$web development Amman$c$,$c$website development company$c$],
+   $c$/services/web-development$c$),
+  ('ecommerce',
+   $c$E-Commerce Development Company in Jordan | Sitekoom$c$,
+   $c$Build a professional e-commerce store with Sitekoom. Scalable online stores with product management, payments, shipping and optimized customer experiences.$c$,
+   $c$e-commerce development Jordan$c$,
+   ARRAY[$c$e-commerce development Jordan$c$,$c$online store development$c$,$c$e-commerce company$c$,$c$woocommerce development$c$],
+   $c$/services/ecommerce$c$),
+  ('custom-software',
+   $c$Custom Software Development Company in Jordan | Sitekoom$c$,
+   $c$Sitekoom develops custom software and digital platforms for businesses in Jordan, including SaaS platforms, dashboards, APIs and business systems.$c$,
+   $c$custom software Jordan$c$,
+   ARRAY[$c$custom software Jordan$c$,$c$software development company$c$,$c$custom development$c$,$c$SaaS development$c$],
+   $c$/services/custom-software$c$),
+  ('mobile-apps',
+   $c$Mobile App Development Company in Jordan | Sitekoom$c$,
+   $c$Professional Android and iOS mobile app development by Sitekoom, with scalable architecture and user-focused experiences.$c$,
+   $c$mobile app development Jordan$c$,
+   ARRAY[$c$mobile app development Jordan$c$,$c$Android app development$c$,$c$iOS app development$c$,$c$Flutter development$c$],
+   $c$/services/mobile-apps$c$),
+  ('erp-systems',
+   $c$ERP Software Development in Jordan | Sitekoom$c$,
+   $c$Custom ERP solutions for businesses in Jordan to manage sales, inventory, accounting, HR, branches and operations from one platform.$c$,
+   $c$ERP development Jordan$c$,
+   ARRAY[$c$ERP development Jordan$c$,$c$ERP software$c$,$c$enterprise resource planning$c$,$c$ERP systems$c$],
+   $c$/services/erp-systems$c$),
+  ('pos-systems',
+   $c$POS Software Development in Jordan | Sitekoom$c$,
+   $c$Modern POS software for sales, inventory, branches and customer management with ERP and e-commerce integrations.$c$,
+   $c$POS software Jordan$c$,
+   ARRAY[$c$POS software$c$,$c$point of sale system$c$,$c$POS development$c$,$c$retail POS$c$],
+   $c$/services/pos-systems$c$),
+  ('crm-systems',
+   $c$CRM Software Development in Jordan | Sitekoom$c$,
+   $c$Custom CRM solutions for managing customers, leads, sales pipelines, follow-ups and customer relationships.$c$,
+   $c$CRM software Jordan$c$,
+   ARRAY[$c$CRM software$c$,$c$customer relationship management$c$,$c$CRM development$c$,$c$sales management software$c$],
+   $c$/services/crm-systems$c$),
+  ('administrative-systems',
+   $c$Business Management Software Development | Sitekoom$c$,
+   $c$Custom business management systems designed to automate operations, manage employees, inventory, requests and reporting.$c$,
+   $c$business management software$c$,
+   ARRAY[$c$business management software$c$,$c$management systems$c$,$c$HR software$c$,$c$business automation$c$],
+   $c$/services/administrative-systems$c$)
+) as v(slug, seo_title, meta, focus, keywords, canonical) on s.slug = v.slug
+on conflict (entity_type, entity_id, locale) do update set
+  seo_title = excluded.seo_title,
+  meta_description = excluded.meta_description,
+  focus_keyword = excluded.focus_keyword,
+  keywords = excluded.keywords,
+  canonical_url = excluded.canonical_url,
+  og_title = excluded.og_title,
+  og_description = excluded.og_description;

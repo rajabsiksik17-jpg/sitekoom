@@ -1,0 +1,65 @@
+-- ============================================================================
+-- Sitekoom — Content population (Service SEO AR)
+-- ============================================================================
+
+insert into public.seo_metadata (entity_type, entity_id, locale, seo_title, meta_description, focus_keyword, keywords, canonical_url, og_title, og_description)
+select 'service', s.id, 'ar', v.seo_title, v.meta, v.focus, v.keywords, v.canonical, v.seo_title, v.meta
+from public.services s
+join (values
+  ('web-development',
+   $c$تصميم وتطوير المواقع الإلكترونية في الأردن | Sitekoom$c$,
+   $c$شركة سايتكم لتصميم وتطوير المواقع الإلكترونية في الأردن. مواقع احترافية، سريعة ومتجاوبة للشركات والمؤسسات مع حلول SEO وتطوير مخصصة.$c$,
+   $c$تصميم مواقع الأردن$c$,
+   ARRAY[$c$تصميم مواقع الأردن$c$,$c$شركة تصميم مواقع$c$,$c$برمجة مواقع عمان$c$,$c$تطوير مواقع إلكترونية$c$,$c$شركة برمجة الأردن$c$,$c$تصميم موقع شركة$c$],
+   $c$/services/web-development$c$),
+  ('ecommerce',
+   $c$تصميم وتطوير المتاجر الإلكترونية في الأردن | Sitekoom$c$,
+   $c$أنشئ متجرك الإلكتروني الاحترافي مع Sitekoom. حلول تجارة إلكترونية متكاملة تشمل المنتجات والطلبات والدفع والشحن وتحسين تجربة العملاء.$c$,
+   $c$متاجر إلكترونية الأردن$c$,
+   ARRAY[$c$تصميم متجر إلكتروني$c$,$c$متاجر إلكترونية الأردن$c$,$c$تطوير متاجر إلكترونية$c$,$c$متجر إلكتروني عمان$c$],
+   $c$/services/ecommerce$c$),
+  ('custom-software',
+   $c$شركة برمجة وتطوير أنظمة مخصصة في الأردن | Sitekoom$c$,
+   $c$نطور أنظمة وبرمجيات مخصصة للشركات في الأردن، من المنصات الرقمية وSaaS إلى لوحات التحكم والأنظمة المتكاملة.$c$,
+   $c$برمجة أنظمة مخصصة الأردن$c$,
+   ARRAY[$c$شركة برمجة الأردن$c$,$c$برمجة مخصصة$c$,$c$تطوير أنظمة الأردن$c$,$c$برمجيات مخصصة$c$],
+   $c$/services/custom-software$c$),
+  ('mobile-apps',
+   $c$تطوير تطبيقات الموبايل Android وiOS في الأردن | Sitekoom$c$,
+   $c$شركة سايتكم لتطوير تطبيقات الموبايل لنظامي Android وiOS بتجربة استخدام احترافية وحلول قابلة للتوسع.$c$,
+   $c$تطوير تطبيقات الأردن$c$,
+   ARRAY[$c$تطوير تطبيقات الأردن$c$,$c$تطبيقات موبايل$c$,$c$تطبيق Android$c$,$c$تطبيق iOS$c$],
+   $c$/services/mobile-apps$c$),
+  ('erp-systems',
+   $c$تطوير أنظمة ERP للشركات في الأردن | Sitekoom$c$,
+   $c$حلول ERP مخصصة لإدارة المبيعات والمخزون والمحاسبة والموارد البشرية والفروع والعمليات من منصة واحدة.$c$,
+   $c$أنظمة ERP الأردن$c$,
+   ARRAY[$c$أنظمة ERP الأردن$c$,$c$نظام ERP$c$,$c$تطوير ERP$c$,$c$إدارة موارد المؤسسات$c$],
+   $c$/services/erp-systems$c$),
+  ('pos-systems',
+   $c$أنظمة نقاط البيع POS في الأردن | Sitekoom$c$,
+   $c$أنظمة نقاط بيع متطورة لإدارة المبيعات والمخزون والفروع والعملاء والتقارير مع إمكانية التكامل مع ERP والمتاجر الإلكترونية.$c$,
+   $c$أنظمة POS الأردن$c$,
+   ARRAY[$c$أنظمة POS$c$,$c$نقاط البيع$c$,$c$نظام POS الأردن$c$,$c$إدارة المبيعات$c$],
+   $c$/services/pos-systems$c$),
+  ('crm-systems',
+   $c$تطوير أنظمة CRM وإدارة العملاء في الأردن | Sitekoom$c$,
+   $c$حلول CRM مخصصة لإدارة العملاء المحتملين والمبيعات والمتابعات والفرص وتحسين إدارة علاقات العملاء.$c$,
+   $c$أنظمة CRM الأردن$c$,
+   ARRAY[$c$أنظمة CRM$c$,$c$إدارة علاقات العملاء$c$,$c$نظام CRM الأردن$c$,$c$إدارة المبيعات$c$],
+   $c$/services/crm-systems$c$),
+  ('administrative-systems',
+   $c$تطوير الأنظمة الإدارية للشركات في الأردن | Sitekoom$c$,
+   $c$نطور أنظمة إدارية وحلول أعمال مخصصة لأتمتة العمليات وإدارة الموظفين والمخزون والطلبات والتقارير.$c$,
+   $c$أنظمة إدارية الأردن$c$,
+   ARRAY[$c$أنظمة إدارية$c$,$c$حلول أعمال$c$,$c$أتمتة العمليات$c$,$c$أنظمة الموارد البشرية$c$],
+   $c$/services/administrative-systems$c$)
+) as v(slug, seo_title, meta, focus, keywords, canonical) on s.slug = v.slug
+on conflict (entity_type, entity_id, locale) do update set
+  seo_title = excluded.seo_title,
+  meta_description = excluded.meta_description,
+  focus_keyword = excluded.focus_keyword,
+  keywords = excluded.keywords,
+  canonical_url = excluded.canonical_url,
+  og_title = excluded.og_title,
+  og_description = excluded.og_description;
