@@ -1,22 +1,24 @@
-import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Reveal } from "@/components/reveal";
 import { Icon } from "@/components/icon";
+import { CompanyVideoSection } from "@/components/home/company-video-section";
+import { CompanyInfoSection } from "@/components/home/company-info-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { localizePath } from "@/lib/i18n/config";
-import { getCompanyInfo, getTeamMembers, getStatistics } from "@/lib/queries";
+import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@/lib/queries";
+import { getSettings } from "@/lib/settings";
 
 export default async function AboutPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
-  const p = (path: string) => localizePath(path, locale);
 
-  const [company, team, stats] = await Promise.all([
+  const [company, team, stats, social, settings] = await Promise.all([
     getCompanyInfo(),
     getTeamMembers(),
     getStatistics(),
+    getSocialLinks(),
+    getSettings(),
   ]);
 
   const about = localize(locale, company?.about_ar, company?.about_en);
@@ -65,16 +67,25 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
               {locale === "ar" ? "قيمنا" : "Our Values"}
             </h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {values.map((v, i) => (
                 <Reveal key={i} delay={i * 40}>
-                  <span className="rounded-full border border-brand-200 bg-brand-50 px-5 py-2.5 font-semibold text-brand-700">
-                    {v}
-                  </span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-white px-5 py-4 shadow-sm transition-colors hover:border-brand-300">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                      <Icon name="check-circle" className="h-5 w-5" />
+                    </span>
+                    <span className="font-semibold text-ink-900">{v}</span>
+                  </div>
                 </Reveal>
               ))}
             </div>
           </section>
+        )}
+
+        {company?.video_url && (
+          <div className="mt-4">
+            <CompanyVideoSection locale={locale} videoUrl={company.video_url} social={social} dict={dict} />
+          </div>
         )}
 
         {whyItems.length > 0 && (
@@ -142,11 +153,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
           </section>
         )}
 
-        <div className="mt-16 text-center">
-          <Link href={p("/contact")} className="btn-primary px-8 py-3.5">
-            {dict.common.startProject}
-          </Link>
-        </div>
+        <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} />
       </div>
     </>
   );

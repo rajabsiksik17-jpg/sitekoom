@@ -31,7 +31,13 @@ export function ChatConsole() {
   const loadConversations = useCallback(async () => {
     const supabase = supabaseRef.current;
     const { data } = await supabase.from("live_chat_conversations").select("*").order("created_at", { ascending: false });
-    setConversations((data ?? []) as LiveChatConversation[]);
+    // Registered clients float to the top within the list (higher priority).
+    const sorted = [...(data ?? [])].sort((a, b) => {
+      const reg = Number(b.is_registered) - Number(a.is_registered);
+      if (reg !== 0) return reg;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    setConversations(sorted as LiveChatConversation[]);
     setLoading(false);
   }, []);
 
@@ -180,6 +186,11 @@ export function ChatConsole() {
                   <p className="font-semibold text-ink-900">{c.visitor_name ?? "زائر"}</p>
                   <span className="text-xs text-gray-400">{timeAgo(c.created_at, "ar")}</span>
                 </div>
+                {c.is_registered && (
+                  <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
+                    عميل مسجل
+                  </span>
+                )}
                 <p className="mt-1 truncate text-sm text-gray-500">{c.first_message}</p>
                 {c.visitor_email && <p className="mt-1 text-xs text-gray-400" dir="ltr">{c.visitor_email}</p>}
               </button>

@@ -1,0 +1,186 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Headset, LifeBuoy, Send, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+interface Conversation {
+  id: string;
+  visitor_token: string;
+  status: string;
+  agent_name: string | null;
+  agent_avatar: string | null;
+  agent_position: string | null;
+}
+
+interface Message {
+  id: string;
+  sender_type: "visitor" | "agent" | "system";
+  body: string;
+  created_at: string;
+}
+
+function appendMessage(prev: Message[], next: Message): Message[] {
+  if (prev.some((m) => m.id === next.id)) return prev;
+  return [...prev, next].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+}
+
+export function SupportChat({ locale }: { locale: "ar" | "en" }) {
+  const supabaseRef = useRef(createClient());
+  const isAr = locale === "ar";
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [firstMessage, setFirstMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [phase, setPhase] = useState<"form" | "waiting" | "active" | "closed">("form");
+
+  async function start(e: React.FormEvent) {
+    e.preventDefault();
+    if (!firstMessage.trim() || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/client/chat/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: firstMessage, source_page: window.location.pathname }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "error");
+      setConversation(data.conversation);
+      setPhase("waiting");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!conversation) return;
+    const supabase = supabaseRef.current;
+    supabase
+      .from("live_chat_messages")
+      .select("*")
+      .eq("conversation_id", conversation.id)
+      .order("created_at")
+      .then(({ data }) => setMessages((data ?? []) as Message[]));
+
+    const channel = supabase
+      .channel(`client-chat:${conversation.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "live_chat_messages", filter: `conversation_id=eq.${conversation.id}` },
+        (payload) => setMessages((prev) => appendMessage(prev, payload.new as Message)),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "live_chat_conversations", filter: `id=eq.${conversation.id}` },
+        (payload) => {
+          const conv = payload.new as Conversation;
+          setConversation(conv);
+          if (conv.status === "active" || conv.status === "accepted") setPhase("active");
+          if (conv.status === "closed") setPhase("closed");
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation?.id]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    const body = input.trim();
+    if (!body || !conversation) return;
+    setInput("");
+    await supabaseRef.current.from("live_chat_messages").insert({ conversation_id: conversation.id, sender_type: "visitor", body, status: "sent" });
+  }
+
+  async function end() {
+    if (!conversation) return;
+    await fetch("/api/chat/end", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ visitor_token: conversation.visitor_token }) });
+    setPhase("closed");
+  }
+
+  function reset() {
+    setConversation(null);
+    setMessages([]);
+    setFirstMessage("");
+    setPhase("form");
+  }
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex items-center gap-2 bg-brand-gradient px-5 py-4 text-white">
+        <Headset className="h-5 w-5" />
+        <div>
+          <p className="text-sm font-bold">{isAr ? "الدعم الفني" : "Technical Support"}</p>
+          <p className="text-xs opacity-80">{isAr ? "تحدث مع فريق سايتكم مباشرة" : "Chat with the Sitekoom team"}</p>
+        </div>
+      </div>
+
+      {phase === "form" && (
+        <form onSubmit={start} className="space-y-4 p-6">
+          <p className="text-sm text-gray-600">{isAr ? "كيف يمكننا مساعدتك؟" : "How can we help you?"}</p>
+          <textarea className="input min-h-[120px]" placeholder={isAr ? "اكتب رسالتك..." : "Type your message..."} value={firstMessage} onChange={(e) => setFirstMessage(e.target.value)} required />
+          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
+          <button type="submit" className="btn-primary px-6 py-2.5" disabled={loading}>
+            {loading ? (isAr ? "جارٍ البدء..." : "Starting...") : isAr ? "ابدأ المحادثة" : "Start conversation"}
+          </button>
+        </form>
+      )}
+
+      {phase === "waiting" && (
+        <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100">
+            <LifeBuoy className="h-7 w-7 text-brand-700" />
+          </span>
+          <p className="font-semibold text-ink-900">{isAr ? "بانتظار اتصال أحد موظفي الدعم..." : "Waiting for a support agent..."}</p>
+          <button type="button" onClick={end} className="btn-secondary px-4 py-2 text-sm">{isAr ? "إلغاء المحادثة" : "Cancel"}</button>
+        </div>
+      )}
+
+      {phase === "closed" && (
+        <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+          <p className="font-semibold text-ink-900">{isAr ? "انتهت المحادثة" : "Conversation ended"}</p>
+          <button type="button" onClick={reset} className="btn-primary px-5 py-2.5 text-sm">{isAr ? "محادثة جديدة" : "New conversation"}</button>
+        </div>
+      )}
+
+      {phase === "active" && (
+        <>
+          <div className="h-[320px] space-y-3 overflow-y-auto p-4">
+            {conversation?.agent_name && (
+              <div className="mb-2 flex items-center gap-2 rounded-xl bg-brand-50 p-2 text-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-200 font-bold text-brand-800">{conversation.agent_name[0]}</span>
+                <div>
+                  <p className="text-xs font-bold">{conversation.agent_name}</p>
+                  <p className="text-[10px] text-green-600">{isAr ? "متصل" : "Online"}</p>
+                </div>
+              </div>
+            )}
+            {messages.map((m) => (
+              <div key={m.id} className={cn("flex", m.sender_type === "visitor" ? "justify-end" : "justify-start")}>
+                <div className={cn("max-w-[80%] rounded-2xl px-3 py-2 text-sm", m.sender_type === "visitor" ? "bg-brand-gradient text-white" : m.sender_type === "system" ? "bg-gray-100 text-gray-500" : "bg-gray-100 text-ink-900")}>
+                  {m.body}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-brand-100 p-2 text-center">
+            <button type="button" onClick={end} className="text-xs font-medium text-gray-400 hover:text-red-500">{isAr ? "إنهاء المحادثة" : "End conversation"}</button>
+          </div>
+          <form onSubmit={send} className="flex gap-2 border-t border-brand-100 p-3">
+            <input className="input flex-1" placeholder={isAr ? "اكتب رسالتك..." : "Type your message..."} value={input} onChange={(e) => setInput(e.target.value)} />
+            <button type="submit" className="btn-primary px-3" aria-label="Send"><Send className="h-4 w-4" /></button>
+          </form>
+        </>
+      )}
+    </div>
+  );
+}

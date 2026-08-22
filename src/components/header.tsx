@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Languages, Menu, X } from "lucide-react";
+import { Languages, Menu, X, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
 import { localizePath } from "@/lib/i18n/config";
@@ -128,6 +128,16 @@ export function Header({ settings }: { settings: GeneralSettings }) {
           <Link href={href("/request-project")} className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
             {dict.common.startProject}
           </Link>
+          <Link
+            href={href("/client-login")}
+            className={cn(
+              "hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold sm:inline-flex",
+              lightText ? "text-white/90 hover:bg-white/10" : "text-brand-700 hover:bg-brand-50",
+            )}
+          >
+            <LogIn className="h-4 w-4" />
+            {dict.nav.clientLogin}
+          </Link>
           <button
             type="button"
             className={cn("btn p-2 lg:hidden", lightText ? "border border-white/30 bg-white/10 text-white" : "btn-secondary")}
@@ -155,6 +165,10 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             ))}
             <Link href={href("/request-project")} className="btn-primary mt-2 px-4 py-2.5 text-sm">
               {dict.common.startProject}
+            </Link>
+            <Link href={href("/client-login")} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
+              <LogIn className="h-4 w-4" />
+              {dict.nav.clientLogin}
             </Link>
           </nav>
         </div>

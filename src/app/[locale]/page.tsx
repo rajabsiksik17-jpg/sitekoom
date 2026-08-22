@@ -7,7 +7,7 @@ import { ServiceCard } from "@/components/service-card";
 import { ProjectCard } from "@/components/project-card";
 import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
-import { SocialIcons } from "@/components/social-icons";
+import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
@@ -126,23 +126,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
       )}
 
       {company?.video_url && (
-        <section className="container-site py-20">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            <Reveal className="relative overflow-hidden rounded-2xl shadow-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <video src={company.video_url} controls preload="metadata" className="aspect-video w-full bg-black object-cover" />
-            </Reveal>
-            <Reveal>
-              <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">{dict.home.aboutTitle}</h2>
-              <p className="mt-5 leading-relaxed text-gray-600">{dict.home.aboutText}</p>
-              {social.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <SocialIcons social={social} showLabel />
-                </div>
-              )}
-            </Reveal>
-          </div>
-        </section>
+        <CompanyVideoSection locale={locale} videoUrl={company.video_url} social={social} dict={dict} />
       )}
 
       {isActive("projects") && featuredProjects.length > 0 && (

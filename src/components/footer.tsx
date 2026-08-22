@@ -29,10 +29,15 @@ export function Footer({
       <div className="container-site grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="mb-4 flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
-              S
-            </span>
-            <span className="text-xl font-extrabold">{companyName}</span>
+            {settings.footer_logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.footer_logo} alt={companyName} className="h-10 w-auto" />
+            ) : (
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
+                S
+              </span>
+            )}
+            {!settings.footer_logo && <span className="text-xl font-extrabold">{companyName}</span>}
           </div>
           <p className="text-sm leading-relaxed text-white/70">
             {localize(locale, settings.tagline_ar, settings.tagline_en)}

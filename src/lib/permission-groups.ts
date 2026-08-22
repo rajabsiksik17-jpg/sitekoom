@@ -14,6 +14,7 @@ export const PERMISSION_GROUPS: Record<string, { ar: string; en: string }> = {
   notifications: { ar: "الإشعارات", en: "Notifications" },
   users: { ar: "المستخدمون", en: "Users" },
   roles: { ar: "الأدوار والصلاحيات", en: "Roles & Permissions" },
+  clients: { ar: "العملاء", en: "Clients" },
   settings: { ar: "الإعدادات", en: "Settings" },
   integrations: { ar: "التكاملات", en: "Integrations" },
   audit: { ar: "سجل النشاطات", en: "Audit Log" },

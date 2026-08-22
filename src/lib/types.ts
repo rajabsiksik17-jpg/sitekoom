@@ -407,6 +407,8 @@ export interface LiveChatConversation {
   updated_at: string;
   closed_at: string | null;
   closed_by: string | null;
+  client_id: string | null;
+  is_registered: boolean;
   agent?: User | null;
 }
 
@@ -483,4 +485,145 @@ export interface Page {
   sort: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  username: string;
+  website_url: string | null;
+  admin_url: string | null;
+  website_type: string;
+  auth_method: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ClientWebsite {
+  id: string;
+  client_id: string;
+  name: string;
+  domain: string | null;
+  website_url: string | null;
+  admin_url: string | null;
+  website_type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientSubscription {
+  id: string;
+  client_id: string;
+  website_id: string | null;
+  plan: string | null;
+  start_date: string | null;
+  expiry_date: string | null;
+  renewal_duration: string | null;
+  renewal_price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientDomain {
+  id: string;
+  client_id: string;
+  website_id: string | null;
+  domain_name: string;
+  registration_date: string | null;
+  expiry_date: string | null;
+  renewal_period: string | null;
+  renewal_price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientHosting {
+  id: string;
+  client_id: string;
+  website_id: string | null;
+  provider: string | null;
+  plan: string | null;
+  start_date: string | null;
+  expiry_date: string | null;
+  renewal_period: string | null;
+  renewal_price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RenewalRequest {
+  id: string;
+  client_id: string;
+  website_id: string | null;
+  service_type: string;
+  service_name: string | null;
+  amount: number;
+  status: string;
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientNotification {
+  id: string;
+  client_id: string;
+  type: string;
+  title_ar: string;
+  title_en: string;
+  body_ar: string | null;
+  body_en: string | null;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface EducationalVideo {
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  youtube_url: string;
+  target_type: string;
+  is_active: boolean;
+  sort: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  key: string;
+  subject_ar: string | null;
+  subject_en: string | null;
+  body_ar: string | null;
+  body_en: string | null;
+  updated_at: string;
+}
+
+export interface EmailLog {
+  id: string;
+  type: string | null;
+  recipient: string | null;
+  subject: string | null;
+  status: string;
+  error: string | null;
+  created_at: string;
+}
+
+export interface ClientSession {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  username: string;
+  website_type: string;
 }

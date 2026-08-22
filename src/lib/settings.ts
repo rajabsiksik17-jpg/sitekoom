@@ -19,6 +19,7 @@ export interface GeneralSettings {
   working_hours_en: string;
   logo: string;
   favicon: string;
+  footer_logo: string;
 }
 
 export interface SeoSettings {
@@ -73,6 +74,7 @@ const defaults = {
     working_hours_en: "",
     logo: "",
     favicon: "",
+    footer_logo: "",
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",

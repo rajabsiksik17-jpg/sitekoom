@@ -13,6 +13,9 @@ function LoginForm() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [resending, setResending] = useState(false);
 
   const disabledError = params.get("error") === "disabled" ? "تم تعطيل حسابك. يرجى التواصل مع الإدارة." : "";
 
@@ -22,13 +25,48 @@ function LoginForm() {
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError("بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.");
+      return;
+    }
+    // Optional email OTP (2FA) — enabled by the admin after SMTP is configured.
+    const res = await fetch("/api/admin/otp/request", { method: "POST" }).catch(() => null);
+    setLoading(false);
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data.enabled) {
+        setOtpStep(true);
+        return;
+      }
+    }
+    router.replace("/admin");
+    router.refresh();
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const res = await fetch("/api/admin/otp/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: otpCode }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error ?? "رمز التحقق غير صحيح.");
       return;
     }
     router.replace("/admin");
     router.refresh();
+  }
+
+  async function handleResendOtp() {
+    setResending(true);
+    await fetch("/api/admin/otp/request", { method: "POST" }).catch(() => null);
+    setResending(false);
   }
 
   async function handleForgot() {
@@ -42,31 +80,43 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="email" className="label">البريد الإلكتروني</label>
-        <input id="email" type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-      </div>
-      <div>
-        <label htmlFor="password" className="label">كلمة المرور</label>
-        <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
-      </div>
-      <div className="flex items-center justify-between text-sm">
-        <label className="flex items-center gap-2 text-gray-600">
-          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="rounded border-brand-200 text-brand-600" />
-          تذكرني
-        </label>
-        <button type="button" onClick={handleForgot} className="font-semibold text-brand-600 hover:underline">
-          نسيت كلمة المرور؟
-        </button>
-      </div>
+    <form onSubmit={otpStep ? handleVerifyOtp : handleSubmit} className="space-y-4">
+      {!otpStep ? (
+        <>
+          <div>
+            <label htmlFor="email" className="label">البريد الإلكتروني</label>
+            <input id="email" type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+          </div>
+          <div>
+            <label htmlFor="password" className="label">كلمة المرور</label>
+            <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2 text-gray-600">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="rounded border-brand-200 text-brand-600" />
+              تذكرني
+            </label>
+            <button type="button" onClick={handleForgot} className="font-semibold text-brand-600 hover:underline">
+              نسيت كلمة المرور؟
+            </button>
+          </div>
+        </>
+      ) : (
+        <div>
+          <label htmlFor="otp" className="label">رمز التحقق المرسل إلى بريدك</label>
+          <input id="otp" className="input text-center text-2xl tracking-[0.5em]" dir="ltr" inputMode="numeric" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required autoFocus />
+          <button type="button" onClick={handleResendOtp} disabled={resending} className="mt-2 text-xs font-semibold text-brand-600 hover:underline">
+            {resending ? "جارٍ إعادة الإرسال..." : "إعادة إرسال الرمز"}
+          </button>
+        </div>
+      )}
 
       {(error || disabledError) && (
         <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error || disabledError}</p>
       )}
 
       <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
-        {loading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
+        {loading ? "جارٍ تسجيل الدخول..." : otpStep ? "تأكيد الرمز" : "تسجيل الدخول"}
       </button>
     </form>
   );
