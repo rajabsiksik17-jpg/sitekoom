@@ -84,6 +84,9 @@ export function SettingsManager() {
             <Field label="ساعات العمل"><input className="input" value={String(g.working_hours_ar ?? "")} onChange={(e) => update("general", "working_hours_ar", e.target.value)} /></Field>
             <Field label="الشعار"><ImageUpload value={String(g.logo ?? "")} onChange={(url) => update("general", "logo", url)} folder="settings" /></Field>
             <Field label="الأيقونة (Favicon)"><ImageUpload value={String(g.favicon ?? "")} onChange={(url) => update("general", "favicon", url)} folder="settings" /></Field>
+            <Field label="عرض شعار الهيدر — Desktop (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_desktop ?? 170)} onChange={(e) => update("general", "logo_width_desktop", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار الهيدر — Tablet (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_tablet ?? 140)} onChange={(e) => update("general", "logo_width_tablet", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار الهيدر — Mobile (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_mobile ?? 120)} onChange={(e) => update("general", "logo_width_mobile", Number(e.target.value))} /></Field>
           </div>
         )}
 

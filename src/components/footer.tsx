@@ -23,15 +23,19 @@ export function Footer({
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
   const year = new Date().getFullYear();
   const p = (path: string) => localizePath(path, locale);
+  const footerLogoDesktop = settings.footer_logo_width_desktop ?? 140;
+  const footerLogoTablet = settings.footer_logo_width_tablet ?? 110;
+  const footerLogoMobile = settings.footer_logo_width_mobile ?? 90;
 
   return (
     <footer className="bg-ink-900 text-white">
+      <style>{`:root{--footer-logo-w:${footerLogoDesktop}px}@media(max-width:1023px){:root{--footer-logo-w:${footerLogoTablet}px}}@media(max-width:639px){:root{--footer-logo-w:${footerLogoMobile}px}}`}</style>
       <div className="container-site grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="mb-4 flex items-center gap-2">
             {settings.footer_logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.footer_logo} alt={companyName} className="h-10 w-auto" />
+              <img src={settings.footer_logo} alt={companyName} style={{ maxWidth: "var(--footer-logo-w)", maxHeight: "48px", width: "auto", height: "auto" }} />
             ) : (
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
                 S

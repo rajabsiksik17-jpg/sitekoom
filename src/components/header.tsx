@@ -69,6 +69,9 @@ export function Header({ settings }: { settings: GeneralSettings }) {
 
   const logo = settings.logo;
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
+  const logoDesktop = settings.logo_width_desktop ?? 170;
+  const logoTablet = settings.logo_width_tablet ?? 140;
+  const logoMobile = settings.logo_width_mobile ?? 120;
 
   // White text over a dark hero (top of page), dark text otherwise.
   const lightText = !scrolled && heroTheme === "dark";
@@ -84,11 +87,12 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             : "border-brand-100/60 bg-white/70 backdrop-blur",
       )}
     >
+      <style>{`:root{--header-logo-w:${logoDesktop}px}@media(max-width:1023px){:root{--header-logo-w:${logoTablet}px}}@media(max-width:639px){:root{--header-logo-w:${logoMobile}px}}`}</style>
       <div className="container-site flex h-16 items-center justify-between gap-2 lg:h-20">
         <Link href={href("/")} className="flex min-w-0 items-center gap-2" onClick={() => setOpen(false)}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={companyName} className="h-9 w-auto" />
+            <img src={logo} alt={companyName} style={{ maxWidth: "var(--header-logo-w)", maxHeight: "40px", width: "auto", height: "auto" }} />
           ) : (
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
               S

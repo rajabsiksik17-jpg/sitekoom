@@ -53,6 +53,12 @@ export function FooterSettingsManager() {
           <ImageUpload value={settings.footer_logo ?? ""} onChange={(url) => update("footer_logo", url)} folder="settings" />
         </Field>
 
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="عرض شعار الفوتر — Desktop (px)"><input className="input" dir="ltr" type="number" value={Number(settings.footer_logo_width_desktop ?? 140)} onChange={(e) => update("footer_logo_width_desktop", Number(e.target.value))} /></Field>
+          <Field label="عرض شعار الفوتر — Tablet (px)"><input className="input" dir="ltr" type="number" value={Number(settings.footer_logo_width_tablet ?? 110)} onChange={(e) => update("footer_logo_width_tablet", Number(e.target.value))} /></Field>
+          <Field label="عرض شعار الفوتر — Mobile (px)"><input className="input" dir="ltr" type="number" value={Number(settings.footer_logo_width_mobile ?? 90)} onChange={(e) => update("footer_logo_width_mobile", Number(e.target.value))} /></Field>
+        </div>
+
         <Bilingual label="وصف الفوتر" ar={settings.tagline_ar} en={settings.tagline_en} onAr={(v) => update("tagline_ar", v)} onEn={(v) => update("tagline_en", v)} type="textarea" />
       </div>
     </div>

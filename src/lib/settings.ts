@@ -19,8 +19,14 @@ export interface GeneralSettings {
   working_hours_ar: string;
   working_hours_en: string;
   logo: string;
+  logo_width_desktop: number;
+  logo_width_tablet: number;
+  logo_width_mobile: number;
   favicon: string;
   footer_logo: string;
+  footer_logo_width_desktop: number;
+  footer_logo_width_tablet: number;
+  footer_logo_width_mobile: number;
 }
 
 export interface SeoSettings {
@@ -75,8 +81,14 @@ const defaults = {
     working_hours_ar: "",
     working_hours_en: "",
     logo: "",
+    logo_width_desktop: 170,
+    logo_width_tablet: 140,
+    logo_width_mobile: 120,
     favicon: "",
     footer_logo: "",
+    footer_logo_width_desktop: 140,
+    footer_logo_width_tablet: 110,
+    footer_logo_width_mobile: 90,
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",
