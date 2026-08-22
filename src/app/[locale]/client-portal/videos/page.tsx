@@ -1,4 +1,4 @@
-import { getCurrentClient, getEducationalVideos } from "@/lib/client-data";
+import { getCurrentClient, getEducationalVideos, getClientWebsites } from "@/lib/client-data";
 import { SectionTitle } from "@/components/client-portal/bits";
 import { localize } from "@/lib/utils";
 
@@ -20,7 +20,8 @@ function embedUrl(url: string): string | null {
 export default async function ClientVideosPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const client = await getCurrentClient(locale);
-  const videos = await getEducationalVideos(client.website_type);
+  const websites = await getClientWebsites(client.id);
+  const videos = await getEducationalVideos(client.id, websites.map((w) => w.id), client.website_type);
   const t = (ar: string, en: string) => (locale === "ar" ? ar : en);
 
   return (

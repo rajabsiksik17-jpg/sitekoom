@@ -15,6 +15,7 @@ import type {
   EducationalVideo,
   LiveChatConversation,
   LiveChatMessage,
+  RenewalHistory,
   RenewalRequest,
 } from "@/lib/types";
 
@@ -91,6 +92,16 @@ export const getClientRenewalRequests = cache(async (clientId: string): Promise<
   return (data ?? []) as RenewalRequest[];
 });
 
+export const getClientRenewalHistory = cache(async (clientId: string): Promise<RenewalHistory[]> => {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("renewal_history")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as RenewalHistory[];
+});
+
 export const getClientNotifications = cache(async (clientId: string): Promise<ClientNotification[]> => {
   const admin = createAdminClient();
   const { data } = await admin
@@ -112,16 +123,22 @@ export const getUnreadCount = cache(async (clientId: string): Promise<number> =>
   return count ?? 0;
 });
 
-export const getEducationalVideos = cache(async (websiteType: string): Promise<EducationalVideo[]> => {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("educational_videos")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort", { ascending: true });
-  const videos = (data ?? []) as EducationalVideo[];
-  return videos.filter((v) => v.target_type === "all" || v.target_type === websiteType);
-});
+export const getEducationalVideos = cache(
+  async (clientId: string, websiteIds: string[], websiteType: string): Promise<EducationalVideo[]> => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("educational_videos")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort", { ascending: true });
+    const videos = (data ?? []) as EducationalVideo[];
+    return videos.filter((v) => {
+      if (v.visibility === "client") return v.client_id === clientId;
+      if (v.visibility === "website") return !!v.website_id && websiteIds.includes(v.website_id);
+      return v.target_type === "all" || v.target_type === websiteType;
+    });
+  },
+);
 
 export const getClientConversations = cache(async (clientId: string): Promise<LiveChatConversation[]> => {
   const admin = createAdminClient();

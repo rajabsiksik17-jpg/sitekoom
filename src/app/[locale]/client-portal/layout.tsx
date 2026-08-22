@@ -1,5 +1,6 @@
 import { getCurrentClient, getUnreadCount } from "@/lib/client-data";
 import { PortalShell } from "@/components/client-portal/shell";
+import { ClientRealtimeRefresher } from "@/components/client-portal/realtime-refresher";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,11 @@ export default async function ClientPortalLayout({
   const unread = await getUnreadCount(client.id);
 
   return (
-    <PortalShell locale={locale} name={client.name} company={client.company} unread={unread}>
-      {children}
-    </PortalShell>
+    <>
+      <PortalShell locale={locale} name={client.name} company={client.company} unread={unread}>
+        {children}
+      </PortalShell>
+      <ClientRealtimeRefresher clientId={client.id} />
+    </>
   );
 }

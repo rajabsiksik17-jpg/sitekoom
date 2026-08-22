@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LogOut, Menu, User, X } from "lucide-react";
-import { adminNav } from "@/components/admin/nav";
+import { LogOut, Menu, User, X, ChevronDown } from "lucide-react";
+import { adminNavSingles, adminNavGroups } from "@/components/admin/nav";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,10 @@ export function Sidebar({
   const { push } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0, renewals: 0 });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const supabaseRef = useRef(createClient());
+
+  const has = (p?: string) => !p || permissions.includes(p);
 
   const refreshBadges = useCallback(async () => {
     const supabase = supabaseRef.current;
@@ -38,7 +41,7 @@ export function Sidebar({
       supabase.from("contact_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("project_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("live_chat_conversations").select("id", { count: "exact", head: true }).eq("status", "waiting"),
-      supabase.from("renewal_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
+      supabase.from("renewal_requests").select("id", { count: "exact", head: true }).in("status", ["new", "in_review"]),
     ]);
     setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0, renewals: rn.count ?? 0 });
   }, []);
@@ -72,6 +75,14 @@ export function Sidebar({
     };
   }, [refreshBadges, push]);
 
+  // Auto-open the group that contains the active route.
+  useEffect(() => {
+    const activeGroup = adminNavGroups.find((g) => g.children.some((c) => pathname.startsWith(c.href)));
+    if (activeGroup) {
+      setOpenGroups((prev) => (prev[activeGroup.key] === false ? prev : { ...prev, [activeGroup.key]: true }));
+    }
+  }, [pathname]);
+
   async function handleSignOut() {
     const supabase = supabaseRef.current;
     await supabase.auth.signOut();
@@ -79,18 +90,19 @@ export function Sidebar({
     router.refresh();
   }
 
-  const items = adminNav.filter((n) => !n.permission || permissions.includes(n.permission));
-  const profileItem = { key: "profile", label: "الملف الشخصي", href: "/admin/profile", icon: User };
-
-  const allItems = [...items, profileItem];
+  function toggleGroup(key: string) {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
 
   const badgeFor = (key: string): number | null => {
     if (key === "contacts") return badges.contacts;
     if (key === "quotes") return badges.quotes;
     if (key === "chat") return badges.chat;
-    if (key === "clients") return badges.renewals;
+    if (key === "renewals") return badges.renewals;
     return null;
   };
+
+  const profileItem = { key: "profile", label: "الملف الشخصي", href: "/admin/profile" };
 
   const nav = (
     <div className="flex h-full flex-col">
@@ -105,13 +117,9 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-        {allItems.map((item) => {
+        {adminNavSingles.filter((i) => has(i.permission)).map((item) => {
           const Icon = item.icon;
-          const count = badgeFor(item.key);
-          const active =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href);
+          const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
           return (
             <Link
               key={item.key}
@@ -124,14 +132,79 @@ export function Sidebar({
             >
               <Icon className="h-5 w-5" />
               <span className="flex-1">{item.label}</span>
-              {count != null && count > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
-                  {count}
-                </span>
-              )}
             </Link>
           );
         })}
+
+        {adminNavGroups.map((group) => {
+          const children = group.children.filter((c) => has(c.permission));
+          if (children.length === 0) return null;
+          const GroupIcon = group.icon;
+          const open = openGroups[group.key];
+          const activeChild = children.some((c) => pathname.startsWith(c.href));
+          const groupBadge = children.reduce((acc, c) => acc + (badgeFor(c.key) ?? 0), 0);
+          return (
+            <div key={group.key}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  activeChild ? "text-white" : "text-white/70 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                <GroupIcon className="h-5 w-5" />
+                <span className="flex-1 text-start">{group.label}</span>
+                {groupBadge > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
+                    {groupBadge}
+                  </span>
+                )}
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />
+              </button>
+              <div className={cn("grid transition-all duration-200", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+                <div className="overflow-hidden">
+                  <div className="mt-1 space-y-0.5 border-s border-white/10 ps-3 ms-4">
+                    {children.map((child) => {
+                      const active = pathname.startsWith(child.href);
+                      const count = badgeFor(child.key);
+                      return (
+                        <Link
+                          key={child.key}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                            active ? "bg-brand-600 text-white" : "text-white/60 hover:bg-white/10 hover:text-white",
+                          )}
+                        >
+                          <span className="flex-1">{child.label}</span>
+                          {count != null && count > 0 && (
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
+                              {count}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <Link
+          href={profileItem.href}
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+            pathname.startsWith("/admin/profile") ? "bg-brand-600 text-white" : "text-white/70 hover:bg-white/10 hover:text-white",
+          )}
+        >
+          <User className="h-5 w-5" />
+          <span className="flex-1">{profileItem.label}</span>
+        </Link>
       </nav>
 
       <div className="border-t border-white/10 p-4">
@@ -158,10 +231,8 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop */}
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 bg-ink-900 lg:block">{nav}</aside>
 
-      {/* Mobile toggle */}
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
@@ -174,7 +245,7 @@ export function Sidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-ink-900/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 start-0 w-72 bg-ink-900">{nav}</aside>
+          <aside className="absolute inset-y-0 start-0 w-72 overflow-y-auto bg-ink-900">{nav}</aside>
         </div>
       )}
     </>

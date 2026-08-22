@@ -3,47 +3,51 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCcw } from "lucide-react";
+import { DURATION_OPTIONS } from "@/lib/renewal-service";
 
 export interface RenewalOption {
-  type: "subscription" | "domain" | "hosting";
+  kind: "subscription" | "domain" | "hosting";
+  id: string;
   name: string;
   amount: number;
+  expiry: string | null;
 }
 
 export function RenewalForm({ options, locale }: { options: RenewalOption[]; locale: "ar" | "en" }) {
   const router = useRouter();
+  const isAr = locale === "ar";
   const [selected, setSelected] = useState("");
+  const [duration, setDuration] = useState(12);
   const [customName, setCustomName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const isAr = locale === "ar";
 
-  const typeLabel = (t: RenewalOption["type"]) =>
-    ({ subscription: isAr ? "اشتراك" : "Subscription", domain: isAr ? "دومين" : "Domain", hosting: isAr ? "استضافة" : "Hosting" })[t];
+  const kindLabel = (k: RenewalOption["kind"]) =>
+    ({ subscription: isAr ? "اشتراك" : "Subscription", domain: isAr ? "دومين" : "Domain", hosting: isAr ? "استضافة" : "Hosting" })[k];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess(false);
 
-    let service_type: RenewalOption["type"];
-    let service_name: string;
-    let finalAmount: number;
+    let payload: Record<string, unknown>;
 
     if (selected === "__other") {
       if (!customName.trim()) return setError(isAr ? "أدخل اسم الخدمة" : "Enter a service name");
-      service_type = "subscription";
-      service_name = customName.trim();
-      finalAmount = Number(amount) || 0;
+      payload = { service_type: "subscription", service_name: customName.trim(), amount: Number(amount) || 0, duration_months: duration };
     } else {
-      const opt = options.find((o) => `${o.type}:${o.name}` === selected);
+      const opt = options.find((o) => `${o.kind}:${o.id}` === selected);
       if (!opt) return setError(isAr ? "اختر خدمة" : "Select a service");
-      service_type = opt.type;
-      service_name = opt.name;
-      finalAmount = opt.amount;
+      payload = {
+        service_type: opt.kind,
+        service_name: opt.name,
+        amount: opt.amount,
+        duration_months: duration,
+      };
+      if (opt.kind === "subscription") payload.subscription_id = opt.id;
     }
 
     setLoading(true);
@@ -51,7 +55,7 @@ export function RenewalForm({ options, locale }: { options: RenewalOption[]; loc
       const res = await fetch("/api/client/renewal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service_type, service_name, amount: finalAmount, message }),
+        body: JSON.stringify({ ...payload, message }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "error");
@@ -77,7 +81,7 @@ export function RenewalForm({ options, locale }: { options: RenewalOption[]; loc
 
       {success && (
         <div className="mt-4 rounded-xl bg-green-50 p-4 text-sm text-green-700">
-          {isAr ? "تم إرسال طلب التجديد بنجاح. سيتواصل معك فريق سايتكم قريبًا." : "Your renewal request was submitted. The Sitekoom team will contact you soon."}
+          {isAr ? "تم إرسال طلب التجديد بنجاح. سيراجعه فريق سايتكم قريبًا." : "Your renewal request was submitted. The Sitekoom team will review it soon."}
         </div>
       )}
 
@@ -87,8 +91,8 @@ export function RenewalForm({ options, locale }: { options: RenewalOption[]; loc
           <select className="input" value={selected} onChange={(e) => setSelected(e.target.value)} required>
             <option value="">{isAr ? "اختر خدمة..." : "Select a service..."}</option>
             {options.map((o) => (
-              <option key={`${o.type}:${o.name}`} value={`${o.type}:${o.name}`}>
-                {typeLabel(o.type)} — {o.name} ({Number(o.amount).toLocaleString()} {isAr ? "د.أ" : "JOD"})
+              <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>
+                {kindLabel(o.kind)} — {o.name} ({Number(o.amount).toLocaleString()} {isAr ? "د.أ" : "JOD"})
               </option>
             ))}
             <option value="__other">{isAr ? "أخرى / غير مذكورة" : "Other / not listed"}</option>
@@ -107,6 +111,15 @@ export function RenewalForm({ options, locale }: { options: RenewalOption[]; loc
             </div>
           </div>
         )}
+
+        <div>
+          <label className="label">{isAr ? "مدة التجديد" : "Renewal duration"}</label>
+          <select className="input" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+            {DURATION_OPTIONS.map((d) => (
+              <option key={d.months} value={d.months}>{isAr ? d.ar : d.en}</option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label className="label">{isAr ? "ملاحظات إضافية" : "Additional notes"}</label>

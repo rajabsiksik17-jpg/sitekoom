@@ -1,34 +1,11 @@
 import {
   LayoutDashboard,
-  Inbox,
-  ReceiptText,
   MessagesSquare,
-  MessageCircle,
   Layers,
-  FolderKanban,
-  GalleryHorizontalEnd,
   Home,
-  PanelTop,
-  Building2,
-  Users,
-  BarChart3,
-  Newspaper,
-  Tags,
-  FileText,
-  Image,
-  Search,
-  LineChart,
-  Bell,
-  UserCog,
   MonitorSmartphone,
-  ShieldCheck,
-  Share2,
+  LineChart,
   Settings,
-  PanelBottom,
-  Plug,
-  History,
-  Video,
-  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,37 +17,96 @@ export interface NavItem {
   permission?: string;
 }
 
-export const adminNav: NavItem[] = [
+export interface NavChild {
+  key: string;
+  label: string;
+  href: string;
+  permission?: string;
+}
+
+export interface NavGroup {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  permission?: string;
+  children: NavChild[];
+}
+
+export const adminNavSingles: NavItem[] = [
   { key: "dashboard", label: "لوحة التحكم", href: "/admin", icon: LayoutDashboard, permission: "dashboard.view" },
-  { key: "contacts", label: "طلبات التواصل", href: "/admin/contacts", icon: Inbox, permission: "contacts.view" },
-  { key: "quotes", label: "طلبات التسعير", href: "/admin/quotes", icon: ReceiptText, permission: "contacts.view" },
-  { key: "chat", label: "الاتصال المباشر", href: "/admin/chat", icon: MessagesSquare, permission: "chat.view" },
-  { key: "services", label: "الخدمات", href: "/admin/services", icon: Layers, permission: "services.view" },
-  { key: "projects", label: "الأعمال", href: "/admin/projects", icon: FolderKanban, permission: "projects.view" },
-  { key: "slider", label: "سلايدر الرئيسية", href: "/admin/slider", icon: GalleryHorizontalEnd, permission: "homepage.view" },
-  { key: "homepage", label: "محتوى الرئيسية", href: "/admin/homepage", icon: Home, permission: "homepage.view" },
-  { key: "pageHero", label: "خلفيات رأس الصفحة", href: "/admin/page-hero", icon: PanelTop, permission: "homepage.view" },
-  { key: "company", label: "الشركة", href: "/admin/company", icon: Building2, permission: "company.view" },
-  { key: "team", label: "فريق العمل", href: "/admin/team", icon: Users, permission: "company.view" },
-  { key: "statistics", label: "الإحصائيات", href: "/admin/statistics", icon: BarChart3, permission: "company.view" },
-  { key: "articles", label: "المقالات", href: "/admin/articles", icon: Newspaper, permission: "articles.view" },
-  { key: "categories", label: "التصنيفات", href: "/admin/categories", icon: Tags, permission: "articles.view" },
-  { key: "pages", label: "الصفحات", href: "/admin/pages", icon: FileText, permission: "articles.view" },
-  { key: "media", label: "مكتبة الوسائط", href: "/admin/media", icon: Image, permission: "media.view" },
-  { key: "seo", label: "SEO", href: "/admin/seo", icon: Search, permission: "seo.view" },
   { key: "analytics", label: "التحليلات", href: "/admin/analytics", icon: LineChart, permission: "analytics.view" },
-  { key: "notifications", label: "الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications.view" },
-  { key: "users", label: "المستخدمون", href: "/admin/users", icon: UserCog, permission: "users.view" },
-  { key: "clients", label: "عملاء WordPress", href: "/admin/clients", icon: MonitorSmartphone, permission: "clients.view" },
-  { key: "clientVideos", label: "فيديوهات تعليمية", href: "/admin/client-videos", icon: Video, permission: "clients.view" },
-  { key: "supportReasons", label: "أسباب الدعم", href: "/admin/support-reasons", icon: MessageCircle, permission: "clients.view" },
-  { key: "roles", label: "الأدوار والصلاحيات", href: "/admin/roles", icon: ShieldCheck, permission: "roles.view" },
-  { key: "social", label: "التواصل الاجتماعي", href: "/admin/social", icon: Share2, permission: "social.view" },
-  { key: "settings", label: "الإعدادات", href: "/admin/settings", icon: Settings, permission: "settings.view" },
-  { key: "email", label: "البريد الإلكتروني", href: "/admin/email", icon: Mail, permission: "settings.view" },
-  { key: "footer", label: "الفوتر", href: "/admin/footer", icon: PanelBottom, permission: "settings.view" },
-  { key: "integrations", label: "التكاملات", href: "/admin/integrations", icon: Plug, permission: "integrations.view" },
-  { key: "audit", label: "سجل النشاطات", href: "/admin/audit", icon: History, permission: "audit.view" },
+];
+
+export const adminNavGroups: NavGroup[] = [
+  {
+    key: "clients",
+    label: "إدارة العملاء",
+    icon: MonitorSmartphone,
+    permission: "clients.view",
+    children: [
+      { key: "clients", label: "العملاء", href: "/admin/clients", permission: "clients.view" },
+      { key: "renewals", label: "طلبات التجديد", href: "/admin/renewals", permission: "clients.view" },
+      { key: "clientVideos", label: "فيديوهات تعليمية", href: "/admin/client-videos", permission: "clients.view" },
+      { key: "supportReasons", label: "أسباب الدعم", href: "/admin/support-reasons", permission: "clients.view" },
+    ],
+  },
+  {
+    key: "content",
+    label: "المحتوى",
+    icon: Layers,
+    permission: "services.view",
+    children: [
+      { key: "services", label: "الخدمات", href: "/admin/services", permission: "services.view" },
+      { key: "projects", label: "الأعمال", href: "/admin/projects", permission: "projects.view" },
+      { key: "articles", label: "المقالات", href: "/admin/articles", permission: "articles.view" },
+      { key: "categories", label: "التصنيفات", href: "/admin/categories", permission: "articles.view" },
+      { key: "pages", label: "الصفحات", href: "/admin/pages", permission: "articles.view" },
+      { key: "media", label: "مكتبة الوسائط", href: "/admin/media", permission: "media.view" },
+      { key: "seo", label: "SEO", href: "/admin/seo", permission: "seo.view" },
+    ],
+  },
+  {
+    key: "communication",
+    label: "التواصل",
+    icon: MessagesSquare,
+    permission: "contacts.view",
+    children: [
+      { key: "contacts", label: "طلبات التواصل", href: "/admin/contacts", permission: "contacts.view" },
+      { key: "quotes", label: "طلبات التسعير", href: "/admin/quotes", permission: "contacts.view" },
+      { key: "chat", label: "الاتصال المباشر", href: "/admin/chat", permission: "chat.view" },
+      { key: "notifications", label: "الإشعارات", href: "/admin/notifications", permission: "notifications.view" },
+    ],
+  },
+  {
+    key: "website",
+    label: "الموقع",
+    icon: Home,
+    permission: "homepage.view",
+    children: [
+      { key: "slider", label: "سلايدر الرئيسية", href: "/admin/slider", permission: "homepage.view" },
+      { key: "homepage", label: "محتوى الرئيسية", href: "/admin/homepage", permission: "homepage.view" },
+      { key: "pageHero", label: "خلفيات رأس الصفحة", href: "/admin/page-hero", permission: "homepage.view" },
+      { key: "company", label: "الشركة", href: "/admin/company", permission: "company.view" },
+      { key: "team", label: "فريق العمل", href: "/admin/team", permission: "company.view" },
+      { key: "statistics", label: "الإحصائيات", href: "/admin/statistics", permission: "company.view" },
+      { key: "social", label: "التواصل الاجتماعي", href: "/admin/social", permission: "social.view" },
+      { key: "footer", label: "الفوتر", href: "/admin/footer", permission: "settings.view" },
+    ],
+  },
+  {
+    key: "settings",
+    label: "الإعدادات",
+    icon: Settings,
+    permission: "settings.view",
+    children: [
+      { key: "settings", label: "الإعدادات العامة", href: "/admin/settings", permission: "settings.view" },
+      { key: "email", label: "البريد الإلكتروني", href: "/admin/email", permission: "settings.view" },
+      { key: "integrations", label: "التكاملات", href: "/admin/integrations", permission: "integrations.view" },
+      { key: "users", label: "المستخدمون", href: "/admin/users", permission: "users.view" },
+      { key: "roles", label: "الأدوار والصلاحيات", href: "/admin/roles", permission: "roles.view" },
+      { key: "audit", label: "سجل النشاطات", href: "/admin/audit", permission: "audit.view" },
+    ],
+  },
 ];
 
 export const statusLabels: Record<string, { label: string; color: "brand" | "green" | "red" | "amber" | "gray" }> = {

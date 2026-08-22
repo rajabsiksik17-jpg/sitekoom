@@ -3,6 +3,7 @@ import { ExternalLink, Globe, LogOut, AlertTriangle, BellRing, Hourglass } from 
 import { getCurrentClient, getClientWebsites, getClientSubscriptions, getClientDomains, getClientHosting, getClientNotifications, getClientRenewalRequests } from "@/lib/client-data";
 import { localizePath } from "@/lib/i18n/config";
 import { ExpiryChip, SectionTitle, StatusBadge, StatCard } from "@/components/client-portal/bits";
+import { WebsiteAnalytics } from "@/components/client-portal/website-analytics";
 import { formatDate, localize } from "@/lib/utils";
 import { daysUntil } from "@/lib/client-utils";
 
@@ -100,6 +101,14 @@ export default async function ClientPortalDashboard({ params }: { params: { loca
         <StatCard label={t("الاشتراكات", "Subscriptions")} value={subscriptions.length} hint={<ExpiryChip date={nearestExpiry(subscriptions)} locale={locale} />} />
         <StatCard label={t("الدومينات", "Domains")} value={domains.length} hint={<ExpiryChip date={nearestExpiry(domains)} locale={locale} />} />
         <StatCard label={t("الاستضافة", "Hosting")} value={hosting.length} hint={<ExpiryChip date={nearestExpiry(hosting)} locale={locale} />} />
+      </div>
+
+      <div>
+        <SectionTitle>{t("إحصائيات الموقع", "Website Analytics")}</SectionTitle>
+        <WebsiteAnalytics
+          locale={locale}
+          sites={websites.map((w) => ({ id: w.id, name: w.name, hasAnalytics: !!w.ga4_property_id }))}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

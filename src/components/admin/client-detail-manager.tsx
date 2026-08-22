@@ -53,6 +53,8 @@ const configs: Record<Exclude<Tab, "renewals">, EntityConfig> = {
       { key: "login_username", label: "Username للموقع" },
       { key: "login_email", label: "بريد الموقع" },
       { key: "login_password", label: "كلمة مرور الموقع", type: "password", hint: "تُشفَّر ولا تُعرض أبدًا" },
+      { key: "ga4_property_id", label: "GA4 Property ID", hint: "مثال: 123456789" },
+      { key: "ga4_measurement_id", label: "GA4 Measurement ID", hint: "مثال: G-XXXXXXX" },
     ],
     useApi: true,
   },
@@ -130,7 +132,7 @@ export function ClientDetailManager({ clientId }: { clientId: string }) {
     const supabase = createClient();
     const [c, w, s, d, h, r] = await Promise.all([
       supabase.from("clients").select("*").eq("id", clientId).single(),
-      supabase.from("client_websites").select("id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, created_at").eq("client_id", clientId).order("created_at"),
+      supabase.from("client_websites").select("id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, ga4_property_id, ga4_measurement_id, created_at").eq("client_id", clientId).order("created_at"),
       supabase.from("client_subscriptions").select("*").eq("client_id", clientId).order("expiry_date"),
       supabase.from("client_domains").select("*").eq("client_id", clientId).order("expiry_date"),
       supabase.from("client_hosting").select("*").eq("client_id", clientId).order("expiry_date"),

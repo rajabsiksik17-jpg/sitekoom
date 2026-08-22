@@ -38,6 +38,12 @@ export function statusMeta(status: string): { tone: StatusTone; ar: string; en: 
       return { tone: "gray", ar: "غير نشط", en: "Inactive" };
     case "new":
       return { tone: "brand", ar: "جديد", en: "New" };
+    case "in_review":
+      return { tone: "amber", ar: "قيد المراجعة", en: "In review" };
+    case "approved":
+      return { tone: "green", ar: "تمت الموافقة", en: "Approved" };
+    case "rejected":
+      return { tone: "red", ar: "مرفوض", en: "Rejected" };
     case "in_progress":
       return { tone: "amber", ar: "قيد التنفيذ", en: "In progress" };
     case "completed":

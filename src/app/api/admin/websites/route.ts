@@ -17,9 +17,11 @@ const schema = z.object({
   login_email: z.string().max(200).optional().or(z.literal("")),
   login_password: z.string().max(500).optional().or(z.literal("")),
   credentials_type: z.string().max(50).optional().or(z.literal("")),
+  ga4_property_id: z.string().max(100).optional().or(z.literal("")),
+  ga4_measurement_id: z.string().max(100).optional().or(z.literal("")),
 });
 
-const PUBLIC_FIELDS = "id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, created_at, updated_at";
+const PUBLIC_FIELDS = "id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, ga4_property_id, ga4_measurement_id, created_at, updated_at";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -48,6 +50,8 @@ export async function POST(request: NextRequest) {
       login_username: body.login_username || null,
       login_email: body.login_email || null,
       credentials_type: body.credentials_type || "none",
+      ga4_property_id: body.ga4_property_id || null,
+      ga4_measurement_id: body.ga4_measurement_id || null,
       credentials_encrypted: body.login_password ? encryptSecret(body.login_password) : null,
     })
     .select(PUBLIC_FIELDS)
@@ -82,6 +86,8 @@ export async function PATCH(request: NextRequest) {
     login_username: body.login_username || null,
     login_email: body.login_email || null,
     credentials_type: body.credentials_type || "none",
+    ga4_property_id: body.ga4_property_id || null,
+    ga4_measurement_id: body.ga4_measurement_id || null,
   };
   if (body.login_password) {
     payload.credentials_encrypted = encryptSecret(body.login_password);

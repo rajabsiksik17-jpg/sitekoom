@@ -3,11 +3,14 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientSession } from "@/lib/client-auth";
+import { durationLabel } from "@/lib/renewal-service";
 
 const schema = z.object({
+  subscription_id: z.string().uuid().optional(),
   service_type: z.enum(["subscription", "domain", "hosting"]),
   service_name: z.string().min(1).max(200),
   amount: z.number().min(0).max(1_000_000),
+  duration_months: z.number().int().min(1).max(24).optional(),
   message: z.string().max(2000).optional().or(z.literal("")),
 });
 
@@ -32,16 +35,35 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
+  // Verify the subscription (if any) belongs to this client and resolve website.
+  let websiteId: string | null = null;
+  let subscriptionId: string | null = null;
+  if (body.subscription_id) {
+    const { data: sub } = await admin
+      .from("client_subscriptions")
+      .select("id, client_id, website_id")
+      .eq("id", body.subscription_id)
+      .eq("client_id", clientId)
+      .single();
+    if (!sub) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+    subscriptionId = sub.id;
+    websiteId = sub.website_id;
+  }
+
   const { data: client } = await admin.from("clients").select("name,company").eq("id", clientId).single();
 
   const { data: request_row, error } = await admin
     .from("renewal_requests")
     .insert({
       client_id: clientId,
+      website_id: websiteId,
+      subscription_id: subscriptionId,
       service_type: body.service_type,
       service_name: body.service_name,
       amount: body.amount,
       message: body.message || null,
+      duration_months: body.duration_months ?? null,
+      renewal_duration: body.duration_months ? durationLabel(body.duration_months, "ar") : null,
       status: "new",
     })
     .select()
@@ -56,9 +78,9 @@ export async function POST(request: NextRequest) {
     type: "renewal",
     title_ar: "طلب تجديد جديد",
     title_en: "New renewal request",
-    body_ar: `${client?.name ?? "عميل"} — ${body.service_name}`,
-    body_en: `${client?.name ?? "Client"} — ${body.service_name}`,
-    link: "/admin/clients",
+    body_ar: `${client?.name ?? "عميل"} — ${body.service_name}${body.duration_months ? ` (${durationLabel(body.duration_months, "ar")})` : ""}`,
+    body_en: `${client?.name ?? "Client"} — ${body.service_name}${body.duration_months ? ` (${durationLabel(body.duration_months, "en")})` : ""}`,
+    link: "/admin/renewals",
   });
 
   await admin.from("client_notifications").insert({
@@ -66,8 +88,8 @@ export async function POST(request: NextRequest) {
     type: "renewal",
     title_ar: "تم استلام طلب التجديد",
     title_en: "Renewal request received",
-    body_ar: `تم استلام طلب تجديد "${body.service_name}" وسيتواصل معك فريق سايتكم قريبًا.`,
-    body_en: `We received your renewal request for "${body.service_name}". The Sitekoom team will contact you soon.`,
+    body_ar: `تم استلام طلب تجديد "${body.service_name}" وسيراجعه فريق سايتكم قريبًا.`,
+    body_en: `We received your renewal request for "${body.service_name}". The Sitekoom team will review it soon.`,
     link: "/client-portal/renewals",
   });
 

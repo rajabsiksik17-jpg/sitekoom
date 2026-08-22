@@ -526,6 +526,8 @@ export interface ClientWebsite {
   login_username: string | null;
   login_email: string | null;
   credentials_type: string;
+  ga4_property_id: string | null;
+  ga4_measurement_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -580,13 +582,35 @@ export interface RenewalRequest {
   id: string;
   client_id: string;
   website_id: string | null;
+  subscription_id: string | null;
   service_type: string;
   service_name: string | null;
   amount: number;
   status: string;
   message: string | null;
+  duration_months: number | null;
+  renewal_duration: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface RenewalHistory {
+  id: string;
+  client_id: string;
+  website_id: string | null;
+  subscription_id: string | null;
+  request_id: string | null;
+  service_type: string;
+  period_label: string | null;
+  duration: string | null;
+  days_added: number | null;
+  old_expiry: string | null;
+  new_expiry: string | null;
+  amount: number;
+  status: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
 }
 
 export interface ClientNotification {
@@ -612,6 +636,9 @@ export interface EducationalVideo {
   target_type: string;
   is_active: boolean;
   sort: number;
+  visibility: string;
+  client_id: string | null;
+  website_id: string | null;
   created_at: string;
   updated_at: string;
 }

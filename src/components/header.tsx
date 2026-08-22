@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Languages, Menu, X, LogIn } from "lucide-react";
+import { Languages, Menu, X, LogIn, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
 import { localizePath } from "@/lib/i18n/config";
@@ -31,6 +31,20 @@ export function Header({ settings }: { settings: GeneralSettings }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [heroTheme, setHeroTheme] = useState<"light" | "dark">("dark");
+  const [clientAuthed, setClientAuthed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/client/me")
+      .then((r) => (r.ok ? r.json() : { authenticated: false }))
+      .then((d) => {
+        if (active) setClientAuthed(Boolean(d.authenticated));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -129,14 +143,14 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             {dict.common.startProject}
           </Link>
           <Link
-            href={href("/client-login")}
+            href={href(clientAuthed ? "/client-portal" : "/client-login")}
             className={cn(
               "hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold sm:inline-flex",
               lightText ? "text-white/90 hover:bg-white/10" : "text-brand-700 hover:bg-brand-50",
             )}
           >
-            <LogIn className="h-4 w-4" />
-            {dict.nav.clientLogin}
+            {clientAuthed ? <UserRound className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+            {clientAuthed ? (locale === "ar" ? "حسابي" : "My Account") : dict.nav.clientLogin}
           </Link>
           <button
             type="button"
@@ -166,9 +180,9 @@ export function Header({ settings }: { settings: GeneralSettings }) {
             <Link href={href("/request-project")} className="btn-primary mt-2 px-4 py-2.5 text-sm">
               {dict.common.startProject}
             </Link>
-            <Link href={href("/client-login")} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
-              <LogIn className="h-4 w-4" />
-              {dict.nav.clientLogin}
+            <Link href={href(clientAuthed ? "/client-portal" : "/client-login")} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
+              {clientAuthed ? <UserRound className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+              {clientAuthed ? (locale === "ar" ? "حسابي" : "My Account") : dict.nav.clientLogin}
             </Link>
           </nav>
         </div>
