@@ -6,7 +6,7 @@ import { useLocale } from "@/components/providers";
 import { PhoneInput, type PhoneInputResult } from "@/components/phone-input";
 import { isValidEmail, localize } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
-import type { Service } from "@/lib/types";
+import type { Service, ServiceCategory } from "@/lib/types";
 
 interface Attachment {
   url: string;
@@ -16,9 +16,11 @@ interface Attachment {
 
 export function ProjectRequestForm({
   services,
+  categories,
   initialServiceId,
 }: {
   services: Service[];
+  categories?: ServiceCategory[];
   initialServiceId?: string;
 }) {
   const { locale, dict } = useLocale();
@@ -27,6 +29,7 @@ export function ProjectRequestForm({
     email: "",
     company: "",
     service_id: initialServiceId ?? "",
+    category_id: "",
     otherService: "",
     projectDetails: "",
     budget: "",
@@ -161,13 +164,26 @@ export function ProjectRequestForm({
       <div>
         <h3 className="mb-4 font-bold text-ink-900">{dict.quote.projectType}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
+          {categories && categories.length > 0 && (
+            <div>
+              <label className="label">{dict.quote.projectType} — التصنيف</label>
+              <select className="input" value={form.category_id} onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value, service_id: "" }))}>
+                <option value="">{dict.quote.projectTypePlaceholder}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{localize(locale, c.name_ar, c.name_en)}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="label">{dict.quote.projectType} *</label>
             <select className="input" value={form.service_id} onChange={(e) => setForm((f) => ({ ...f, service_id: e.target.value }))}>
               <option value="">{dict.quote.projectTypePlaceholder}</option>
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>{localize(locale, s.title_ar, s.title_en)}</option>
-              ))}
+              {services
+                .filter((s) => !form.category_id || s.category_id === form.category_id)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>{localize(locale, s.title_ar, s.title_en)}</option>
+                ))}
               <option value="__other__">{dict.form.other}</option>
             </select>
           </div>

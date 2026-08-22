@@ -15,10 +15,12 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+  // Idempotent: only transition if not already closed.
   const { error } = await admin
     .from("live_chat_conversations")
     .update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "customer" })
-    .eq("visitor_token", body.visitor_token);
+    .eq("visitor_token", body.visitor_token)
+    .neq("status", "closed");
 
   if (error) return NextResponse.json({ error: "Failed to close conversation" }, { status: 500 });
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email";
+import { getAdminNotificationEmail } from "@/lib/admin-notify";
 import type { ProjectRequest } from "@/lib/types";
 
 const schema = z.object({
@@ -115,12 +116,8 @@ export async function POST(request: NextRequest) {
     utm_campaign: saved.utm_campaign,
   });
 
-  // Email to admin
-  const { data: settingsRow } = await admin.from("site_settings").select("value").eq("key", "contact").single();
-  const contactSettings = (settingsRow?.value ?? {}) as { destination_email?: string };
-  const { data: generalRow } = await admin.from("site_settings").select("value").eq("key", "general").single();
-  const general = (generalRow?.value ?? {}) as { email?: string };
-  const destination = contactSettings.destination_email || general.email || process.env.EMAIL_FROM;
+  // Email to admin (dynamic notification inbox)
+  const destination = await getAdminNotificationEmail();
 
   if (destination) {
     const rows = [
@@ -139,6 +136,7 @@ export async function POST(request: NextRequest) {
       subject: `New project request — ${saved.service_name ?? saved.other_service ?? ""}`,
       html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${saved.name}</h2><p style="margin:4px 0 0;opacity:.85">Project request</p></div><div style="padding:20px">${rows.filter(([, v]) => v).map(([k, v]) => `<p style="margin:6px 0"><strong>${k}:</strong> ${String(v).replace(/</g, "&lt;")}</p>`).join("")}</div></div>`,
       text,
+      type: "pricing_request",
     }).catch(() => null);
   }
 

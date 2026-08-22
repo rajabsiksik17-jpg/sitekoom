@@ -12,7 +12,9 @@ export function ProjectCard({ project }: { project: Project }) {
   const href = useLocalizedHref();
   const title = localize(locale, project.title_ar, project.title_en);
   const short = localize(locale, project.short_desc_ar, project.short_desc_en);
+  const service = localize(locale, project.service?.title_ar, project.service?.title_en);
   const category = localize(locale, project.category?.name_ar, project.category?.name_en);
+  const badge = service || category;
 
   return (
     <Link
@@ -33,9 +35,9 @@ export function ProjectCard({ project }: { project: Project }) {
             <ArrowUpRight className="h-10 w-10 opacity-50" />
           </div>
         )}
-        {category && (
+        {badge && (
           <span className="absolute top-3 start-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-700 backdrop-blur">
-            {category}
+            {badge}
           </span>
         )}
       </div>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Send, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
-import { PageTitle, Badge, Spinner, EmptyState } from "@/components/admin/ui";
+import { PageTitle, Badge, Spinner, EmptyState, Modal } from "@/components/admin/ui";
 import { cn, timeAgo } from "@/lib/utils";
 import type { LiveChatConversation, LiveChatMessage } from "@/lib/types";
 
@@ -40,6 +40,8 @@ export function ChatConsole() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [accepting, setAccepting] = useState(false);
   const [sending, setSending] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   const loadConversations = useCallback(async () => {
     const supabase = supabaseRef.current;
@@ -148,11 +150,20 @@ export function ChatConsole() {
     }
   }
 
-  async function closeConversation() {
+  function closeConversation() {
     if (!selected) return;
+    setConfirmClose(true);
+  }
+
+  async function confirmCloseConversation() {
+    if (!selected || closing) return;
+    setClosing(true);
     const supabase = supabaseRef.current;
-    await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "admin" }).eq("id", selected.id);
+    // Idempotent: only close if still active/waiting.
+    await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "admin" }).eq("id", selected.id).neq("status", "closed");
     await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "system", body: "تم إنهاء المحادثة" });
+    setClosing(false);
+    setConfirmClose(false);
     setSelected(null);
     setMessages([]);
     loadConversations();
@@ -280,6 +291,11 @@ export function ChatConsole() {
           )}
         </div>
       </div>
+
+      <Modal open={confirmClose} onClose={() => setConfirmClose(false)} title="إنهاء المحادثة" size="sm"
+        footer={<><button type="button" onClick={() => setConfirmClose(false)} className="btn-secondary px-4 py-2 text-sm">إلغاء</button><button type="button" onClick={confirmCloseConversation} disabled={closing} className="btn-danger px-4 py-2 text-sm">{closing ? <Spinner className="h-4 w-4" /> : "نعم، إنهاء المحادثة"}</button></>}>
+        <p className="text-sm text-gray-600">هل أنت متأكد من إنهاء هذه المحادثة؟ بعد إنهائها لن تتمكن من إرسال رسائل جديدة إليها، ويمكن للعميل بدء محادثة جديدة لاحقًا.</p>
+      </Modal>
     </div>
   );
 }

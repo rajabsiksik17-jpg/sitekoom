@@ -23,6 +23,18 @@ import {
   Eye,
   Lightbulb,
   CheckCircle2,
+  Megaphone,
+  Camera,
+  Video,
+  Scissors,
+  MessageSquare,
+  Bot,
+  Share2,
+  PenTool,
+  FileText,
+  BarChart3,
+  Image,
+  ThumbsUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +63,18 @@ const map: Record<string, LucideIcon> = {
   eye: Eye,
   lightbulb: Lightbulb,
   "check-circle": CheckCircle2,
+  megaphone: Megaphone,
+  camera: Camera,
+  video: Video,
+  scissors: Scissors,
+  "message-square": MessageSquare,
+  bot: Bot,
+  "share-2": Share2,
+  "pen-tool": PenTool,
+  "file-text": FileText,
+  "bar-chart": BarChart3,
+  image: Image,
+  "thumbs-up": ThumbsUp,
 };
 
 export const ICON_NAMES = Object.keys(map);

@@ -3,7 +3,6 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { HeroSlider } from "@/components/home/hero-slider";
 import { Marquee } from "@/components/home/marquee";
 import { Reveal } from "@/components/reveal";
-import { ServiceCard } from "@/components/service-card";
 import { ProjectCard } from "@/components/project-card";
 import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
@@ -16,6 +15,7 @@ import {
   getMarqueeMessages,
   getHomepageSections,
   getServices,
+  getServiceCategories,
   getProjects,
   getCompanyInfo,
   getStatistics,
@@ -27,11 +27,12 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, projects, company, stats, social] = await Promise.all([
+  const [sliders, marquee, sections, services, categories, projects, company, stats, social] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
     getServices(),
+    getServiceCategories(),
     getProjects(),
     getCompanyInfo(),
     getStatistics(),
@@ -43,7 +44,6 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const Arrow = locale === "ar" ? ArrowLeft : ArrowRight;
 
   const whyItems = (locale === "ar" ? company?.why_ar : company?.why_en) ?? [];
-  const featuredServices = services.filter((s) => s.is_featured).slice(0, 4);
   const featuredProjects = projects.slice(0, 6);
 
   return (
@@ -63,13 +63,50 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
                 dict.home.servicesSubtitle}
             </p>
           </Reveal>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredServices.map((s, i) => (
-              <Reveal key={s.id} delay={i * 60}>
-                <ServiceCard service={s} />
-              </Reveal>
-            ))}
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {categories.map((cat) => {
+              const catServices = services.filter((s) => s.category_id === cat.id).slice(0, 6);
+              return (
+                <Reveal key={cat.id}>
+                  <div className="group relative h-full overflow-hidden rounded-3xl border border-brand-100/60 bg-white p-8 shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
+                    <div className="pointer-events-none absolute -end-12 -top-12 h-44 w-44 rounded-full bg-brand-50 blur-3xl transition-opacity group-hover:opacity-100" />
+                    <div className="relative">
+                      <div className="mb-4 flex items-center gap-4">
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-glow">
+                          <Icon name={cat.icon} className="h-7 w-7" />
+                        </span>
+                        <h3 className="text-2xl font-extrabold text-ink-900">{localize(locale, cat.name_ar, cat.name_en)}</h3>
+                      </div>
+                      <p className="text-gray-600">{localize(locale, cat.description_ar, cat.description_en)}</p>
+
+                      <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                        {catServices.map((s) => (
+                          <li key={s.id}>
+                            <Link
+                              href={p(`/services/${s.slug}`)}
+                              className="flex items-center gap-3 rounded-xl border border-brand-100 p-3 transition-colors hover:border-brand-300 hover:bg-brand-50"
+                            >
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                                <Icon name={s.icon} className="h-4 w-4" />
+                              </span>
+                              <span className="text-sm font-semibold text-ink-900">{localize(locale, s.title_ar, s.title_en)}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <Link href={p(`/services/category/${cat.slug}`)} className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:underline">
+                        {locale === "ar" ? `رؤية خدمات ${localize(locale, cat.name_ar, cat.name_en)}` : `View ${localize(locale, cat.name_ar, cat.name_en)} services`}
+                        <Arrow className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
+
           <div className="mt-10 text-center">
             <Link href={p("/services")} className="btn-primary px-6 py-3">
               {dict.home.viewMoreServices}

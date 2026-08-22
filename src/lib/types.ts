@@ -51,10 +51,32 @@ export interface Service {
   status: PublishStatus;
   sort: number;
   is_featured: boolean;
+  category_id: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  category?: ServiceCategory | null;
+}
+
+export interface ServiceCategory {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  slug: string;
+  description_ar: string | null;
+  description_en: string | null;
+  icon: string | null;
+  image: string | null;
+  seo_title_ar: string | null;
+  seo_title_en: string | null;
+  meta_description_ar: string | null;
+  meta_description_en: string | null;
+  og_image: string | null;
+  sort: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ServiceImage {

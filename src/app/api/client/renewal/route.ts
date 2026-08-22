@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientSession } from "@/lib/client-auth";
 import { durationLabel } from "@/lib/renewal-service";
+import { notifyAdminEmail } from "@/lib/admin-notify";
 
 const schema = z.object({
   subscription_id: z.string().uuid().optional(),
@@ -81,6 +82,13 @@ export async function POST(request: NextRequest) {
     body_ar: `${client?.name ?? "عميل"} — ${body.service_name}${body.duration_months ? ` (${durationLabel(body.duration_months, "ar")})` : ""}`,
     body_en: `${client?.name ?? "Client"} — ${body.service_name}${body.duration_months ? ` (${durationLabel(body.duration_months, "en")})` : ""}`,
     link: "/admin/renewals",
+  });
+
+  await notifyAdminEmail({
+    type: "renewal_request",
+    subject: `New renewal request — ${body.service_name}`,
+    text: `Client: ${client?.name ?? ""}\nService: ${body.service_name}\nDuration: ${body.duration_months ? durationLabel(body.duration_months, "en") : "—"}\nAmount: ${body.amount}`,
+    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${client?.name ?? "Client"}</h2><p style="margin:4px 0 0;opacity:.85">New renewal request</p></div><div style="padding:20px"><p><strong>Service:</strong> ${body.service_name}</p><p><strong>Duration:</strong> ${body.duration_months ? durationLabel(body.duration_months, "en") : "—"}</p><p><strong>Amount:</strong> ${body.amount}</p></div></div>`,
   });
 
   await admin.from("client_notifications").insert({

@@ -11,7 +11,7 @@ import { ProjectRequestForm } from "@/components/project-request-form";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
-import { getServiceDetails, getProjects, getServices } from "@/lib/queries";
+import { getServiceDetails, getProjects, getServices, getServiceCategories } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { faqSchema, serviceSchema, jsonLdToString } from "@/lib/seo";
 import type { ServiceFeature } from "@/lib/types";
@@ -66,7 +66,7 @@ export default async function ServiceDetailPage({
       description: localize(locale, f.description_ar, f.description_en),
     }));
 
-  const [allProjects, allServices] = await Promise.all([getProjects(), getServices()]);
+  const [allProjects, allServices, allCategories] = await Promise.all([getProjects(), getServices(), getServiceCategories()]);
   const relatedProjects = allProjects.filter((p) => p.service_id === service.id).slice(0, 3);
   const fallbackProjects = relatedProjects.length ? relatedProjects : allProjects.slice(0, 3);
 
@@ -246,7 +246,7 @@ export default async function ServiceDetailPage({
           <h2 className="mb-2 text-center text-2xl font-extrabold text-ink-900">{dict.quote.title}</h2>
           <p className="mb-8 text-center text-gray-600">{dict.quote.subtitle}</p>
           <div className="card p-8">
-            <ProjectRequestForm services={allServices} initialServiceId={service.id} />
+            <ProjectRequestForm services={allServices} categories={allCategories} initialServiceId={service.id} />
           </div>
         </div>
       </section>

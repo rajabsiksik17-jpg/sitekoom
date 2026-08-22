@@ -56,6 +56,8 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   const [error, setError] = useState("");
   const [input, setInput] = useState("");
   const [agentTyping, setAgentTyping] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   const viewRef = useRef(view);
   const soundOnRef = useRef(soundOn);
@@ -231,13 +233,21 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
       .send({ type: "broadcast", event: "typing", payload: { typing: false } });
   }
 
-  async function handleEnd() {
+  function handleEnd() {
     if (!conversation) return;
+    setConfirmEnd(true);
+  }
+
+  async function confirmEndChat() {
+    if (!conversation || ending) return;
+    setEnding(true);
     await fetch("/api/chat/end", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitor_token: conversation.visitor_token }),
     });
+    setEnding(false);
+    setConfirmEnd(false);
     setPhase("closed");
   }
 
@@ -295,6 +305,25 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         <div className="fixed bottom-24 start-5 z-[80] flex items-center gap-2 rounded-xl bg-ink-900 px-4 py-3 text-sm font-medium text-white shadow-card">
           <span className="h-2 w-2 rounded-full bg-brand-400" />
           {toast}
+        </div>
+      )}
+
+      {confirmEnd && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-card">
+            <h3 className="text-lg font-bold text-ink-900">{dict.chat.close}</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {locale === "ar"
+                ? "هل أنت متأكد من إنهاء هذه المحادثة؟ بعد إنهاء المحادثة لن تتمكن من إرسال رسائل جديدة إليها، ويمكنك بدء محادثة جديدة لاحقًا."
+                : "Are you sure you want to end this conversation? You won't be able to send new messages afterwards, and you can start a new conversation later."}
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setConfirmEnd(false)} className="btn-secondary px-4 py-2 text-sm">{locale === "ar" ? "إلغاء" : "Cancel"}</button>
+              <button type="button" onClick={confirmEndChat} disabled={ending} className="btn-danger px-4 py-2 text-sm">
+                {ending ? (locale === "ar" ? "جارٍ الإنهاء..." : "Ending...") : (locale === "ar" ? "نعم، إنهاء المحادثة" : "Yes, end conversation")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

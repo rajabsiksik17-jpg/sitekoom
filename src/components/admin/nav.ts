@@ -56,6 +56,7 @@ export const adminNavGroups: NavGroup[] = [
     icon: Layers,
     permission: "services.view",
     children: [
+      { key: "serviceCategories", label: "تصنيفات الخدمات", href: "/admin/service-categories", permission: "services.view" },
       { key: "services", label: "الخدمات", href: "/admin/services", permission: "services.view" },
       { key: "projects", label: "الأعمال", href: "/admin/projects", permission: "projects.view" },
       { key: "articles", label: "المقالات", href: "/admin/articles", permission: "articles.view" },

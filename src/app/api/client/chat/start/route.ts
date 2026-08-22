@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientSession } from "@/lib/client-auth";
+import { notifyAdminEmail } from "@/lib/admin-notify";
 
 const schema = z.object({
   message: z.string().min(1).max(3000),
@@ -95,6 +96,13 @@ export async function POST(request: NextRequest) {
     body_ar: `${client.name} ينتظر اتصال أحد موظفي الدعم.`,
     body_en: `${client.name} is waiting for a support agent.`,
     link: "/admin/chat",
+  });
+
+  await notifyAdminEmail({
+    type: "live_chat_request",
+    subject: `New chat from registered client — ${client.name}`,
+    text: `Registered client ${client.name} (${client.email ?? ""}) started a chat.\nMessage: ${body.message}`,
+    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${client.name}</h2><p style="margin:4px 0 0;opacity:.85">Registered client chat</p></div><div style="padding:20px"><p><strong>Email:</strong> ${client.email ?? "—"}</p><p><strong>Message:</strong> ${body.message.replace(/</g, "&lt;")}</p></div></div>`,
   });
 
   return NextResponse.json({

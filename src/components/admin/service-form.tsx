@@ -14,7 +14,7 @@ import { RichText } from "@/components/admin/rich-text";
 import { SeoFields } from "@/components/admin/seo-fields";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
-import type { Service } from "@/lib/types";
+import type { Service, ServiceCategory } from "@/lib/types";
 
 type Detail = { kind: string; icon: string; title_ar: string; title_en: string; description_ar: string; description_en: string };
 type Faq = { question_ar: string; question_en: string; answer_ar: string; answer_en: string };
@@ -34,15 +34,20 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
     title_ar: "", title_en: "", slug: "", icon: "sparkles",
     short_desc_ar: "", short_desc_en: "", full_desc_ar: "", full_desc_en: "",
     main_image: "", status: "published" as "draft" | "published" | "archived", is_featured: false,
+    category_id: "",
   });
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [details, setDetails] = useState<Detail[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [gallery, setGallery] = useState<string[]>([]);
   const [descTab, setDescTab] = useState<"ar" | "en">("ar");
 
   useEffect(() => {
-    if (!serviceId) return;
     const supabase = createClient();
+    supabase.from("service_categories").select("id,name_ar,name_en").order("sort").then(({ data }) => {
+      setCategories((data ?? []) as ServiceCategory[]);
+    });
+    if (!serviceId) return;
     Promise.all([
       supabase.from("services").select("*").eq("id", serviceId).single(),
       supabase.from("service_features").select("*").eq("service_id", serviceId).order("sort"),
@@ -56,6 +61,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
           short_desc_ar: d.short_desc_ar ?? "", short_desc_en: d.short_desc_en ?? "",
           full_desc_ar: d.full_desc_ar ?? "", full_desc_en: d.full_desc_en ?? "",
           main_image: d.main_image ?? "", status: d.status, is_featured: d.is_featured,
+          category_id: d.category_id ?? "",
         });
       }
       setDetails((f.data ?? []).map((x) => ({ kind: x.kind, icon: x.icon ?? "", title_ar: x.title_ar, title_en: x.title_en, description_ar: x.description_ar ?? "", description_en: x.description_en ?? "" })));
@@ -77,6 +83,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
     const payload = {
       ...form,
       slug: slugify(form.slug),
+      category_id: form.category_id || null,
       short_desc_ar: form.short_desc_ar || null,
       short_desc_en: form.short_desc_en || null,
       full_desc_ar: form.full_desc_ar || null,
@@ -139,6 +146,12 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Slug">
             <input className="input" dir="ltr" value={form.slug} onChange={(e) => update("slug", e.target.value)} />
+          </Field>
+          <Field label="التصنيف الرئيسي">
+            <select className="input" value={form.category_id} onChange={(e) => update("category_id", e.target.value)}>
+              <option value="">— بدون تصنيف —</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+            </select>
           </Field>
           <Field label="الحالة">
             <select className="input" value={form.status} onChange={(e) => update("status", e.target.value)}>

@@ -13,6 +13,7 @@ import type {
   Project,
   ProjectCategory,
   Service,
+  ServiceCategory,
   ServiceFaq,
   ServiceFeature,
   SocialLink,
@@ -25,12 +26,31 @@ const supabase = () => createClient();
 export const getServices = cache(async (): Promise<Service[]> => {
   const { data } = await supabase()
     .from("services")
-    .select("*")
+    .select("*, category:service_categories(*)")
     .eq("status", "published")
     .is("deleted_at", null)
     .order("sort")
     .order("created_at");
   return (data ?? []) as Service[];
+});
+
+export const getServiceCategories = cache(async (): Promise<ServiceCategory[]> => {
+  const { data } = await supabase()
+    .from("service_categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort");
+  return (data ?? []) as ServiceCategory[];
+});
+
+export const getServiceCategoryBySlug = cache(async (slug: string): Promise<ServiceCategory | null> => {
+  const { data } = await supabase()
+    .from("service_categories")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  return (data as ServiceCategory) ?? null;
 });
 
 export const getServiceBySlug = cache(async (slug: string): Promise<Service | null> => {
@@ -77,7 +97,7 @@ export const getProjectCategories = cache(async (): Promise<ProjectCategory[]> =
 export const getProjects = cache(async (): Promise<Project[]> => {
   const { data } = await supabase()
     .from("projects")
-    .select("*, service:services(id,title_ar,title_en,slug), category:project_categories(*)")
+    .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*)")
     .eq("status_field", "published")
     .is("deleted_at", null)
     .order("sort")

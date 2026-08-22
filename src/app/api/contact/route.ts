@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email";
+import { getAdminNotificationEmail } from "@/lib/admin-notify";
 import { contactRequestEmail, autoReplyEmail } from "@/lib/email/templates";
 import type { ContactRequest } from "@/lib/types";
 
@@ -132,14 +133,11 @@ export async function POST(request: NextRequest) {
     destination_email?: string;
     auto_reply?: boolean;
   };
-  const { data: generalRow } = await admin.from("site_settings").select("value").eq("key", "general").single();
-  const general = (generalRow?.value ?? {}) as { email?: string };
-
-  const destination = contactSettings.destination_email || general.email || process.env.EMAIL_FROM;
+  const destination = await getAdminNotificationEmail();
   const email = contactRequestEmail(saved, locale);
 
   if (destination) {
-    await sendEmail({ to: destination, subject: email.subject, html: email.html, text: email.text }).catch(
+    await sendEmail({ to: destination, subject: email.subject, html: email.html, text: email.text, type: "contact_request" }).catch(
       () => null,
     );
   }
