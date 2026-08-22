@@ -5,6 +5,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { GeneralSettings } from "@/lib/settings";
 import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { Reveal } from "@/components/reveal";
+import { GoogleMapEmbed } from "@/components/google-map-embed";
 import { socialIcon } from "@/components/social-icons";
 import type { SocialLink } from "@/lib/types";
 
@@ -22,6 +23,7 @@ export function CompanyInfoSection({
   const p = (path: string) => localizePath(path, locale);
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
   const mapsUrl = settings.google_maps_url;
+  const mapsEmbed = settings.google_maps_embed_url;
 
   return (
     <section className="mt-16">
@@ -90,24 +92,9 @@ export function CompanyInfoSection({
               </div>
             </div>
 
-            {mapsUrl && (
-              <div className="overflow-hidden rounded-2xl border border-brand-100">
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={dict.contact.map}
-                  className="block h-full min-h-[260px]"
-                >
-                  <iframe
-                    title={dict.contact.map}
-                    src={mapsUrl.includes("output=embed") ? mapsUrl : mapsUrl + "&output=embed"}
-                    className="h-full min-h-[260px] w-full"
-                    loading="lazy"
-                  />
-                </a>
-              </div>
-            )}
+            {mapsUrl || mapsEmbed ? (
+              <GoogleMapEmbed embedUrl={mapsEmbed} linkUrl={mapsUrl} title={dict.contact.map} className="h-full min-h-[260px]" />
+            ) : null}
           </div>
         </div>
       </Reveal>

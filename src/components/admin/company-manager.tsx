@@ -80,6 +80,8 @@ export function CompanyManager() {
         <Field label="فيديو الشركة (يظهر في الصفحة الرئيسية)" hint="ارفع فيديو MP4/WebM ليظهر بجانب بيانات الشركة">
           <VideoUpload value={info.video_url ?? ""} onChange={(url) => update("video_url", url)} folder="company" />
         </Field>
+        <Bilingual label="عنوان قسم الفيديو" ar={info.video_title_ar ?? ""} en={info.video_title_en ?? ""} onAr={(v) => update("video_title_ar", v)} onEn={(v) => update("video_title_en", v)} />
+        <Bilingual label="نص تعريفي قصير أسفل العنوان" ar={info.video_intro_ar ?? ""} en={info.video_intro_en ?? ""} onAr={(v) => update("video_intro_ar", v)} onEn={(v) => update("video_intro_en", v)} type="textarea" />
       </div>
 
       <div className="card p-6">

@@ -15,6 +15,7 @@ export interface GeneralSettings {
   address_ar: string;
   address_en: string;
   google_maps_url: string;
+  google_maps_embed_url: string;
   working_hours_ar: string;
   working_hours_en: string;
   logo: string;
@@ -70,6 +71,7 @@ const defaults = {
     address_ar: "عمّان، الأردن",
     address_en: "Amman, Jordan",
     google_maps_url: "",
+    google_maps_embed_url: "",
     working_hours_ar: "",
     working_hours_en: "",
     logo: "",

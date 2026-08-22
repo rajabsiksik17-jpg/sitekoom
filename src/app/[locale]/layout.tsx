@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/providers";
-import { Header } from "@/components/header";
+import { SiteChrome } from "@/components/site-chrome";
 import { Footer } from "@/components/footer";
-import { FloatingContact } from "@/components/live-chat";
-import { FloatingSocial } from "@/components/floating-social";
-import { PageViewTracker } from "@/components/page-view-tracker";
-import { CookieConsent } from "@/components/cookie-consent";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { getSettings } from "@/lib/settings";
 import { getServices, getSocialLinks } from "@/lib/queries";
@@ -67,13 +63,15 @@ export default async function LocaleLayout({
 
   return (
     <LocaleProvider locale={params.locale}>
-      <Header settings={settings.general} />
-      <main dir={params.locale === "ar" ? "rtl" : "ltr"} className="min-h-screen">{children}</main>
-      <Footer locale={params.locale} settings={settings.general} services={services} social={social} />
-      <FloatingContact settings={settings.general} />
-      <FloatingSocial social={social} />
-      <CookieConsent />
-      <PageViewTracker />
+      <SiteChrome
+        locale={params.locale}
+        settings={settings.general}
+        social={social}
+        services={services}
+        footer={<Footer locale={params.locale} settings={settings.general} services={services} social={social} />}
+      >
+        {children}
+      </SiteChrome>
 
       {settings.seo.analytics_id && (
         <>

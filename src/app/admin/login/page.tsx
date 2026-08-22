@@ -15,6 +15,7 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [otpStep, setOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [trust, setTrust] = useState(true);
   const [resending, setResending] = useState(false);
 
   const disabledError = params.get("error") === "disabled" ? "تم تعطيل حسابك. يرجى التواصل مع الإدارة." : "";
@@ -35,6 +36,11 @@ function LoginForm() {
     setLoading(false);
     if (res && res.ok) {
       const data = await res.json();
+      if (data.trusted) {
+        router.replace("/admin");
+        router.refresh();
+        return;
+      }
       if (data.enabled) {
         setOtpStep(true);
         return;
@@ -51,7 +57,7 @@ function LoginForm() {
     const res = await fetch("/api/admin/otp/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: otpCode }),
+      body: JSON.stringify({ code: otpCode, trust }),
     });
     const data = await res.json();
     setLoading(false);
@@ -105,6 +111,10 @@ function LoginForm() {
         <div>
           <label htmlFor="otp" className="label">رمز التحقق المرسل إلى بريدك</label>
           <input id="otp" className="input text-center text-2xl tracking-[0.5em]" dir="ltr" inputMode="numeric" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required autoFocus />
+          <label className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+            <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} className="rounded border-brand-200 text-brand-600" />
+            تذكر هذا الجهاز (لن يُطلب رمز التحقق خلال 30 يومًا)
+          </label>
           <button type="button" onClick={handleResendOtp} disabled={resending} className="mt-2 text-xs font-semibold text-brand-600 hover:underline">
             {resending ? "جارٍ إعادة الإرسال..." : "إعادة إرسال الرمز"}
           </button>

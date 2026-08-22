@@ -14,6 +14,7 @@ import type {
   ClientWebsite,
   EducationalVideo,
   LiveChatConversation,
+  LiveChatMessage,
   RenewalRequest,
 } from "@/lib/types";
 
@@ -132,3 +133,30 @@ export const getClientConversations = cache(async (clientId: string): Promise<Li
     .limit(100);
   return (data ?? []) as LiveChatConversation[];
 });
+
+export const getClientConversationMessages = cache(
+  async (clientId: string): Promise<Map<string, LiveChatMessage[]>> => {
+    const admin = createAdminClient();
+    const { data: conversations } = await admin
+      .from("live_chat_conversations")
+      .select("id")
+      .eq("client_id", clientId)
+      .limit(100);
+    const ids = (conversations ?? []).map((c) => c.id);
+    if (ids.length === 0) return new Map();
+
+    const { data: messages } = await admin
+      .from("live_chat_messages")
+      .select("*")
+      .in("conversation_id", ids)
+      .order("created_at", { ascending: true });
+
+    const map = new Map<string, LiveChatMessage[]>();
+    for (const m of (messages ?? []) as LiveChatMessage[]) {
+      const list = map.get(m.conversation_id) ?? [];
+      list.push(m);
+      map.set(m.conversation_id, list);
+    }
+    return map;
+  },
+);

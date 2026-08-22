@@ -7,7 +7,22 @@ import { getClientSession } from "@/lib/client-auth";
 const schema = z.object({
   message: z.string().min(1).max(3000),
   source_page: z.string().max(500).optional(),
+  reason: z.string().max(100).optional(),
 });
+
+const REASON_TO_TYPE: Record<string, string> = {
+  website_modification: "modification",
+  website_issue: "general",
+  maintenance: "maintenance",
+  development: "development",
+  renewal: "renewal",
+  inquiry: "general",
+  hosting: "hosting",
+  domain: "domain",
+  woocommerce: "woocommerce",
+  wordpress: "wordpress",
+  other: "other",
+};
 
 // Starts a support conversation as a registered client. Identity is taken from
 // the client record (never from the client) so it cannot be spoofed, and the
@@ -34,7 +49,7 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const { data: client } = await admin
     .from("clients")
-    .select("name,email,company")
+    .select("name,email,phone,company")
     .eq("id", clientId)
     .eq("status", "active")
     .is("deleted_at", null)
@@ -51,10 +66,13 @@ export async function POST(request: NextRequest) {
       is_registered: true,
       visitor_name: client.name,
       visitor_email: client.email || null,
+      visitor_phone: client.phone || null,
       first_message: body.message,
       status: "waiting",
       source_page: body.source_page || null,
       last_message_at: new Date().toISOString(),
+      conversation_type: body.reason ? REASON_TO_TYPE[body.reason] ?? "general" : "general",
+      support_reason: body.reason || null,
     })
     .select()
     .single();

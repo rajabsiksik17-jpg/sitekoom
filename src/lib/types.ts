@@ -190,6 +190,10 @@ export interface CompanyInfo {
   why_ar: WhyItem[];
   why_en: WhyItem[];
   video_url: string | null;
+  video_title_ar: string | null;
+  video_title_en: string | null;
+  video_intro_ar: string | null;
+  video_intro_en: string | null;
 }
 
 export interface WhyItem {
@@ -403,12 +407,17 @@ export interface LiveChatConversation {
   source_page: string | null;
   referrer: string | null;
   last_message_at: string | null;
+  agent_name: string | null;
+  agent_avatar: string | null;
+  agent_position: string | null;
   created_at: string;
   updated_at: string;
   closed_at: string | null;
   closed_by: string | null;
   client_id: string | null;
   is_registered: boolean;
+  conversation_type: string | null;
+  support_reason: string | null;
   agent?: User | null;
 }
 
@@ -492,12 +501,14 @@ export interface Client {
   name: string;
   company: string | null;
   email: string | null;
+  phone: string | null;
   username: string;
   website_url: string | null;
   admin_url: string | null;
   website_type: string;
   auth_method: string;
   status: string;
+  preferred_language: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -512,6 +523,9 @@ export interface ClientWebsite {
   admin_url: string | null;
   website_type: string;
   status: string;
+  login_username: string | null;
+  login_email: string | null;
+  credentials_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -526,6 +540,9 @@ export interface ClientSubscription {
   renewal_duration: string | null;
   renewal_price: number;
   status: string;
+  duration_months: number | null;
+  covers_domain: boolean;
+  covers_hosting: boolean;
   created_at: string;
   updated_at: string;
 }

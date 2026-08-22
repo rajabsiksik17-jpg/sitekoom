@@ -125,8 +125,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
         </section>
       )}
 
-      {company?.video_url && (
-        <CompanyVideoSection locale={locale} videoUrl={company.video_url} social={social} dict={dict} />
+      {company && company.video_url && (
+        <CompanyVideoSection locale={locale} company={company} social={social} dict={dict} />
       )}
 
       {isActive("projects") && featuredProjects.length > 0 && (

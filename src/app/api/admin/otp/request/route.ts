@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createAdminOtp } from "@/lib/otp";
+import { isAdminDeviceTrusted } from "@/lib/trusted-devices";
 import { sendEmail } from "@/lib/email";
 
 export async function POST() {
@@ -13,6 +14,11 @@ export async function POST() {
   const settings = await getEmailSettings();
   if (!settings.otp_enabled) {
     return NextResponse.json({ enabled: false });
+  }
+
+  // Trusted device/session → no OTP needed within the trust window.
+  if (await isAdminDeviceTrusted(user.id)) {
+    return NextResponse.json({ enabled: true, trusted: true });
   }
 
   const to = user.email;
@@ -32,5 +38,5 @@ export async function POST() {
     type: "admin_otp",
   });
 
-  return NextResponse.json({ enabled: true, sent: true });
+  return NextResponse.json({ enabled: true, trusted: false, sent: true });
 }

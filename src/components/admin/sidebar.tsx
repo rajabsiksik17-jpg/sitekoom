@@ -13,6 +13,7 @@ interface Badges {
   contacts: number;
   quotes: number;
   chat: number;
+  renewals: number;
 }
 
 export function Sidebar({
@@ -28,17 +29,18 @@ export function Sidebar({
   const router = useRouter();
   const { push } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0 });
+  const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0, renewals: 0 });
   const supabaseRef = useRef(createClient());
 
   const refreshBadges = useCallback(async () => {
     const supabase = supabaseRef.current;
-    const [c, q, ch] = await Promise.all([
+    const [c, q, ch, rn] = await Promise.all([
       supabase.from("contact_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("project_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("live_chat_conversations").select("id", { count: "exact", head: true }).eq("status", "waiting"),
+      supabase.from("renewal_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
     ]);
-    setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0 });
+    setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0, renewals: rn.count ?? 0 });
   }, []);
 
   useEffect(() => {
@@ -57,6 +59,10 @@ export function Sidebar({
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_conversations" }, (payload) => {
         if (payload.eventType === "INSERT") push("success", "محادثة مباشرة جديدة");
+        refreshBadges();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "renewal_requests" }, (payload) => {
+        if (payload.eventType === "INSERT") push("success", "طلب تجديد جديد");
         refreshBadges();
       })
       .subscribe();
@@ -82,6 +88,7 @@ export function Sidebar({
     if (key === "contacts") return badges.contacts;
     if (key === "quotes") return badges.quotes;
     if (key === "chat") return badges.chat;
+    if (key === "clients") return badges.renewals;
     return null;
   };
 

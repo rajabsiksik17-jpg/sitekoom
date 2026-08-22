@@ -80,6 +80,7 @@ export function SettingsManager() {
             <Field label="العنوان (عربي)"><input className="input" value={String(g.address_ar ?? "")} onChange={(e) => update("general", "address_ar", e.target.value)} /></Field>
             <Field label="Address (EN)"><input className="input" dir="ltr" value={String(g.address_en ?? "")} onChange={(e) => update("general", "address_en", e.target.value)} /></Field>
             <Field label="رابط خرائط جوجل"><input className="input" dir="ltr" value={String(g.google_maps_url ?? "")} onChange={(e) => update("general", "google_maps_url", e.target.value)} /></Field>
+            <Field label="رابط Embed لخرائط جوجل" hint="رابط Google Maps Embed (يبدأ بـ https://www.google.com/maps...). يستخدم داخل iframe."><input className="input" dir="ltr" value={String(g.google_maps_embed_url ?? "")} onChange={(e) => update("general", "google_maps_embed_url", e.target.value)} /></Field>
             <Field label="ساعات العمل"><input className="input" value={String(g.working_hours_ar ?? "")} onChange={(e) => update("general", "working_hours_ar", e.target.value)} /></Field>
             <Field label="الشعار"><ImageUpload value={String(g.logo ?? "")} onChange={(url) => update("general", "logo", url)} folder="settings" /></Field>
             <Field label="الأيقونة (Favicon)"><ImageUpload value={String(g.favicon ?? "")} onChange={(url) => update("general", "favicon", url)} folder="settings" /></Field>

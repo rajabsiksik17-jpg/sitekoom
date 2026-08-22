@@ -82,9 +82,9 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
           </section>
         )}
 
-        {company?.video_url && (
+        {company && company.video_url && (
           <div className="mt-4">
-            <CompanyVideoSection locale={locale} videoUrl={company.video_url} social={social} dict={dict} />
+            <CompanyVideoSection locale={locale} company={company} social={social} dict={dict} />
           </div>
         )}
 

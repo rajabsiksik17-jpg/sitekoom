@@ -48,6 +48,41 @@ export function getClientSession(): string | null {
   return verifyClientSession(token);
 }
 
+// --- Pending client authentication (used during the OTP step) -------------
+
+const PENDING_COOKIE = "sitekoom_client_pending";
+const PENDING_TTL_SECONDS = 10 * 60; // 10 minutes to complete OTP
+
+export function setPendingClientCookie(clientId: string) {
+  const payload = `${clientId}.${Date.now()}`;
+  const token = `${payload}.${sign(payload)}`;
+  cookies().set(PENDING_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: PENDING_TTL_SECONDS,
+  });
+}
+
+export function getPendingClientId(): string | null {
+  const token = cookies().get(PENDING_COOKIE)?.value;
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [clientId, ts, sig] = parts;
+  const expected = sign(`${clientId}.${ts}`);
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  if (Date.now() - Number(ts) > PENDING_TTL_SECONDS * 1000) return null;
+  return clientId;
+}
+
+export function clearPendingClientCookie() {
+  cookies().set(PENDING_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+}
+
 // One-time SSO token (single use, short-lived, signed, bound to client + url).
 export function createSsoToken(clientId: string, adminUrl: string): { token: string; expiresAt: number } {
   const expiresAt = Date.now() + 60_000; // 1 minute

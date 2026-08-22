@@ -2,6 +2,7 @@ import { Mail, MapPin, Phone, Clock, MessageCircle, ArrowUpRight } from "lucide-
 import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContactForm } from "@/components/contact-form";
+import { GoogleMapEmbed } from "@/components/google-map-embed";
 import { socialIcon } from "@/components/social-icons";
 import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
@@ -96,16 +97,15 @@ export default async function ContactPage({ params }: { params: { locale: "ar" |
           </div>
         </div>
 
-        {g.google_maps_url && (
-          <div className="mt-12 overflow-hidden rounded-2xl border border-brand-100">
-            <iframe
+        {g.google_maps_embed_url || g.google_maps_url ? (
+          <div className="mt-12">
+            <GoogleMapEmbed
+              embedUrl={g.google_maps_embed_url}
+              linkUrl={g.google_maps_url}
               title={dict.contact.map}
-              src={g.google_maps_url.includes("output=embed") ? g.google_maps_url : g.google_maps_url.replace("maps.google.com", "maps.google.com/maps") + "&output=embed"}
-              className="h-[360px] w-full"
-              loading="lazy"
             />
           </div>
-        )}
+        ) : null}
       </div>
     </>
   );

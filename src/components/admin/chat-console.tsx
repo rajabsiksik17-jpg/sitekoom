@@ -10,6 +10,19 @@ import type { LiveChatConversation, LiveChatMessage } from "@/lib/types";
 
 type Agent = { id: string; name: string; avatar_url: string | null; position_ar: string | null; position_en: string | null };
 
+const typeLabels: Record<string, string> = {
+  general: "دعم عام",
+  modification: "تعديل على الموقع",
+  maintenance: "صيانة",
+  renewal: "تجديد",
+  hosting: "استضافة",
+  domain: "دومين",
+  development: "تطوير",
+  wordpress: "WordPress",
+  woocommerce: "WooCommerce",
+  other: "أخرى",
+};
+
 function appendMessage(prev: LiveChatMessage[], next: LiveChatMessage): LiveChatMessage[] {
   if (prev.some((m) => m.id === next.id)) return prev;
   return [...prev, next].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
@@ -191,6 +204,11 @@ export function ChatConsole() {
                     عميل مسجل
                   </span>
                 )}
+                {c.conversation_type && (
+                  <span className="mt-1.5 ms-1.5 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                    {typeLabels[c.conversation_type] ?? c.conversation_type}
+                  </span>
+                )}
                 <p className="mt-1 truncate text-sm text-gray-500">{c.first_message}</p>
                 {c.visitor_email && <p className="mt-1 text-xs text-gray-400" dir="ltr">{c.visitor_email}</p>}
               </button>
@@ -207,6 +225,11 @@ export function ChatConsole() {
                 <div>
                   <p className="font-bold text-ink-900">{selected.visitor_name ?? "زائر"}</p>
                   <p className="text-xs text-gray-400" dir="ltr">{selected.visitor_email} {selected.visitor_phone}</p>
+                  {(selected.conversation_type || selected.support_reason) && (
+                    <p className="mt-1 text-xs font-semibold text-brand-700">
+                      {selected.support_reason ? `${typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type ?? ""} — ${selected.support_reason}` : typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {selected.status === "waiting" && (

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Headset, LifeBuoy, Send, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Headset, LifeBuoy, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -21,32 +21,39 @@ interface Message {
   created_at: string;
 }
 
+export interface ReasonOption {
+  value: string;
+  label: string;
+}
+
 function appendMessage(prev: Message[], next: Message): Message[] {
   if (prev.some((m) => m.id === next.id)) return prev;
   return [...prev, next].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
 }
 
-export function SupportChat({ locale }: { locale: "ar" | "en" }) {
+export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons: ReasonOption[] }) {
   const supabaseRef = useRef(createClient());
   const isAr = locale === "ar";
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [firstMessage, setFirstMessage] = useState("");
+  const [reason, setReason] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [phase, setPhase] = useState<"form" | "waiting" | "active" | "closed">("form");
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
-    if (!firstMessage.trim() || loading) return;
+    if (!reason) return setError(isAr ? "اختر سبب التواصل" : "Select a reason");
+    if (!message.trim() || loading) return;
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/client/chat/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: firstMessage, source_page: window.location.pathname }),
+        body: JSON.stringify({ message, reason, source_page: window.location.pathname }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "error");
@@ -110,7 +117,8 @@ export function SupportChat({ locale }: { locale: "ar" | "en" }) {
   function reset() {
     setConversation(null);
     setMessages([]);
-    setFirstMessage("");
+    setMessage("");
+    setReason("");
     setPhase("form");
   }
 
@@ -126,10 +134,31 @@ export function SupportChat({ locale }: { locale: "ar" | "en" }) {
 
       {phase === "form" && (
         <form onSubmit={start} className="space-y-4 p-6">
-          <p className="text-sm text-gray-600">{isAr ? "كيف يمكننا مساعدتك؟" : "How can we help you?"}</p>
-          <textarea className="input min-h-[120px]" placeholder={isAr ? "اكتب رسالتك..." : "Type your message..."} value={firstMessage} onChange={(e) => setFirstMessage(e.target.value)} required />
+          <p className="text-sm font-semibold text-ink-900">{isAr ? "ما سبب تواصلك معنا؟" : "What is the reason for your contact?"}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {reasons.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setReason(r.value)}
+                className={cn(
+                  "rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+                  reason === r.value ? "border-brand-500 bg-brand-50 text-brand-700" : "border-brand-100 text-gray-600 hover:border-brand-300 hover:bg-brand-50/50",
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="input min-h-[100px]"
+            placeholder={isAr ? "اكتب تفاصيل طلبك..." : "Describe your request..."}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            required
+          />
           {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
-          <button type="submit" className="btn-primary px-6 py-2.5" disabled={loading}>
+          <button type="submit" className="btn-primary w-full px-6 py-2.5" disabled={loading}>
             {loading ? (isAr ? "جارٍ البدء..." : "Starting...") : isAr ? "ابدأ المحادثة" : "Start conversation"}
           </button>
         </form>

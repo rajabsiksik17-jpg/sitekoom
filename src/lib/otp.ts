@@ -69,3 +69,48 @@ export async function verifyAdminOtp(userId: string, code: string): Promise<bool
 
   return ok;
 }
+
+// --- Client OTP (client portal accounts are NOT Supabase auth users) ------
+
+export async function createClientOtp(clientId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+
+  // Invalidate any previous pending code for this client.
+  await admin.from("client_otp").update({ used_at: new Date().toISOString() }).eq("client_id", clientId).is("used_at", null);
+
+  const { error } = await admin.from("client_otp").insert({
+    client_id: clientId,
+    token_hash: hashToken(code),
+    expires_at: new Date(Date.now() + OTP_TTL_MS).toISOString(),
+  });
+
+  if (error) return null;
+  return code;
+}
+
+export async function verifyClientOtp(clientId: string, code: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("client_otp")
+    .select("*")
+    .eq("client_id", clientId)
+    .is("used_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return false;
+  if (new Date(data.expires_at).getTime() < Date.now()) return false;
+  if (data.attempts >= MAX_ATTEMPTS) return false;
+
+  const ok = verifyToken(code, data.token_hash);
+
+  if (ok) {
+    await admin.from("client_otp").update({ used_at: new Date().toISOString() }).eq("id", data.id);
+  } else {
+    await admin.from("client_otp").update({ attempts: (data.attempts ?? 0) + 1 }).eq("id", data.id);
+  }
+
+  return ok;
+}

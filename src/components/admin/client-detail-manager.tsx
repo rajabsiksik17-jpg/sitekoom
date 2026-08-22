@@ -26,14 +26,16 @@ interface EntityConfig {
   label: string;
   empty: Record<string, unknown>;
   columns: { key: string; label: string; ltr?: boolean }[];
-  fields: { key: string; label: string; type?: "text" | "date" | "number" | "select"; options?: string[] }[];
+  fields: { key: string; label: string; type?: "text" | "date" | "number" | "select" | "checkbox" | "password"; options?: string[]; hint?: string }[];
+  useApi?: boolean;
+  autoExpiry?: { startKey: string; durationKey: string; expiryKey: string };
 }
 
 const configs: Record<Exclude<Tab, "renewals">, EntityConfig> = {
   websites: {
     table: "client_websites",
     label: "موقع",
-    empty: { name: "", domain: "", website_url: "", admin_url: "", website_type: "wordpress", status: "active" },
+    empty: { name: "", domain: "", website_url: "", admin_url: "", website_type: "wordpress", status: "active", login_username: "", login_email: "", login_password: "", credentials_type: "wordpress" },
     columns: [
       { key: "name", label: "الاسم" },
       { key: "domain", label: "الدومين", ltr: true },
@@ -45,14 +47,19 @@ const configs: Record<Exclude<Tab, "renewals">, EntityConfig> = {
       { key: "domain", label: "الدومين" },
       { key: "website_url", label: "رابط الموقع" },
       { key: "admin_url", label: "رابط لوحة التحكم" },
-      { key: "website_type", label: "نوع الموقع", type: "select", options: ["wordpress", "woocommerce", "custom", "laravel", "dotnet", "other"] },
+      { key: "website_type", label: "نوع الموقع", type: "select", options: ["wordpress", "woocommerce", "custom", "other"] },
       { key: "status", label: "الحالة", type: "select", options: ["active", "maintenance", "suspended"] },
+      { key: "credentials_type", label: "طريقة دخول الموقع", type: "select", options: ["none", "wordpress", "custom"] },
+      { key: "login_username", label: "Username للموقع" },
+      { key: "login_email", label: "بريد الموقع" },
+      { key: "login_password", label: "كلمة مرور الموقع", type: "password", hint: "تُشفَّر ولا تُعرض أبدًا" },
     ],
+    useApi: true,
   },
   subscriptions: {
     table: "client_subscriptions",
     label: "اشتراك",
-    empty: { plan: "", start_date: "", expiry_date: "", renewal_duration: "1 year", renewal_price: 0, status: "active" },
+    empty: { plan: "", start_date: "", duration_months: 12, renewal_price: 0, covers_domain: true, covers_hosting: true, status: "active" },
     columns: [
       { key: "plan", label: "الخطة" },
       { key: "expiry_date", label: "تاريخ الانتهاء" },
@@ -61,12 +68,15 @@ const configs: Record<Exclude<Tab, "renewals">, EntityConfig> = {
     ],
     fields: [
       { key: "plan", label: "الخطة" },
-      { key: "renewal_duration", label: "مدة التجديد" },
       { key: "start_date", label: "تاريخ البداية", type: "date" },
-      { key: "expiry_date", label: "تاريخ الانتهاء", type: "date" },
+      { key: "duration_months", label: "مدة الاشتراك", type: "select", options: ["1", "3", "6", "12", "24"] },
+      { key: "expiry_date", label: "تاريخ الانتهاء (يُحسب تلقائيًا)", type: "date" },
       { key: "renewal_price", label: "قيمة التجديد", type: "number" },
+      { key: "covers_domain", label: "يشمل الدومين", type: "checkbox" },
+      { key: "covers_hosting", label: "يشمل الاستضافة", type: "checkbox" },
       { key: "status", label: "الحالة", type: "select", options: ["active", "expiring", "renewal_requested", "renewed", "expired", "suspended"] },
     ],
+    autoExpiry: { startKey: "start_date", durationKey: "duration_months", expiryKey: "expiry_date" },
   },
   domains: {
     table: "client_domains",
@@ -120,7 +130,7 @@ export function ClientDetailManager({ clientId }: { clientId: string }) {
     const supabase = createClient();
     const [c, w, s, d, h, r] = await Promise.all([
       supabase.from("clients").select("*").eq("id", clientId).single(),
-      supabase.from("client_websites").select("*").eq("client_id", clientId).order("created_at"),
+      supabase.from("client_websites").select("id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, created_at").eq("client_id", clientId).order("created_at"),
       supabase.from("client_subscriptions").select("*").eq("client_id", clientId).order("expiry_date"),
       supabase.from("client_domains").select("*").eq("client_id", clientId).order("expiry_date"),
       supabase.from("client_hosting").select("*").eq("client_id", clientId).order("expiry_date"),
@@ -165,6 +175,13 @@ function StatusLabel({ status }: { status: string }) {
   return <Badge color={meta.tone as "green" | "amber" | "red" | "gray" | "brand"}>{meta.ar}</Badge>;
 }
 
+function addMonths(dateStr: string, months: number): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
 function CrudTab({ config, clientId, items, reload }: { config: EntityConfig; clientId: string; items: Record<string, unknown>[]; reload: () => void }) {
   const { push } = useToast();
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
@@ -175,14 +192,51 @@ function CrudTab({ config, clientId, items, reload }: { config: EntityConfig; cl
     setEditing((prev) => (prev ? { ...prev, [field]: value } : prev));
   }
 
+  function computeAutoExpiry(field: string, value: unknown) {
+    set(field, value);
+    if (!config.autoExpiry) return;
+    const a = config.autoExpiry;
+    const startKey = field === a.startKey ? String(value) : String(editing?.[a.startKey] ?? "");
+    const durationKey = field === a.durationKey ? String(value) : String(editing?.[a.durationKey] ?? "");
+    const months = Number(durationKey);
+    if (startKey && months) {
+      set(a.expiryKey, addMonths(startKey, months));
+    }
+  }
+
   async function save() {
     if (!editing) return;
     setSaving(true);
-    const supabase = createClient();
     const payload: Record<string, unknown> = { ...editing };
     for (const f of config.fields) {
       if (f.type === "number") payload[f.key] = Number(payload[f.key]) || 0;
+      if (f.type === "password" && !payload[f.key]) delete payload[f.key];
     }
+    if (config.table === "client_subscriptions") {
+      const m = Number(payload.duration_months) || 0;
+      payload.duration_months = m;
+      payload.renewal_duration = m === 1 ? "1 month" : m === 12 ? "1 year" : m === 24 ? "2 years" : m ? `${m} months` : null;
+    }
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
+
+    if (config.useApi) {
+      const res = await fetch("/api/admin/websites", {
+        method: editing.id ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, id: editing.id as string | undefined, client_id: clientId }),
+      });
+      const data = await res.json();
+      setSaving(false);
+      if (!res.ok) return push("error", data.error ?? "فشل الحفظ");
+      push("success", "تم الحفظ");
+      setEditing(null);
+      reload();
+      return;
+    }
+
+    const supabase = createClient();
     const { error } = editing.id
       ? await supabase.from(config.table).update(payload).eq("id", editing.id as string)
       : await supabase.from(config.table).insert({ ...payload, client_id: clientId });
@@ -195,7 +249,11 @@ function CrudTab({ config, clientId, items, reload }: { config: EntityConfig; cl
 
   async function confirmDelete() {
     if (!deleting) return;
-    await createClient().from(config.table).delete().eq("id", deleting.id as string);
+    if (config.useApi) {
+      await fetch("/api/admin/websites", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleting.id as string }) });
+    } else {
+      await createClient().from(config.table).delete().eq("id", deleting.id as string);
+    }
     setDeleting(null);
     push("success", "تم الحذف");
     reload();
@@ -246,18 +304,22 @@ function CrudTab({ config, clientId, items, reload }: { config: EntityConfig; cl
         {editing && (
           <div className="grid gap-4 sm:grid-cols-2">
             {config.fields.map((f) => (
-              <Field key={f.key} label={f.label}>
+              <Field key={f.key} label={f.label} hint={f.hint}>
                 {f.type === "select" ? (
-                  <select className="input" value={String(editing[f.key] ?? "")} onChange={(e) => set(f.key, e.target.value)}>
+                  <select className="input" value={String(editing[f.key] ?? "")} onChange={(e) => computeAutoExpiry(f.key, e.target.value)}>
                     {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
+                ) : f.type === "checkbox" ? (
+                  <label className="flex items-center gap-2 pt-2 text-sm text-gray-700">
+                    <input type="checkbox" checked={Boolean(editing[f.key])} onChange={(e) => set(f.key, e.target.checked)} className="rounded border-brand-200 text-brand-600" /> نعم
+                  </label>
                 ) : (
                   <input
                     className="input"
                     dir={f.type === "text" ? undefined : "ltr"}
-                    type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
+                    type={f.type === "date" ? "date" : f.type === "number" ? "number" : f.type === "password" ? "password" : "text"}
                     value={f.type === "number" ? Number(editing[f.key] ?? 0) : String(editing[f.key] ?? "")}
-                    onChange={(e) => set(f.key, f.type === "number" ? Number(e.target.value) : e.target.value)}
+                    onChange={(e) => computeAutoExpiry(f.key, f.type === "number" ? Number(e.target.value) : e.target.value)}
                   />
                 )}
               </Field>

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ExternalLink, Globe, LogOut } from "lucide-react";
+import { ExternalLink, Globe, LogOut, AlertTriangle, BellRing, Hourglass } from "lucide-react";
 import { getCurrentClient, getClientWebsites, getClientSubscriptions, getClientDomains, getClientHosting, getClientNotifications, getClientRenewalRequests } from "@/lib/client-data";
 import { localizePath } from "@/lib/i18n/config";
 import { ExpiryChip, SectionTitle, StatusBadge, StatCard } from "@/components/client-portal/bits";
 import { formatDate, localize } from "@/lib/utils";
+import { daysUntil } from "@/lib/client-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,54 @@ export default async function ClientPortalDashboard({ params }: { params: { loca
 
   const t = (ar: string, en: string) => (locale === "ar" ? ar : en);
 
+  // Smart alerts
+  const allExpiry = [...subscriptions, ...domains, ...hosting].map((i) => i.expiry_date).filter(Boolean) as string[];
+  const minDays = allExpiry.length ? Math.min(...allExpiry.map((d) => daysUntil(d) ?? 9999)) : null;
+  const renewalSoon = minDays !== null && minDays >= 0 && minDays <= 30;
+  const unreadMessages = notifications.some((n) => !n.is_read);
+  const pendingRenewal = renewals.some((r) => r.status === "new" || r.status === "in_progress");
+  const isNewClient = websites.length === 0 && subscriptions.length === 0 && renewals.length === 0 && !unreadMessages;
+
+  const alerts: { icon: React.ComponentType<{ className?: string }>; tone: "amber" | "red" | "brand" | "green"; text: string; href?: string }[] = [];
+  if (renewalSoon) {
+    alerts.push({
+      icon: AlertTriangle,
+      tone: "amber",
+      text: t("اشتراكك يحتاج إلى تجديد قريبًا. يرجى مراجعة تفاصيل التجديد.", "Your subscription needs renewal soon. Please review your renewal details."),
+      href: localizePath("/client-portal/renewals", locale),
+    });
+  }
+  if (unreadMessages) {
+    alerts.push({
+      icon: BellRing,
+      tone: "brand",
+      text: t("لديك رسالة جديدة من فريق Sitekoom.", "You have a new message from the Sitekoom team."),
+      href: localizePath("/client-portal/notifications", locale),
+    });
+  }
+  if (pendingRenewal) {
+    alerts.push({
+      icon: Hourglass,
+      tone: "amber",
+      text: t("طلب التجديد الخاص بك قيد المراجعة.", "Your renewal request is under review."),
+      href: localizePath("/client-portal/renewals", locale),
+    });
+  }
+
+  const toneClasses = {
+    amber: "border-amber-200 bg-amber-50 text-amber-800",
+    red: "border-red-200 bg-red-50 text-red-700",
+    brand: "border-brand-200 bg-brand-50 text-brand-700",
+    green: "border-green-200 bg-green-50 text-green-700",
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-ink-900">{t("مرحبًا", "Welcome")}, {client.name}</h1>
+          <h1 className="text-2xl font-extrabold text-ink-900">
+            {isNewClient ? t("مرحبًا بك في بوابة Sitekoom", "Welcome to the Sitekoom Portal") : t("مرحبًا", "Welcome")}, {client.name}
+          </h1>
           <p className="text-sm text-gray-500">{t("هذه بوابتك للوصول إلى مواقعك وأنظمتك.", "This is your portal to access your websites and systems.")}</p>
         </div>
         {client.admin_url && (
@@ -39,6 +83,17 @@ export default async function ClientPortalDashboard({ params }: { params: { loca
           </a>
         )}
       </div>
+
+      {alerts.length > 0 && (
+        <div className="space-y-3">
+          {alerts.map((a, i) => (
+            <a key={i} href={a.href} className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors ${toneClasses[a.tone]}`}>
+              <a.icon className="mt-0.5 h-5 w-5 shrink-0" />
+              <span className="flex-1">{a.text}</span>
+            </a>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t("المواقع", "Websites")} value={websites.length} />
