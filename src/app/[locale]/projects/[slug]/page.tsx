@@ -8,9 +8,9 @@ import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { getProjectBySlug, getProjects, getProjectPortfolioItems, getServices, getServiceCategories } from "@/lib/queries";
+import { getProjectBySlug, getProjects, getProjectPortfolioItems } from "@/lib/queries";
 import { ProjectPortfolio } from "@/components/project-portfolio";
-import { ProjectRequestForm } from "@/components/project-request-form";
+import { ProjectCta } from "@/components/project-cta";
 import { getSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
@@ -51,7 +51,6 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const settings = await getSettings();
-  const [allServices, allCategories] = await Promise.all([getServices(), getServiceCategories()]);
 
   const title = localize(locale, project.title_ar, project.title_en);
   const fullDesc = localize(locale, project.full_desc_ar, project.full_desc_en);
@@ -160,27 +159,7 @@ export default async function ProjectDetailPage({
       )}
 
       {settings.general.show_project_cta !== false && (
-        <section className="container-site py-16">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="mb-2 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{dict.common.startProject}</h2>
-            <p className="mb-8 text-center text-gray-600">{dict.quote.subtitle}</p>
-            <div className="card p-6 sm:p-8">
-              <ProjectRequestForm
-                services={allServices}
-                categories={allCategories}
-                initialServiceId={project.service_id ?? undefined}
-                context={{
-                  source: "portfolio",
-                  sourcePage: `/projects/${project.slug}`,
-                  sourceRefId: project.id,
-                  sourceType: "portfolio",
-                  sourceWorkId: project.id,
-                  sourceWorkTitle: title,
-                }}
-              />
-            </div>
-          </div>
-        </section>
+        <ProjectCta locale={locale} settings={settings.general} />
       )}
     </>
   );

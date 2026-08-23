@@ -9,7 +9,8 @@ export function Marquee({ messages }: { messages: MarqueeMessage[] }) {
   if (messages.length === 0) return null;
 
   const items = messages.map((m) => localize(locale, m.text_ar, m.text_en));
-  // Duplicate the set so `translateX(-50%)` produces a seamless, gapless loop.
+  // Duplicate the set so `translateX(-50%)` scrolls exactly one full set and
+  // loops seamlessly, with no gap at the wrap point.
   const loop = [...items, ...items];
 
   return (
@@ -18,10 +19,10 @@ export function Marquee({ messages }: { messages: MarqueeMessage[] }) {
         {loop.map((text, i) => (
           <span
             key={i}
-            className="flex shrink-0 items-center gap-3 whitespace-nowrap pe-3 text-sm font-semibold text-brand-800"
+            className="flex shrink-0 items-center whitespace-nowrap text-sm font-semibold text-brand-800"
           >
             <span>{text}</span>
-            <span className="text-brand-300">✦</span>
+            <span className="mx-6 text-brand-300 sm:mx-8">✦</span>
           </span>
         ))}
       </div>
