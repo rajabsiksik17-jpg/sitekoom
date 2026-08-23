@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createAdminOtp } from "@/lib/otp";
 import { isAdminDeviceTrusted } from "@/lib/trusted-devices";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 
 export async function POST() {
   const user = await getCurrentUser();
@@ -31,11 +31,13 @@ export async function POST() {
     return NextResponse.json({ error: "فشل إنشاء رمز التحقق." }, { status: 500 });
   }
 
-  await sendEmail({
+  await sendSiteEmail({
     to,
     subject: "Sitekoom — رمز التحقق",
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">رمز التحقق</h2></div><div style="padding:20px;text-align:center"><p style="font-size:32px;font-weight:800;letter-spacing:8px;margin:16px 0">${code}</p><p style="color:#888;font-size:13px">هذا الرمز صالح لمدة 5 دقائق ويمكن استخدامه مرة واحدة فقط.</p></div></div>`,
+    locale: "ar",
     type: "admin_otp",
+    title: "رمز التحقق",
+    body: `<p style="margin:0 0 12px;font-size:14px;color:#374151;">مرحبًا،</p><p style="margin:0 0 20px;font-size:14px;color:#374151;">استخدم رمز التحقق التالي لإكمال عملية تسجيل الدخول:</p><div style="margin:20px 0;padding:24px;background:#f1e9ff;border:1px solid #e4d5ff;border-radius:12px;text-align:center;"><span style="font-size:34px;font-weight:800;letter-spacing:10px;color:#7a1aff;direction:ltr;display:inline-block;">${code}</span></div><p style="margin:0;font-size:12px;color:#9ca3af;">هذا الرمز صالح لمدة 5 دقائق ويمكن استخدامه مرة واحدة فقط.</p>`,
   });
 
   return NextResponse.json({ enabled: true, trusted: false, sent: true });

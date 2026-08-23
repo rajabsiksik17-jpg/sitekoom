@@ -35,7 +35,7 @@ export function Footer({
           <div className="mb-4 flex items-center gap-2">
             {settings.footer_logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.footer_logo} alt={companyName} style={{ maxWidth: "var(--footer-logo-w)", maxHeight: "48px", width: "auto", height: "auto" }} />
+              <img src={settings.footer_logo} alt={companyName} style={{ width: "var(--footer-logo-w)", height: "auto" }} />
             ) : (
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
                 S

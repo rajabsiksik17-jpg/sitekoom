@@ -9,7 +9,8 @@ import { ContactForm } from "@/components/contact-form";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { getProjectBySlug, getProjects } from "@/lib/queries";
+import { getProjectBySlug, getProjects, getProjectPortfolioItems } from "@/lib/queries";
+import { ProjectPortfolio } from "@/components/project-portfolio";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
@@ -56,6 +57,7 @@ export default async function ProjectDetailPage({
 
   const gallery = project.images ?? [];
   const cover = project.cover_image ?? project.thumbnail;
+  const portfolioItems = await getProjectPortfolioItems(project.id);
 
   const allProjects = await getProjects();
   const related = allProjects
@@ -107,6 +109,12 @@ export default async function ProjectDetailPage({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img key={img.id} src={img.url} alt={img.alt ?? title} loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
                 ))}
+              </div>
+            )}
+
+            {portfolioItems.length > 0 && (
+              <div className="mt-12">
+                <ProjectPortfolio items={portfolioItems} locale={locale} />
               </div>
             )}
           </div>

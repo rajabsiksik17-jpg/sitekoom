@@ -92,7 +92,7 @@ export function Header({ settings }: { settings: GeneralSettings }) {
         <Link href={href("/")} className="flex min-w-0 items-center gap-2" onClick={() => setOpen(false)}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={companyName} style={{ maxWidth: "var(--header-logo-w)", maxHeight: "40px", width: "auto", height: "auto" }} />
+            <img src={logo} alt={companyName} style={{ width: "var(--header-logo-w)", height: "auto" }} />
           ) : (
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
               S

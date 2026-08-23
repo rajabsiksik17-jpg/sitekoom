@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
 import type { ProjectRequest } from "@/lib/types";
 
@@ -130,13 +130,18 @@ export async function POST(request: NextRequest) {
       ["Timeline", saved.timeline],
       ["Details", saved.project_details],
     ];
-    const text = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join("\n");
-    await sendEmail({
+    const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const body = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">${rows
+      .filter(([, v]) => v)
+      .map(([k, v]) => `<tr><td style="padding:8px 0;color:#9ca3af;width:120px;vertical-align:top;font-size:13px;">${esc(k)}</td><td style="padding:8px 0;color:#1f2937;font-weight:500;">${esc(v)}</td></tr>`)
+      .join("")}</table>`;
+    await sendSiteEmail({
       to: destination,
       subject: `New project request — ${saved.service_name ?? saved.other_service ?? ""}`,
-      html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${saved.name}</h2><p style="margin:4px 0 0;opacity:.85">Project request</p></div><div style="padding:20px">${rows.filter(([, v]) => v).map(([k, v]) => `<p style="margin:6px 0"><strong>${k}:</strong> ${String(v).replace(/</g, "&lt;")}</p>`).join("")}</div></div>`,
-      text,
+      locale: locale === "en" ? "en" : "ar",
       type: "pricing_request",
+      title: locale === "en" ? "New project request" : "طلب تسعير جديد",
+      body,
     }).catch(() => null);
   }
 

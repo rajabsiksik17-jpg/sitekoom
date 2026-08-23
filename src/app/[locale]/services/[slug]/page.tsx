@@ -62,7 +62,7 @@ export default async function ServiceDetailPage({
   const byKind = (kind: ServiceFeature["kind"]) =>
     features.filter((f) => f.kind === kind).map((f) => ({
       icon: f.icon,
-      title: localize(locale, f.title_ar, f.title_en),
+      title: localize(locale, f.title_ar, f.title_en).replace(/^\d+[.)\-]?\s*/, ""),
       description: localize(locale, f.description_ar, f.description_en),
     }));
 
@@ -199,20 +199,20 @@ export default async function ServiceDetailPage({
         {byKind("process").length > 0 && (
           <section className="mt-16">
             <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{dict.service.process}</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
               {byKind("process").map((f, i) => (
                 <Reveal key={i} delay={i * 60}>
-                  <div className="card group relative h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-lg font-extrabold text-white">
+                  <div className="card group relative h-full p-4 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow sm:p-6">
+                    <div className="mb-3 flex items-center gap-3 sm:mb-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-base font-extrabold text-white sm:h-12 sm:w-12 sm:text-lg">
                         {i + 1}
                       </span>
                       {i < byKind("process").length - 1 && (
                         <span className="hidden h-px flex-1 bg-brand-200 lg:block" />
                       )}
                     </div>
-                    <h3 className="mb-2 text-base font-bold text-ink-900">{f.title}</h3>
-                    {f.description && <p className="text-sm text-gray-600">{f.description}</p>}
+                    <h3 className="mb-2 text-sm font-bold text-ink-900 sm:text-base">{f.title}</h3>
+                    {f.description && <p className="text-xs text-gray-600 sm:text-sm">{f.description}</p>}
                   </div>
                 </Reveal>
               ))}

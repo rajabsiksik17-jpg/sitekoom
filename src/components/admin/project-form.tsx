@@ -12,6 +12,7 @@ import { RichText } from "@/components/admin/rich-text";
 import { SeoFields } from "@/components/admin/seo-fields";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
+import { PortfolioEditor, type PortfolioItemDraft } from "@/components/admin/portfolio-editor";
 import type { Project, ProjectCategory, Service } from "@/lib/types";
 
 export function ProjectForm({ projectId }: { projectId?: string }) {
@@ -22,6 +23,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItemDraft[]>([]);
 
   const [form, setForm] = useState({
     title_ar: "", title_en: "", slug: "", short_desc_ar: "", short_desc_en: "",
@@ -32,10 +34,13 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [gallery, setGallery] = useState<string[]>([]);
   const [descTab, setDescTab] = useState<"ar" | "en">("ar");
 
+  const selectedService = services.find((s) => s.id === form.service_id);
+  const enabledTypes = selectedService?.portfolio_config ?? [];
+
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      supabase.from("services").select("id,title_ar,title_en").order("sort"),
+      supabase.from("services").select("id,title_ar,title_en,portfolio_config").order("sort"),
       supabase.from("project_categories").select("*").order("sort"),
     ]).then(([s, c]) => {
       setServices((s.data ?? []) as Service[]);
@@ -46,7 +51,8 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
       Promise.all([
         supabase.from("projects").select("*").eq("id", projectId).single(),
         supabase.from("project_images").select("*").eq("project_id", projectId).order("sort"),
-      ]).then(([p, imgs]) => {
+        supabase.from("project_portfolio_items").select("*").eq("project_id", projectId).order("sort"),
+      ]).then(([p, imgs, ppi]) => {
         if (p.data) {
           const d = p.data as Project;
           setForm({
@@ -61,6 +67,16 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
           });
         }
         setGallery((imgs.data ?? []).map((i) => i.url));
+        setPortfolioItems((ppi.data ?? []).map((x) => ({
+          type: x.type, title_ar: x.title_ar, title_en: x.title_en,
+          description_ar: x.description_ar, description_en: x.description_en,
+          caption_ar: x.caption_ar, caption_en: x.caption_en,
+          alt_ar: x.alt_ar, alt_en: x.alt_en,
+          url: x.url, thumbnail: x.thumbnail, platform: x.platform, icon: x.icon,
+          button_text_ar: x.button_text_ar, button_text_en: x.button_text_en,
+          button_style: x.button_style, button_action: x.button_action, display_mode: x.display_mode,
+          is_visible: x.is_visible, is_featured: x.is_featured, sort: x.sort, data: x.data ?? {},
+        })));
         setLoading(false);
       });
     }
@@ -104,6 +120,38 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
     await supabase.from("project_images").delete().eq("project_id", id);
     if (gallery.length) {
       await supabase.from("project_images").insert(gallery.map((url, i) => ({ project_id: id, url, is_primary: i === 0, sort: i })));
+    }
+
+    await supabase.from("project_portfolio_items").delete().eq("project_id", id);
+    if (portfolioItems.length) {
+      await supabase.from("project_portfolio_items").insert(
+        portfolioItems.map((it, i) => ({
+          project_id: id,
+          service_id: form.service_id || null,
+          type: it.type,
+          title_ar: it.title_ar || null,
+          title_en: it.title_en || null,
+          description_ar: it.description_ar || null,
+          description_en: it.description_en || null,
+          caption_ar: it.caption_ar || null,
+          caption_en: it.caption_en || null,
+          alt_ar: it.alt_ar || null,
+          alt_en: it.alt_en || null,
+          url: it.url || null,
+          thumbnail: it.thumbnail || null,
+          platform: it.platform || null,
+          icon: it.icon || null,
+          button_text_ar: it.button_text_ar || null,
+          button_text_en: it.button_text_en || null,
+          button_style: it.button_style || "primary",
+          button_action: it.button_action || "open",
+          display_mode: it.display_mode || null,
+          is_visible: it.is_visible,
+          is_featured: it.is_featured,
+          sort: i,
+          data: it.data ?? {},
+        })),
+      );
     }
 
     setSaving(false);
@@ -195,6 +243,16 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
           <input type="checkbox" checked={form.is_featured} onChange={(e) => update("is_featured", e.target.checked)} className="rounded border-brand-200 text-brand-600" />
           مشروع مميز
         </label>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-1 text-lg font-bold text-ink-900">محتوى العمل لهذه الخدمة</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          {selectedService
+            ? "تظهر هنا أنواع المحتوى المفعّلة لخدمة " + selectedService.title_ar + " فقط."
+            : "اختر الخدمة أولًا لتظهر أنواع المحتوى المفعّلة لها."}
+        </p>
+        <PortfolioEditor enabled={enabledTypes} value={portfolioItems} onChange={setPortfolioItems} />
       </div>
 
       {isEdit && projectId && (

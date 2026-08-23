@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
 
 const schema = z.object({
@@ -70,12 +70,14 @@ export async function POST(request: NextRequest) {
   // Email notification (best-effort, non-blocking)
   const destination = await getAdminNotificationEmail();
   if (destination) {
-    await sendEmail({
+    const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    await sendSiteEmail({
       to: destination,
       subject: "New live chat request",
-      html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${body.name.replace(/</g, "&lt;")}</h2><p style="margin:4px 0 0;opacity:.85">New live chat request</p></div><div style="padding:20px"><p style="margin:6px 0"><strong>Email:</strong> ${(body.email || "—").replace(/</g, "&lt;")}</p><p style="margin:6px 0"><strong>Phone:</strong> ${(body.phone || "—").replace(/</g, "&lt;")}</p><p style="margin:6px 0"><strong>Message:</strong> ${body.message.replace(/</g, "&lt;")}</p></div></div>`,
-      text: `New live chat request\nName: ${body.name}\nEmail: ${body.email || "—"}\nPhone: ${body.phone || "—"}\nMessage: ${body.message}`,
+      locale: "ar",
       type: "live_chat_request",
+      title: "محادثة مباشرة جديدة",
+      body: `<p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>الاسم:</strong> ${esc(body.name)}</p><p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>البريد:</strong> ${esc(body.email || "—")}</p><p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>الهاتف:</strong> ${esc(body.phone || "—")}</p><p style="margin:0;font-size:14px;color:#374151;"><strong>الرسالة:</strong> ${esc(body.message)}</p>`,
     }).catch(() => null);
   }
 

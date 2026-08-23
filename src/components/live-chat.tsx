@@ -329,9 +329,9 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
 
       {(view === "closed" || view === "minimized") && (
         <Draggable storageKey="sitekoom_contact_pos" defaultSide="left">
-          <div className="flex flex-col items-start gap-2">
+          <div className="relative flex flex-col items-start gap-2">
             {view === "closed" && menuOpen && (
-              <div className="mb-3 flex max-h-[60vh] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">
+              <div className="absolute bottom-full start-0 mb-2 flex max-h-[60vh] w-max max-w-[80vw] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">
                 {whatsapp && (
                   <a
                     href={buildWhatsAppUrl(settings.whatsapp, settings.whatsapp_message)}

@@ -10,6 +10,7 @@ import type {
   MarqueeMessage,
   PageHeroSettings,
   Page,
+  PortfolioItem,
   Project,
   ProjectCategory,
   Service,
@@ -108,12 +109,22 @@ export const getProjects = cache(async (): Promise<Project[]> => {
 export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
   const { data } = await supabase()
     .from("projects")
-    .select("*, service:services(id,title_ar,title_en,slug), category:project_categories(*), images:project_images(*)")
+    .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*), images:project_images(*)")
     .eq("slug", slug)
     .eq("status_field", "published")
     .is("deleted_at", null)
     .single();
   return (data as Project) ?? null;
+});
+
+export const getProjectPortfolioItems = cache(async (projectId: string): Promise<PortfolioItem[]> => {
+  const { data } = await supabase()
+    .from("project_portfolio_items")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("is_visible", true)
+    .order("sort");
+  return (data ?? []) as PortfolioItem[];
 });
 
 export const getSliders = cache(async (): Promise<HomepageSlider[]> => {

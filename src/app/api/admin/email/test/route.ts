@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getEmailSettings } from "@/lib/email/settings";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -16,11 +16,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "لا يوجد بريد إلكتروني للإرسال إليه." }, { status: 400 });
   }
 
-  const result = await sendEmail({
+  const result = await sendSiteEmail({
     to,
     subject: "Sitekoom — رسالة تجريبية",
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">Sitekoom</h2></div><div style="padding:20px"><p>هذه رسالة تجريبية لتأكيد إعدادات البريد الإلكتروني.</p></div></div>`,
+    locale: "ar",
     type: "test",
+    title: "رسالة تجريبية",
+    body: `<p style="margin:0;font-size:14px;color:#374151;">هذه رسالة تجريبية لتأكيد إعدادات البريد الإلكتروني واختبار القالب الموحد.</p>`,
   });
 
   if (!result.ok) {

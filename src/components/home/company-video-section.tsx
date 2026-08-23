@@ -61,8 +61,8 @@ export function CompanyVideoSection({
 
           {social.length > 0 && (
             <Reveal delay={160}>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <SocialIcons social={social} />
+              <div className="mt-6 flex flex-wrap gap-3">
+                <SocialIcons social={social} variant="dark" />
               </div>
             </Reveal>
           )}

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { computeNewExpiry, durationDays, durationLabel } from "@/lib/renewal-service";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 import { broadcastClientUpdate } from "@/lib/realtime";
 
 const schema = z.object({
@@ -189,10 +189,10 @@ export async function POST(request: NextRequest) {
     const domain = website?.domain ?? "—";
     const isAr = locale === "ar";
     const subject = isAr ? "تمت الموافقة على طلب التجديد" : "Your renewal request was approved";
-    const html = isAr
-      ? `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">تمت الموافقة على طلب التجديد</h2></div><div style="padding:20px"><p>مرحبًا ${client.name}،</p><p>تمت الموافقة على طلب تجديد "<b>${requestRow.service_name}</b>" للموقع <b>${site}</b>.</p><ul><li>المدة: ${durationLabel(months, "ar")} (${days} يوم)</li><li>تاريخ الانتهاء الجديد: ${subNewExpiry ?? "—"}</li><li>الدومين: ${domain}</li><li>الاستضافة: ${hostingNewExpiry ?? "—"}</li></ul><p>يمكنك متابعة التفاصيل من <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/client-portal">بوابة العملاء</a>.</p></div></div>`
-      : `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">Renewal approved</h2></div><div style="padding:20px"><p>Hi ${client.name},</p><p>Your renewal request for "<b>${requestRow.service_name}</b>" (site <b>${site}</b>) was approved.</p><ul><li>Duration: ${durationLabel(months, "en")} (${days} days)</li><li>New expiry: ${subNewExpiry ?? "—"}</li><li>Domain: ${domain}</li><li>Hosting: ${hostingNewExpiry ?? "—"}</li></ul><p>You can review the details in the <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/client-portal">Client Portal</a>.</p></div></div>`;
-    await sendEmail({ to: client.email, subject, html, type: "renewal_approved" }).catch(() => null);
+    const body = isAr
+      ? `<p style="margin:0 0 12px;font-size:14px;color:#374151;">مرحبًا ${client.name}،</p><p style="margin:0 0 16px;font-size:14px;color:#374151;">تمت الموافقة على طلب تجديد "<b>${requestRow.service_name}</b>" للموقع <b>${site}</b>.</p><ul style="margin:0 0 16px;padding-${isAr ? "right" : "left"}:20px;font-size:14px;color:#374151;"><li style="margin:6px 0;">المدة: ${durationLabel(months, "ar")} (${days} يوم)</li><li style="margin:6px 0;">تاريخ الانتهاء الجديد: ${subNewExpiry ?? "—"}</li><li style="margin:6px 0;">الدومين: ${domain}</li><li style="margin:6px 0;">الاستضافة: ${hostingNewExpiry ?? "—"}</li></ul><p style="margin:0;font-size:14px;color:#374151;">يمكنك متابعة التفاصيل من <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/client-portal" style="color:#7a1aff;">بوابة العملاء</a>.</p>`
+      : `<p style="margin:0 0 12px;font-size:14px;color:#374151;">Hi ${client.name},</p><p style="margin:0 0 16px;font-size:14px;color:#374151;">Your renewal request for "<b>${requestRow.service_name}</b>" (site <b>${site}</b>) was approved.</p><ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:#374151;"><li style="margin:6px 0;">Duration: ${durationLabel(months, "en")} (${days} days)</li><li style="margin:6px 0;">New expiry: ${subNewExpiry ?? "—"}</li><li style="margin:6px 0;">Domain: ${domain}</li><li style="margin:6px 0;">Hosting: ${hostingNewExpiry ?? "—"}</li></ul><p style="margin:0;font-size:14px;color:#374151;">You can review the details in the <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/client-portal" style="color:#7a1aff;">Client Portal</a>.</p>`;
+    await sendSiteEmail({ to: client.email, subject, locale, type: "renewal_approved", title: isAr ? "تمت الموافقة على طلب التجديد" : "Renewal approved", body }).catch(() => null);
   }
 
   await broadcastClientUpdate(requestRow.client_id, "renewal-updated");

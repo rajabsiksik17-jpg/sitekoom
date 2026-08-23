@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { renderEmailTemplate } from "@/lib/email/template-service";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 
 interface ServiceRow {
   id: string;
@@ -82,11 +82,13 @@ export async function checkDueRenewals(): Promise<{ checked: number; sent: numbe
           "ar",
         );
 
-        await sendEmail({
+        await sendSiteEmail({
           to: client.email,
           subject: rendered.subject || "Renewal reminder",
-          html: rendered.html,
+          locale: "ar",
           type: "renewal_reminder",
+          title: "تذكير: خدمتك ستنتهي قريبًا",
+          body: rendered.html,
         });
 
         await admin.from("client_notifications").insert({

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
-import { contactRequestEmail, autoReplyEmail } from "@/lib/email/templates";
+import { contactRequestBody, autoReplyBody } from "@/lib/email/templates";
 import type { ContactRequest } from "@/lib/types";
 
 const schema = z.object({
@@ -134,16 +134,16 @@ export async function POST(request: NextRequest) {
     auto_reply?: boolean;
   };
   const destination = await getAdminNotificationEmail();
-  const email = contactRequestEmail(saved, locale);
+  const email = contactRequestBody(saved, locale);
 
   if (destination) {
-    await sendEmail({ to: destination, subject: email.subject, html: email.html, text: email.text, type: "contact_request" }).catch(
+    await sendSiteEmail({ to: destination, subject: email.subject, locale, type: "contact_request", title: locale === "ar" ? "طلب تواصل جديد" : "New contact request", body: email.body }).catch(
       () => null,
     );
   }
   if (saved.email && contactSettings.auto_reply !== false) {
-    const reply = autoReplyEmail(saved, locale);
-    await sendEmail({ to: saved.email, subject: reply.subject, html: reply.html }).catch(() => null);
+    const reply = autoReplyBody(saved, locale);
+    await sendSiteEmail({ to: saved.email, subject: reply.subject, locale, type: "contact_autoreply", title: locale === "ar" ? "تم استلام طلبك" : "Request received", body: reply.body }).catch(() => null);
   }
 
   return NextResponse.json({ ok: true, id: saved.id });

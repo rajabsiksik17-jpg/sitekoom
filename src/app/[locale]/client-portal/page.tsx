@@ -107,7 +107,7 @@ export default async function ClientPortalDashboard({ params }: { params: { loca
         <SectionTitle>{t("إحصائيات الموقع", "Website Analytics")}</SectionTitle>
         <WebsiteAnalytics
           locale={locale}
-          sites={websites.map((w) => ({ id: w.id, name: w.name, hasAnalytics: !!w.ga4_property_id }))}
+          sites={websites.map((w) => ({ id: w.id, name: w.name, hasAnalytics: !!w.ga4_property_id, ga4_property_id: w.ga4_property_id }))}
         />
       </div>
 

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmailSettings } from "@/lib/email/settings";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 
 /**
  * Resolve the admin notification inbox dynamically:
@@ -27,16 +27,25 @@ export async function getAdminNotificationEmail(): Promise<string | null> {
 }
 
 /**
- * Send an administrative notification email for a typed event. Extensible —
- * add new notification types without rebuilding the email system.
+ * Send an administrative notification email for a typed event, using the
+ * central branded email template. Extensible — add new types without
+ * rebuilding the email system.
  */
 export async function notifyAdminEmail(opts: {
   type: string;
   subject: string;
-  html: string;
-  text?: string;
+  locale?: "ar" | "en";
+  title: string;
+  body: string;
 }) {
   const to = await getAdminNotificationEmail();
   if (!to) return;
-  await sendEmail({ to, subject: opts.subject, html: opts.html, text: opts.text, type: opts.type }).catch(() => null);
+  await sendSiteEmail({
+    to,
+    subject: opts.subject,
+    locale: opts.locale ?? "ar",
+    type: opts.type,
+    title: opts.title,
+    body: opts.body,
+  }).catch(() => null);
 }

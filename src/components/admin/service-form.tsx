@@ -14,6 +14,7 @@ import { RichText } from "@/components/admin/rich-text";
 import { SeoFields } from "@/components/admin/seo-fields";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
+import { PORTFOLIO_FIELD_TYPES } from "@/lib/portfolio";
 import type { Service, ServiceCategory } from "@/lib/types";
 
 type Detail = { kind: string; icon: string; title_ar: string; title_en: string; description_ar: string; description_en: string };
@@ -35,6 +36,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
     short_desc_ar: "", short_desc_en: "", full_desc_ar: "", full_desc_en: "",
     main_image: "", status: "published" as "draft" | "published" | "archived", is_featured: false,
     category_id: "",
+    portfolio_config: [] as string[],
   });
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [details, setDetails] = useState<Detail[]>([]);
@@ -62,6 +64,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
           full_desc_ar: d.full_desc_ar ?? "", full_desc_en: d.full_desc_en ?? "",
           main_image: d.main_image ?? "", status: d.status, is_featured: d.is_featured,
           category_id: d.category_id ?? "",
+          portfolio_config: d.portfolio_config ?? [],
         });
       }
       setDetails((f.data ?? []).map((x) => ({ kind: x.kind, icon: x.icon ?? "", title_ar: x.title_ar, title_en: x.title_en, description_ar: x.description_ar ?? "", description_en: x.description_en ?? "" })));
@@ -75,6 +78,14 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function togglePortfolio(key: string) {
+    setForm((f) => {
+      const current = f.portfolio_config ?? [];
+      const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+      return { ...f, portfolio_config: next };
+    });
+  }
+
   async function handleSave() {
     if (!form.title_ar.trim() || !form.title_en.trim()) return push("error", "أدخل العنوان بالعربية والإنجليزية");
     if (!form.slug.trim()) return push("error", "أدخل Slug");
@@ -84,6 +95,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
       ...form,
       slug: slugify(form.slug),
       category_id: form.category_id || null,
+      portfolio_config: form.portfolio_config ?? [],
       short_desc_ar: form.short_desc_ar || null,
       short_desc_en: form.short_desc_en || null,
       full_desc_ar: form.full_desc_ar || null,
@@ -210,6 +222,24 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
           <input type="checkbox" checked={form.is_featured} onChange={(e) => update("is_featured", e.target.checked)} className="rounded border-brand-200 text-brand-600" />
           خدمة مميزة (تظهر في الرئيسية)
         </label>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-1 text-lg font-bold text-ink-900">إعدادات الأعمال Portfolio</h2>
+        <p className="mb-4 text-sm text-gray-500">حدد أنواع المحتوى والمرفقات التي ستظهر عند إضافة عمل لهذه الخدمة.</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {PORTFOLIO_FIELD_TYPES.map((t) => (
+            <label key={t.key} className="flex items-center gap-2 rounded-xl border border-brand-100 px-3 py-2.5 text-sm text-gray-700 hover:border-brand-300">
+              <input
+                type="checkbox"
+                checked={(form.portfolio_config ?? []).includes(t.key)}
+                onChange={() => togglePortfolio(t.key)}
+                className="rounded border-brand-200 text-brand-600"
+              />
+              {t.labelAr}
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="card p-6">

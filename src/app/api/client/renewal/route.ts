@@ -87,8 +87,9 @@ export async function POST(request: NextRequest) {
   await notifyAdminEmail({
     type: "renewal_request",
     subject: `New renewal request — ${body.service_name}`,
-    text: `Client: ${client?.name ?? ""}\nService: ${body.service_name}\nDuration: ${body.duration_months ? durationLabel(body.duration_months, "en") : "—"}\nAmount: ${body.amount}`,
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">${client?.name ?? "Client"}</h2><p style="margin:4px 0 0;opacity:.85">New renewal request</p></div><div style="padding:20px"><p><strong>Service:</strong> ${body.service_name}</p><p><strong>Duration:</strong> ${body.duration_months ? durationLabel(body.duration_months, "en") : "—"}</p><p><strong>Amount:</strong> ${body.amount}</p></div></div>`,
+    locale: "ar",
+    title: "طلب تجديد جديد",
+    body: `<p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>العميل:</strong> ${client?.name ?? ""}</p><p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>الخدمة:</strong> ${body.service_name}</p><p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>المدة:</strong> ${body.duration_months ? durationLabel(body.duration_months, "ar") : "—"}</p><p style="margin:0;font-size:14px;color:#374151;"><strong>القيمة:</strong> ${body.amount}</p>`,
   });
 
   await admin.from("client_notifications").insert({

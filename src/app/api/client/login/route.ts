@@ -6,7 +6,7 @@ import { verifyPassword } from "@/lib/password";
 import { createClientSession, setClientSessionCookie, setPendingClientCookie } from "@/lib/client-auth";
 import { createClientOtp } from "@/lib/otp";
 import { isClientDeviceTrusted } from "@/lib/trusted-devices";
-import { sendEmail } from "@/lib/email";
+import { sendSiteEmail } from "@/lib/email/send";
 
 const schema = z.object({
   username: z.string().min(1).max(100),
@@ -65,11 +65,17 @@ export async function POST(request: NextRequest) {
   const code = await createClientOtp(client.id);
   if (code) {
     setPendingClientCookie(client.id);
-    await sendEmail({
+    const locale = client.preferred_language === "en" ? "en" : "ar";
+    const isAr = locale === "ar";
+    await sendSiteEmail({
       to: client.email,
-      subject: "Sitekoom — رمز التحقق من جهاز جديد",
-      html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;overflow:hidden"><div style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:20px;color:#fff"><h2 style="margin:0">رمز التحقق</h2></div><div style="padding:20px;text-align:center"><p style="font-size:32px;font-weight:800;letter-spacing:8px;margin:16px 0">${code}</p><p style="color:#888;font-size:13px">تم اكتشاف جهاز جديد. أدخل هذا الرمز لتأكيد تسجيل الدخول (صالح لمدة 5 دقائق).</p></div></div>`,
+      subject: isAr ? "Sitekoom — رمز التحقق من جهاز جديد" : "Sitekoom — New device verification code",
+      locale,
       type: "client_otp",
+      title: isAr ? "رمز التحقق" : "Verification code",
+      body: isAr
+        ? `<p style="margin:0 0 12px;font-size:14px;color:#374151;">مرحبًا،</p><p style="margin:0 0 20px;font-size:14px;color:#374151;">استخدم رمز التحقق التالي لتأكيد تسجيل الدخول من جهاز جديد:</p><div style="margin:20px 0;padding:24px;background:#f1e9ff;border:1px solid #e4d5ff;border-radius:12px;text-align:center;"><span style="font-size:34px;font-weight:800;letter-spacing:10px;color:#7a1aff;direction:ltr;display:inline-block;">${code}</span></div><p style="margin:0;font-size:12px;color:#9ca3af;">هذا الرمز صالح لمدة 5 دقائق ويمكن استخدامه مرة واحدة فقط.</p>`
+        : `<p style="margin:0 0 12px;font-size:14px;color:#374151;">Hi,</p><p style="margin:0 0 20px;font-size:14px;color:#374151;">Use the following verification code to confirm sign-in from a new device:</p><div style="margin:20px 0;padding:24px;background:#f1e9ff;border:1px solid #e4d5ff;border-radius:12px;text-align:center;"><span style="font-size:34px;font-weight:800;letter-spacing:10px;color:#7a1aff;direction:ltr;display:inline-block;">${code}</span></div><p style="margin:0;font-size:12px;color:#9ca3af;">This code is valid for 5 minutes and can be used only once.</p>`,
     }).catch(() => null);
   }
 

@@ -53,6 +53,7 @@ export interface Service {
   is_featured: boolean;
   category_id: string | null;
   published_at: string | null;
+  portfolio_config: string[];
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -154,6 +155,36 @@ export interface ProjectImage {
   alt: string | null;
   is_primary: boolean;
   sort: number;
+}
+
+export interface PortfolioItem {
+  id: string;
+  project_id: string;
+  service_id: string | null;
+  type: string;
+  title_ar: string | null;
+  title_en: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  caption_ar: string | null;
+  caption_en: string | null;
+  alt_ar: string | null;
+  alt_en: string | null;
+  url: string | null;
+  thumbnail: string | null;
+  platform: string | null;
+  icon: string | null;
+  button_text_ar: string | null;
+  button_text_en: string | null;
+  button_style: string | null;
+  button_action: string | null;
+  display_mode: string | null;
+  is_visible: boolean;
+  is_featured: boolean;
+  sort: number;
+  data: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface HomepageSlider {
