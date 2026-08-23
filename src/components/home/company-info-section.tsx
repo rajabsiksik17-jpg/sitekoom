@@ -31,16 +31,16 @@ export function CompanyInfoSection({
         <div className="card overflow-hidden">
           <div className="grid gap-8 p-8 lg:grid-cols-2 lg:p-12">
             <div>
-              <div className="mb-6 flex items-center gap-3">
+              <div className="mb-6 flex items-center gap-4">
                 {settings.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={settings.logo} alt={companyName} className="h-12 w-auto" />
+                  <img src={settings.logo} alt={companyName} className="h-16 w-auto sm:h-20 lg:h-24" />
                 ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-xl font-extrabold text-white">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-extrabold text-white sm:h-20 sm:w-20">
                     S
                   </span>
                 )}
-                <h2 className="text-2xl font-extrabold text-ink-900">{companyName}</h2>
+                <h2 className="text-2xl font-extrabold text-ink-900 sm:text-3xl">{companyName}</h2>
               </div>
 
               <p className="leading-relaxed text-gray-600">

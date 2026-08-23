@@ -67,14 +67,14 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
               {locale === "ar" ? "قيمنا" : "Our Values"}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
               {values.map((v, i) => (
                 <Reveal key={i} delay={i * 40}>
-                  <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-white px-5 py-4 shadow-sm transition-colors hover:border-brand-300">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                  <div className="flex h-full items-center gap-2 rounded-2xl border border-brand-100 bg-white px-3 py-3 shadow-sm transition-colors hover:border-brand-300 sm:gap-3 sm:px-5 sm:py-4">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 sm:h-9 sm:w-9">
                       <Icon name="check-circle" className="h-5 w-5" />
                     </span>
-                    <span className="font-semibold text-ink-900">{v}</span>
+                    <span className="text-sm font-semibold leading-snug text-ink-900 sm:text-base">{v}</span>
                   </div>
                 </Reveal>
               ))}

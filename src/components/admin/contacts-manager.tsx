@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, Search, Trash2 } from "lucide-react";
+import { Download, Search, Trash2, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState, ConfirmDialog } from "@/components/admin/ui";
@@ -45,6 +45,15 @@ export function ContactsManager() {
     const supabase = createClient();
     const { error } = await supabase.from("contact_requests").update({ [field]: value }).eq("id", id);
     if (error) return push("error", error.message);
+    load();
+  }
+
+  async function markRead(c: ContactRequest) {
+    if (c.status !== "new") return;
+    const supabase = createClient();
+    const { error } = await supabase.from("contact_requests").update({ status: "contacted" }).eq("id", c.id);
+    if (error) return push("error", error.message);
+    push("success", "تم تعيين الطلب كمقروء");
     load();
   }
 
@@ -128,7 +137,14 @@ export function ContactsManager() {
                   </td>
                   <td className="px-4 py-3 text-gray-500">{formatDateTime(c.created_at, "ar")}</td>
                   <td className="px-4 py-3 text-end">
-                    <button type="button" onClick={() => setDeleting(c)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    <div className="flex items-center justify-end gap-1">
+                      {c.status === "new" && (
+                        <button type="button" onClick={() => markRead(c)} className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
+                          <Check className="h-3.5 w-3.5" /> تعيين كمقروء
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setDeleting(c)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}

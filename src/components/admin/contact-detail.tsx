@@ -32,6 +32,12 @@ export function ContactDetail({ id }: { id: string }) {
     setNotes((n.data ?? []) as ContactNote[]);
     setUsers((u.data ?? []) as User[]);
     setLoading(false);
+    // Auto-mark as read when opened (only if still "new").
+    if (c.data?.status === "new") {
+      supabase.from("contact_requests").update({ status: "contacted" }).eq("id", id).then(() => {
+        setContact((prev) => (prev ? { ...prev, status: "contacted" } : prev));
+      });
+    }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);

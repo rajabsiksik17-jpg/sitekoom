@@ -328,7 +328,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
       )}
 
       {(view === "closed" || view === "minimized") && (
-        <Draggable storageKey="sitekoom_contact_pos" defaultSide="left">
+        <Draggable storageKey="sitekoom_contact_pos" defaultSide="right">
           <div className="relative flex flex-col items-start gap-2">
             {view === "closed" && menuOpen && (
               <div className="absolute bottom-full start-0 mb-2 flex max-h-[60vh] w-max max-w-[80vw] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">

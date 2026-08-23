@@ -104,6 +104,13 @@ export function ChatConsole() {
           }
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "live_chat_conversations", filter: `id=eq.${selected.id}` },
+        (payload) => {
+          setSelected((prev) => (prev && prev.id === payload.new.id ? { ...prev, ...(payload.new as LiveChatConversation) } : prev));
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -142,7 +149,14 @@ export function ChatConsole() {
     setSending(true);
     try {
       const supabase = supabaseRef.current;
-      await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "agent", body: input.trim() });
+      const { error } = await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "agent", body: input.trim() });
+      if (error) {
+        // The conversation was closed (DB trigger rejects the insert).
+        setSelected((prev) => (prev ? { ...prev, status: "closed", closed_by: "customer" } : prev));
+        setInput("");
+        push("error", "تم إنهاء هذه المحادثة ولا يمكن إرسال رسائل جديدة.");
+        return;
+      }
       await supabase.from("live_chat_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", selected.id);
       setInput("");
     } finally {

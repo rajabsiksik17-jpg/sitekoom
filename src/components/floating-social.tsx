@@ -14,7 +14,7 @@ export function FloatingSocial({ social }: { social: SocialLink[] }) {
   if (social.length === 0) return null;
 
   return (
-    <Draggable storageKey="sitekoom_social_pos" defaultSide="right">
+    <Draggable storageKey="sitekoom_social_pos" defaultSide="left">
       <div className="relative flex flex-col items-end gap-2">
         {open && (
           <div className="absolute bottom-full end-0 mb-2 flex max-h-[60vh] flex-col gap-2 overflow-y-auto rounded-2xl border border-brand-100 bg-white/95 p-2 shadow-card backdrop-blur">

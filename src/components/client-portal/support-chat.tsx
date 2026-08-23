@@ -42,6 +42,8 @@ export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [phase, setPhase] = useState<"form" | "waiting" | "active" | "closed">("form");
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +112,15 @@ export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons:
 
   async function end() {
     if (!conversation) return;
+    setConfirmEnd(true);
+  }
+
+  async function confirmEndChat() {
+    if (!conversation || ending) return;
+    setEnding(true);
     await fetch("/api/chat/end", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ visitor_token: conversation.visitor_token }) });
+    setEnding(false);
+    setConfirmEnd(false);
     setPhase("closed");
   }
 
@@ -209,6 +219,23 @@ export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons:
             <button type="submit" className="btn-primary px-3" aria-label="Send"><Send className="h-4 w-4" /></button>
           </form>
         </>
+      )}
+
+      {confirmEnd && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-card">
+            <h3 className="text-lg font-bold text-ink-900">{isAr ? "إنهاء المحادثة" : "End conversation"}</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {isAr ? "هل أنت متأكد من إنهاء المحادثة؟ بعد إنهائها لن تتمكن من إرسال رسائل جديدة." : "Are you sure you want to end the conversation? You won't be able to send new messages afterwards."}
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setConfirmEnd(false)} className="btn-secondary px-4 py-2 text-sm">{isAr ? "إلغاء" : "Cancel"}</button>
+              <button type="button" onClick={confirmEndChat} disabled={ending} className="btn-danger px-4 py-2 text-sm">
+                {ending ? (isAr ? "جارٍ الإنهاء..." : "Ending...") : isAr ? "إنهاء المحادثة" : "End conversation"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -5,7 +5,8 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState } from "@/components/admin/ui";
-import { Bilingual } from "@/components/admin/fields";
+import { Bilingual, Field } from "@/components/admin/fields";
+import { ImageUpload } from "@/components/admin/image-upload";
 import type { HomepageSection, MarqueeMessage } from "@/lib/types";
 
 export function HomepageContentManager() {
@@ -38,11 +39,16 @@ export function HomepageContentManager() {
     setSections((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   }
 
+  function updateSectionData(id: string, patch: Record<string, unknown>) {
+    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, data: { ...(s.data ?? {}), ...patch } } : s)));
+  }
+
   async function saveSection(item: HomepageSection) {
     const supabase = createClient();
     const { error } = await supabase.from("homepage_sections").update({
       title_ar: item.title_ar, title_en: item.title_en,
       description_ar: item.description_ar, description_en: item.description_en,
+      data: item.data ?? {},
     }).eq("id", item.id);
     if (error) push("error", error.message);
     else push("success", "تم حفظ القسم");
@@ -118,6 +124,52 @@ export function HomepageContentManager() {
                 <Bilingual label="العنوان" ar={item.title_ar ?? ""} en={item.title_en ?? ""} onAr={(v) => updateSection(item.id, "title_ar", v)} onEn={(v) => updateSection(item.id, "title_en", v)} />
                 <Bilingual label="الوصف" ar={item.description_ar ?? ""} en={item.description_en ?? ""} onAr={(v) => updateSection(item.id, "description_ar", v)} onEn={(v) => updateSection(item.id, "description_en", v)} type="textarea" />
               </div>
+
+              {item.key === "statistics" && (
+                <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/30 p-4">
+                  <p className="mb-3 text-sm font-bold text-ink-900">خلفية القسم (أرقام نفخر بها)</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="نوع الخلفية">
+                      <select className="input" value={String(item.data?.bg_type ?? "gradient")} onChange={(e) => updateSectionData(item.id, { bg_type: e.target.value })}>
+                        <option value="gradient">Gradient</option>
+                        <option value="solid">لون واحد</option>
+                        <option value="image">صورة</option>
+                      </select>
+                    </Field>
+
+                    {String(item.data?.bg_type ?? "gradient") === "solid" && (
+                      <Field label="اللون">
+                        <input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_color ?? "#7a1aff")} onChange={(e) => updateSectionData(item.id, { bg_color: e.target.value })} />
+                      </Field>
+                    )}
+
+                    {String(item.data?.bg_type ?? "gradient") === "gradient" && (
+                      <>
+                        <Field label="اللون 1"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[0] ?? "#7a1aff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[0] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="اللون 2"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[1] ?? "#9d72ff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[1] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="اللون 3 (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[2] ?? "#bda4ff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[2] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="زاوية الـGradient">
+                          <input className="input" dir="ltr" type="number" value={Number(item.data?.bg_angle ?? 135)} onChange={(e) => updateSectionData(item.id, { bg_angle: Number(e.target.value) })} />
+                        </Field>
+                      </>
+                    )}
+
+                    {String(item.data?.bg_type ?? "gradient") === "image" && (
+                      <>
+                        <Field label="صورة الخلفية"><ImageUpload value={String(item.data?.bg_image ?? "")} onChange={(u) => updateSectionData(item.id, { bg_image: u })} folder="homepage" /></Field>
+                        <Field label={`شفافية الصورة: ${Number(item.data?.bg_image_opacity ?? 100)}%`}>
+                          <input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_image_opacity ?? 100)} onChange={(e) => updateSectionData(item.id, { bg_image_opacity: Number(e.target.value) })} />
+                        </Field>
+                      </>
+                    )}
+
+                    <Field label="لون الـOverlay (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_overlay_color ?? "#2c036e")} onChange={(e) => updateSectionData(item.id, { bg_overlay_color: e.target.value })} /></Field>
+                    <Field label={`شفافية الـOverlay: ${Number(item.data?.bg_overlay_opacity ?? 0)}%`}>
+                      <input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_overlay_opacity ?? 0)} onChange={(e) => updateSectionData(item.id, { bg_overlay_opacity: Number(e.target.value) })} />
+                    </Field>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -7,6 +7,7 @@ import { ProjectCard } from "@/components/project-card";
 import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
 import { CompanyVideoSection } from "@/components/home/company-video-section";
+import { StatisticsSection } from "@/components/home/statistics-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
@@ -117,26 +118,12 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
       )}
 
       {isActive("statistics") && stats.length > 0 && (
-        <section className="bg-brand-gradient py-16 text-white">
-          <div className="container-site">
-            <h2 className="mb-10 text-center text-3xl font-extrabold">
-              {localize(locale, sectionMap.statistics?.title_ar, sectionMap.statistics?.title_en) ??
-                dict.home.statsTitle}
-            </h2>
-            <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
-              {stats.map((s) => (
-                <Reveal key={s.id} className="text-center">
-                  <Icon name={s.icon} className="mx-auto mb-3 h-8 w-8 text-white/80" />
-                  <p className="text-4xl font-extrabold">
-                    {s.value}
-                    {s.suffix}
-                  </p>
-                  <p className="mt-1 text-sm text-white/80">{localize(locale, s.label_ar, s.label_en)}</p>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        <StatisticsSection
+          locale={locale}
+          title={localize(locale, sectionMap.statistics?.title_ar, sectionMap.statistics?.title_en) ?? dict.home.statsTitle}
+          stats={stats}
+          data={sectionMap.statistics?.data ?? {}}
+        />
       )}
 
       {isActive("why") && whyItems.length > 0 && (

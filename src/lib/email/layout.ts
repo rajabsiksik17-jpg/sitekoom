@@ -56,8 +56,8 @@ export async function renderEmailShell(opts: {
   const align = isAr ? "right" : "left";
 
   const logoBlock = info.logo
-    ? `<img src="${esc(info.logo)}" alt="${esc(info.companyName)}" height="40" style="height:40px;width:auto;display:inline-block;vertical-align:middle;" />`
-    : `<span style="display:inline-block;width:40px;height:40px;line-height:40px;border-radius:12px;background:#7a1aff;color:#ffffff;font-size:20px;font-weight:800;text-align:center;vertical-align:middle;">S</span>`;
+    ? `<img src="${esc(info.logo)}" alt="${esc(info.companyName)}" height="64" style="height:64px;width:auto;display:inline-block;vertical-align:middle;border:0;" />`
+    : `<span style="display:inline-block;width:56px;height:56px;line-height:56px;border-radius:16px;background:#7a1aff;color:#ffffff;font-size:26px;font-weight:800;text-align:center;vertical-align:middle;">S</span>`;
 
   const socialLinks = info.social
     .map(
@@ -92,13 +92,8 @@ export async function renderEmailShell(opts: {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #ede9f7;">
 
         <tr>
-          <td align="center" style="background:linear-gradient(135deg,#7a1aff,#9d72ff);padding:26px 32px;">
-            <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-              <td style="vertical-align:middle;">${logoBlock}</td>
-              <td style="vertical-align:middle;padding-${isAr ? "right" : "left"}:12px;">
-                <span style="color:#ffffff;font-size:20px;font-weight:800;font-family:Arial,Helvetica,sans-serif;">${esc(info.companyName)}</span>
-              </td>
-            </tr></table>
+          <td align="center" style="padding:28px 32px 8px;background-color:#ffffff;">
+            ${logoBlock}
           </td>
         </tr>
 
