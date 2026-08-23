@@ -74,6 +74,7 @@ export function ProjectPortfolio({ items, description, locale }: { items: Portfo
   const after = visible.filter((i) => i.data?.before_description !== true);
 
   function renderList(list: PortfolioItem[]) {
+    if (list.length === 0) return null;
     const groups: { mode: string; items: PortfolioItem[] }[] = [];
     for (const it of list) {
       const mode = modeOf(it.type);
@@ -83,7 +84,7 @@ export function ProjectPortfolio({ items, description, locale }: { items: Portfo
     }
 
     return (
-      <div className="space-y-12">
+      <div className="space-y-8 sm:space-y-10 lg:space-y-12">
         {groups.map((group, gi) => (
           <div key={gi}>
             {group.mode === "action" ? (
@@ -179,8 +180,10 @@ export function ProjectPortfolio({ items, description, locale }: { items: Portfo
   return (
     <div>
       {renderList(before)}
-      {description && <div className="prose-site" dangerouslySetInnerHTML={{ __html: description }} />}
-      {renderList(after)}
+      {description && (
+        <div className={cn("prose-site", before.length > 0 ? "mt-10 sm:mt-12" : "")} dangerouslySetInnerHTML={{ __html: description }} />
+      )}
+      {after.length > 0 && <div className={description ? "mt-10 sm:mt-12" : ""}>{renderList(after)}</div>}
 
       {lightbox && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/90 p-4" onClick={() => setLightbox(null)}>

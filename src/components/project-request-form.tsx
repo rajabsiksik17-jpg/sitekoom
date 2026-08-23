@@ -14,14 +14,25 @@ interface Attachment {
   mime: string;
 }
 
+export interface ProjectRequestContext {
+  source?: string;
+  sourcePage?: string;
+  sourceRefId?: string;
+  sourceType?: string;
+  sourceWorkId?: string;
+  sourceWorkTitle?: string;
+}
+
 export function ProjectRequestForm({
   services,
   categories,
   initialServiceId,
+  context,
 }: {
   services: Service[];
   categories?: ServiceCategory[];
   initialServiceId?: string;
+  context?: ProjectRequestContext;
 }) {
   const { locale, dict } = useLocale();
   const [form, setForm] = useState({
@@ -114,8 +125,12 @@ export function ProjectRequestForm({
           other_budget: isOtherBudget ? form.otherBudget : null,
           timeline: form.timeline,
           attachments: attachments.map((a) => a.url),
-          source: "quote",
-          source_page: typeof window !== "undefined" ? window.location.pathname : "",
+          source: context?.source ?? "quote",
+          source_page: context?.sourcePage ?? (typeof window !== "undefined" ? window.location.pathname : ""),
+          source_ref_id: context?.sourceRefId,
+          source_type: context?.sourceType,
+          source_work_id: context?.sourceWorkId,
+          source_work_title: context?.sourceWorkTitle,
           referrer: typeof document !== "undefined" ? document.referrer : "",
           locale,
           ...getUtm(),

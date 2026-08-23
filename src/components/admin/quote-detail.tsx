@@ -71,6 +71,7 @@ export function QuoteDetail({ id }: { id: string }) {
     ["الموعد", quote.timeline ?? "—"],
     ["المصدر", quote.source ?? "—"],
     ["الصفحة", quote.source_page ?? "—"],
+    ["العمل المرتبط", quote.source_work_title ?? "—"],
     ["التاريخ", formatDateTime(quote.created_at, "ar")],
   ];
 

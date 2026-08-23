@@ -40,7 +40,7 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
       </div>
 
       <div
-        className="group relative h-[420px] cursor-pointer overflow-hidden bg-ink-900 sm:h-[520px]"
+        className="group relative h-[440px] cursor-pointer overflow-hidden bg-ink-900"
         onClick={() => setScrolled((v) => !v)}
         onMouseEnter={() => setScrolled(true)}
         onMouseLeave={() => setScrolled(false)}
@@ -51,7 +51,7 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
           alt={localize(locale, item.alt_ar, item.alt_en) || localize(locale, item.title_ar, item.title_en) || ""}
           loading="lazy"
           className="w-full transition-transform duration-[8000ms] ease-linear"
-          style={{ transform: scrolled ? "translateY(calc(-100% + 420px))" : "translateY(0)", transitionDuration: scrolled ? "8s" : "1.5s" }}
+          style={{ transform: scrolled ? "translateY(calc(-100% + 440px))" : "translateY(0)", transitionDuration: scrolled ? "8s" : "1.5s" }}
         />
       </div>
       {(item.title_ar || item.caption_ar || item.caption_en) && (
@@ -93,7 +93,7 @@ export function VideoGallery({ items, locale }: { items: PortfolioItem[]; locale
         </button>
       </div>
 
-      <div ref={trackRef} dir={isAr ? "rtl" : "ltr"} className="-mx-2 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
+      <div ref={trackRef} dir={isAr ? "rtl" : "ltr"} className="mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
         {items.map((v) => {
           const id = youtubeId(v.url ?? "");
           return (

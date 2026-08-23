@@ -370,6 +370,10 @@ export interface ProjectRequest {
   attachments: string[];
   source: string | null;
   source_page: string | null;
+  source_ref_id: string | null;
+  source_type: string | null;
+  source_work_id: string | null;
+  source_work_title: string | null;
   referrer: string | null;
   utm_source: string | null;
   utm_medium: string | null;
