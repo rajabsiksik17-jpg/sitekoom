@@ -56,7 +56,6 @@ export default async function ProjectDetailPage({
   const service = localize(locale, project.service?.title_ar, project.service?.title_en);
 
   const gallery = project.images ?? [];
-  const cover = project.cover_image ?? project.thumbnail;
   const portfolioItems = await getProjectPortfolioItems(project.id);
 
   const allProjects = await getProjects();
@@ -91,11 +90,6 @@ export default async function ProjectDetailPage({
             { name: title, path: `/projects/${project.slug}` },
           ]}
         />
-
-        {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt={title} className="mb-8 w-full rounded-2xl object-cover shadow-card" />
-        )}
 
         <div className="grid gap-10 lg:grid-cols-3">
           <div className="lg:col-span-2">

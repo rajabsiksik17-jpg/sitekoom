@@ -24,9 +24,14 @@ export function CompanyInfoSection({
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
   const mapsUrl = settings.google_maps_url;
   const mapsEmbed = settings.google_maps_embed_url;
+  const aboutLogoDesktop = settings.about_logo_width_desktop ?? 96;
+  const aboutLogoLaptop = settings.about_logo_width_laptop ?? 84;
+  const aboutLogoTablet = settings.about_logo_width_tablet ?? 72;
+  const aboutLogoMobile = settings.about_logo_width_mobile ?? 64;
 
   return (
     <section className="mt-16">
+      <style>{`:root{--about-logo-w:${aboutLogoDesktop}px}@media(max-width:1279px){:root{--about-logo-w:${aboutLogoLaptop}px}}@media(max-width:1023px){:root{--about-logo-w:${aboutLogoTablet}px}}@media(max-width:639px){:root{--about-logo-w:${aboutLogoMobile}px}}`}</style>
       <Reveal>
         <div className="card overflow-hidden">
           <div className="grid gap-8 p-8 lg:grid-cols-2 lg:p-12">
@@ -34,9 +39,9 @@ export function CompanyInfoSection({
               <div className="mb-6 flex items-center gap-4">
                 {settings.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={settings.logo} alt={companyName} className="h-16 w-auto sm:h-20 lg:h-24" />
+                  <img src={settings.logo} alt={companyName} style={{ width: "var(--about-logo-w)", height: "auto" }} />
                 ) : (
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-extrabold text-white sm:h-20 sm:w-20">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-extrabold text-white">
                     S
                   </span>
                 )}

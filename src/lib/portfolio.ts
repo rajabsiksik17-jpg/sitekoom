@@ -16,9 +16,9 @@ export interface PortfolioFieldType {
 export const PORTFOLIO_FIELD_TYPES: PortfolioFieldType[] = [
   { key: "image", labelAr: "صورة", labelEn: "Image", kind: "image" },
   { key: "gallery", labelAr: "معرض صور", labelEn: "Image Gallery", kind: "image", multiple: true },
-  { key: "screenshots", labelAr: "لقطات شاشة", labelEn: "Screenshots", kind: "image", multiple: true },
-  { key: "device_screenshots", labelAr: "لقطات حسب الجهاز", labelEn: "Device Screenshots", kind: "image", multiple: true },
+  { key: "website_screenshot", labelAr: "صورة موقع كاملة", labelEn: "Website Full Screenshot", kind: "image", multiple: true },
   { key: "video", labelAr: "فيديو", labelEn: "Video", kind: "video", multiple: true },
+  { key: "video_gallery", labelAr: "معرض فيديوهات", labelEn: "Video Gallery", kind: "video", multiple: true },
   { key: "pdf", labelAr: "ملف PDF", labelEn: "PDF", kind: "file", multiple: true },
   { key: "file", labelAr: "ملف", labelEn: "File", kind: "file", multiple: true },
   { key: "external_link", labelAr: "روابط خارجية", labelEn: "External Links", kind: "link", multiple: true },

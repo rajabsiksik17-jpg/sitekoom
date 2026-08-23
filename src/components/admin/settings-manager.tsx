@@ -87,6 +87,10 @@ export function SettingsManager() {
             <Field label="عرض شعار الهيدر — Desktop (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_desktop ?? 170)} onChange={(e) => update("general", "logo_width_desktop", Number(e.target.value))} /></Field>
             <Field label="عرض شعار الهيدر — Tablet (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_tablet ?? 140)} onChange={(e) => update("general", "logo_width_tablet", Number(e.target.value))} /></Field>
             <Field label="عرض شعار الهيدر — Mobile (px)"><input className="input" dir="ltr" type="number" value={Number(g.logo_width_mobile ?? 120)} onChange={(e) => update("general", "logo_width_mobile", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار من نحن — Desktop (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_desktop ?? 96)} onChange={(e) => update("general", "about_logo_width_desktop", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار من نحن — Laptop (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_laptop ?? 84)} onChange={(e) => update("general", "about_logo_width_laptop", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار من نحن — Tablet (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_tablet ?? 72)} onChange={(e) => update("general", "about_logo_width_tablet", Number(e.target.value))} /></Field>
+            <Field label="عرض شعار من نحن — Mobile (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_mobile ?? 64)} onChange={(e) => update("general", "about_logo_width_mobile", Number(e.target.value))} /></Field>
           </div>
         )}
 

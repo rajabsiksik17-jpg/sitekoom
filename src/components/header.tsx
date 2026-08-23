@@ -181,10 +181,10 @@ export function Header({ settings }: { settings: GeneralSettings }) {
                 {dict.nav[item.key]}
               </Link>
             ))}
-            <Link href={href("/request-project")} className="btn-primary mt-2 px-4 py-2.5 text-sm">
+            <Link href={href("/request-project")} onClick={() => setOpen(false)} className="btn-primary mt-2 px-4 py-2.5 text-sm">
               {dict.common.startProject}
             </Link>
-            <Link href={href(clientAuthed ? "/client-portal" : "/client-login")} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
+            <Link href={href(clientAuthed ? "/client-portal" : "/client-login")} onClick={() => setOpen(false)} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
               {clientAuthed ? <UserRound className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
               {clientAuthed ? (locale === "ar" ? "حسابي" : "My Account") : dict.nav.clientLogin}
             </Link>

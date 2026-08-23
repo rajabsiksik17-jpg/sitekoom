@@ -88,46 +88,29 @@ export function ServicesManager() {
           }
         />
       ) : (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-brand-50 text-start text-gray-600">
-              <tr>
-                <th className="px-4 py-3 text-start font-semibold">العنوان</th>
-                <th className="px-4 py-3 text-start font-semibold">Slug</th>
-                <th className="px-4 py-3 text-start font-semibold">الحالة</th>
-                <th className="px-4 py-3 text-center font-semibold">ترتيب</th>
-                <th className="px-4 py-3 text-end font-semibold">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-50">
-              {items.map((item) => {
-                const st = publishLabels[item.status] ?? { label: item.status, color: "gray" as const };
-                return (
-                  <tr key={item.id} className="hover:bg-brand-50/40">
-                    <td className="px-4 py-3 font-medium text-ink-900">{item.title_ar}</td>
-                    <td className="px-4 py-3 text-gray-500" dir="ltr">{item.slug}</td>
-                    <td className="px-4 py-3">
-                      <button type="button" onClick={() => togglePublish(item)}>
-                        <Badge color={st.color}>{st.label}</Badge>
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button type="button" onClick={() => move(item, -1)} className="rounded p-1 hover:bg-brand-100"><ChevronUp className="h-4 w-4" /></button>
-                        <button type="button" onClick={() => move(item, 1)} className="rounded p-1 hover:bg-brand-100"><ChevronDown className="h-4 w-4" /></button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <Link href={`/admin/services/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50"><Pencil className="h-4 w-4" /></Link>
-                        <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {items.map((item) => {
+            const st = publishLabels[item.status] ?? { label: item.status, color: "gray" as const };
+            return (
+              <div key={item.id} className="card flex flex-wrap items-center gap-3 p-4">
+                <Link href={`/admin/services/${item.id}`} className="min-w-0 flex-1">
+                  <p className="font-semibold text-ink-900 hover:text-brand-700">{item.title_ar}</p>
+                  <p className="text-xs text-gray-400" dir="ltr">{item.slug}</p>
+                </Link>
+
+                <button type="button" onClick={() => togglePublish(item)}>
+                  <Badge color={st.color}>{st.label}</Badge>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => move(item, -1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أعلى"><ChevronUp className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => move(item, 1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أسفل"><ChevronDown className="h-4 w-4" /></button>
+                  <Link href={`/admin/services/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50" aria-label="تعديل"><Pencil className="h-4 w-4" /></Link>
+                  <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" aria-label="حذف"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

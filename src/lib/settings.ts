@@ -27,6 +27,10 @@ export interface GeneralSettings {
   footer_logo_width_desktop: number;
   footer_logo_width_tablet: number;
   footer_logo_width_mobile: number;
+  about_logo_width_desktop: number;
+  about_logo_width_laptop: number;
+  about_logo_width_tablet: number;
+  about_logo_width_mobile: number;
 }
 
 export interface SeoSettings {
@@ -89,6 +93,10 @@ const defaults = {
     footer_logo_width_desktop: 140,
     footer_logo_width_tablet: 110,
     footer_logo_width_mobile: 90,
+    about_logo_width_desktop: 96,
+    about_logo_width_laptop: 84,
+    about_logo_width_tablet: 72,
+    about_logo_width_mobile: 64,
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",

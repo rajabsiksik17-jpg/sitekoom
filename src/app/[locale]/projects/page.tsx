@@ -15,6 +15,10 @@ export default async function ProjectsPage({ params }: { params: { locale: "ar" 
   ]);
   const sec = sections.find((s) => s.key === "projects");
 
+  // Only show services that actually have at least one published work.
+  const projectServiceIds = new Set(projects.map((p) => p.service_id).filter(Boolean) as string[]);
+  const servicesWithWork = services.filter((s) => projectServiceIds.has(s.id));
+
   return (
     <>
       <PageHero
@@ -23,7 +27,7 @@ export default async function ProjectsPage({ params }: { params: { locale: "ar" 
         subtitle={localize(locale, sec?.description_ar, sec?.description_en) ?? dict.home.projectsSubtitle}
       />
       <section className="container-site py-16">
-        <ProjectList projects={projects} categories={categories} services={services} />
+        <ProjectList projects={projects} categories={categories} services={servicesWithWork} />
       </section>
     </>
   );

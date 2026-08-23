@@ -5,6 +5,7 @@ import { ExternalLink, FileText, Download, MapPin, Play, X } from "lucide-react"
 import { socialIcon } from "@/components/social-icons";
 import { localize } from "@/lib/utils";
 import { portfolioTypeLabel } from "@/lib/portfolio";
+import { WebsiteScreenshot, VideoGallery } from "@/components/portfolio-media";
 import type { PortfolioItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,10 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
                   );
                 })}
               </div>
+            ) : group.type === "website_screenshot" ? (
+              <div className="space-y-6">
+                {group.items.map((img) => <WebsiteScreenshot key={img.id} item={img} locale={locale} />)}
+              </div>
             ) : group.type === "video" ? (
               <div className="grid gap-6 sm:grid-cols-2">
                 {group.items.map((v) => {
@@ -122,6 +127,8 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
                   );
                 })}
               </div>
+            ) : group.type === "video_gallery" ? (
+              <VideoGallery items={group.items} locale={locale} />
             ) : group.type === "pdf" ? (
               <div className="flex flex-wrap gap-3">
                 {group.items.map((f) => <CtaButton key={f.id} item={f} locale={locale} icon={<FileText className="h-4 w-4" />} />)}
