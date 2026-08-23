@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState } from "@/components/admin/ui";
 import { Bilingual, Field } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { VideoUpload } from "@/components/admin/video-upload";
 import type { HomepageSection, MarqueeMessage } from "@/lib/types";
 
 export function HomepageContentManager() {
@@ -166,6 +167,84 @@ export function HomepageContentManager() {
                     <Field label="لون الـOverlay (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_overlay_color ?? "#2c036e")} onChange={(e) => updateSectionData(item.id, { bg_overlay_color: e.target.value })} /></Field>
                     <Field label={`شفافية الـOverlay: ${Number(item.data?.bg_overlay_opacity ?? 0)}%`}>
                       <input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_overlay_opacity ?? 0)} onChange={(e) => updateSectionData(item.id, { bg_overlay_opacity: Number(e.target.value) })} />
+                    </Field>
+                  </div>
+                </div>
+              )}
+
+              {item.key === "cta" && (
+                <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/30 p-4">
+                  <p className="mb-3 text-sm font-bold text-ink-900">خلفية القسم (لديك فكرة لمشروعك القادم؟)</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="نوع الخلفية">
+                      <select className="input" value={String(item.data?.bg_type ?? "gradient")} onChange={(e) => updateSectionData(item.id, { bg_type: e.target.value })}>
+                        <option value="gradient">Gradient</option>
+                        <option value="solid">لون واحد</option>
+                        <option value="image">صورة</option>
+                        <option value="video">فيديو</option>
+                      </select>
+                    </Field>
+
+                    {String(item.data?.bg_type ?? "gradient") === "solid" && (
+                      <Field label="اللون"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_color ?? "#0b0a1a")} onChange={(e) => updateSectionData(item.id, { bg_color: e.target.value })} /></Field>
+                    )}
+
+                    {String(item.data?.bg_type ?? "gradient") === "gradient" && (
+                      <>
+                        <Field label="اللون 1"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[0] ?? "#7a1aff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[0] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="اللون 2"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[1] ?? "#9d72ff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[1] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="اللون 3 (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[2] ?? "#bda4ff")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#7a1aff", "#9d72ff"])]; c[2] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="زاوية الـGradient"><input className="input" dir="ltr" type="number" value={Number(item.data?.bg_angle ?? 135)} onChange={(e) => updateSectionData(item.id, { bg_angle: Number(e.target.value) })} /></Field>
+                      </>
+                    )}
+
+                    {String(item.data?.bg_type ?? "gradient") === "image" && (
+                      <>
+                        <Field label="صورة الخلفية"><ImageUpload value={String(item.data?.bg_image ?? "")} onChange={(u) => updateSectionData(item.id, { bg_image: u })} folder="homepage" /></Field>
+                        <Field label="الموضع (Position)">
+                          <select className="input" value={String(item.data?.bg_position ?? "center")} onChange={(e) => updateSectionData(item.id, { bg_position: e.target.value })}>
+                            <option value="center">وسط</option>
+                            <option value="top">أعلى</option>
+                            <option value="bottom">أسفل</option>
+                          </select>
+                        </Field>
+                        <Field label="الحجم (Size)">
+                          <select className="input" value={String(item.data?.bg_size ?? "cover")} onChange={(e) => updateSectionData(item.id, { bg_size: e.target.value })}>
+                            <option value="cover">Cover</option>
+                            <option value="contain">Contain</option>
+                          </select>
+                        </Field>
+                      </>
+                    )}
+
+                    {String(item.data?.bg_type ?? "gradient") === "video" && (
+                      <>
+                        <Field label="فيديو الخلفية"><VideoUpload value={String(item.data?.bg_video ?? "")} onChange={(u) => updateSectionData(item.id, { bg_video: u })} folder="homepage" /></Field>
+                        <Field label="الموضع (Position)">
+                          <select className="input" value={String(item.data?.bg_position ?? "center")} onChange={(e) => updateSectionData(item.id, { bg_position: e.target.value })}>
+                            <option value="center">وسط</option>
+                            <option value="top">أعلى</option>
+                            <option value="bottom">أسفل</option>
+                          </select>
+                        </Field>
+                        <Field label="الحجم (Size)">
+                          <select className="input" value={String(item.data?.bg_size ?? "cover")} onChange={(e) => updateSectionData(item.id, { bg_size: e.target.value })}>
+                            <option value="cover">Cover</option>
+                            <option value="contain">Contain</option>
+                          </select>
+                        </Field>
+                      </>
+                    )}
+
+                    {(String(item.data?.bg_type ?? "gradient") === "image" || String(item.data?.bg_type ?? "gradient") === "video") && (
+                      <Field label={`شفافية الوسائط: ${Number(item.data?.bg_media_opacity ?? 100)}%`}>
+                        <input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_media_opacity ?? 100)} onChange={(e) => updateSectionData(item.id, { bg_media_opacity: Number(e.target.value) })} />
+                      </Field>
+                    )}
+
+                    <Field label="لون الـOverlay (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_overlay_color ?? "#0b0a1a")} onChange={(e) => updateSectionData(item.id, { bg_overlay_color: e.target.value })} /></Field>
+                    <Field label={`شفافية الـOverlay: ${Number(item.data?.bg_overlay_opacity ?? 60)}%`}>
+                      <input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_overlay_opacity ?? 60)} onChange={(e) => updateSectionData(item.id, { bg_overlay_opacity: Number(e.target.value) })} />
                     </Field>
                   </div>
                 </div>

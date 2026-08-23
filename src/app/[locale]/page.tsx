@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
 import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { StatisticsSection } from "@/components/home/statistics-section";
+import { CtaSection } from "@/components/home/cta-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
@@ -184,20 +185,14 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
       )}
 
       {isActive("cta") && (
-        <section className="container-site py-20">
-          <Reveal className="relative overflow-hidden rounded-3xl bg-ink-900 px-6 py-16 text-center text-white">
-            <div className="absolute inset-0 bg-hero-gradient" />
-            <div className="relative">
-              <h2 className="text-3xl font-extrabold sm:text-4xl">
-                {localize(locale, sectionMap.cta?.title_ar, sectionMap.cta?.title_en) ?? dict.home.ctaTitle}
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-white/70">{dict.home.ctaSubtitle}</p>
-              <Link href={p("/contact")} className="btn-primary mt-8 px-8 py-3.5 text-base">
-                {dict.common.startProject}
-              </Link>
-            </div>
-          </Reveal>
-        </section>
+        <CtaSection
+          locale={locale}
+          title={localize(locale, sectionMap.cta?.title_ar, sectionMap.cta?.title_en) ?? dict.home.ctaTitle}
+          subtitle={dict.home.ctaSubtitle}
+          ctaText={dict.common.startProject}
+          ctaHref={p("/contact")}
+          data={sectionMap.cta?.data ?? {}}
+        />
       )}
 
       {isActive("contact") && (
