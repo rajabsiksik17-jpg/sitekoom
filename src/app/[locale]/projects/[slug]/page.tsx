@@ -5,12 +5,13 @@ import { ExternalLink } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProjectCard } from "@/components/project-card";
-import { ContactForm } from "@/components/contact-form";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getProjectBySlug, getProjects, getProjectPortfolioItems } from "@/lib/queries";
 import { ProjectPortfolio } from "@/components/project-portfolio";
+import { ProjectCta } from "@/components/project-cta";
+import { getSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
@@ -48,6 +49,8 @@ export default async function ProjectDetailPage({
 
   const project = await getProjectBySlug(params.slug);
   if (!project) notFound();
+
+  const settings = await getSettings();
 
   const title = localize(locale, project.title_ar, project.title_en);
   const fullDesc = localize(locale, project.full_desc_ar, project.full_desc_en);
@@ -93,23 +96,23 @@ export default async function ProjectDetailPage({
 
         <div className="grid gap-10 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            {fullDesc && (
-              <div className="prose-site" dangerouslySetInnerHTML={{ __html: fullDesc }} />
-            )}
+            {portfolioItems.length > 0 ? (
+              <ProjectPortfolio items={portfolioItems} description={fullDesc ?? undefined} locale={locale} />
+            ) : (
+              <>
+                {fullDesc && (
+                  <div className="prose-site" dangerouslySetInnerHTML={{ __html: fullDesc }} />
+                )}
 
-            {gallery.length > 0 && (
-              <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {gallery.map((img) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={img.id} src={img.url} alt={img.alt ?? title} loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
-                ))}
-              </div>
-            )}
-
-            {portfolioItems.length > 0 && (
-              <div className="mt-12">
-                <ProjectPortfolio items={portfolioItems} locale={locale} />
-              </div>
+                {gallery.length > 0 && (
+                  <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {gallery.map((img) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={img.id} src={img.url} alt={img.alt ?? title} loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -155,21 +158,9 @@ export default async function ProjectDetailPage({
         </section>
       )}
 
-      <section className="container-site py-16">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="mb-2 text-center text-2xl font-extrabold text-ink-900">{dict.common.startProject}</h2>
-          <p className="mb-8 text-center text-gray-600">{dict.contact.subtitle}</p>
-          <ContactForm
-            context={{
-              source: "project",
-              sourcePage: `/projects/${project.slug}`,
-              sourceRefId: project.id,
-              serviceId: project.service_id ?? undefined,
-              serviceName: service ?? undefined,
-            }}
-          />
-        </div>
-      </section>
+      {settings.general.show_project_cta !== false && (
+        <ProjectCta locale={locale} settings={settings.general} />
+      )}
     </>
   );
 }

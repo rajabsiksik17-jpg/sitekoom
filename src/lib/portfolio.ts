@@ -26,6 +26,7 @@ export const PORTFOLIO_FIELD_TYPES: PortfolioFieldType[] = [
   { key: "google_play", labelAr: "Google Play", labelEn: "Google Play", kind: "link" },
   { key: "app_store", labelAr: "Apple App Store", labelEn: "Apple App Store", kind: "link" },
   { key: "social_links", labelAr: "روابط التواصل", labelEn: "Social Links", kind: "link", multiple: true },
+  { key: "button", labelAr: "زر", labelEn: "Button", kind: "link" },
   { key: "location", labelAr: "الموقع", labelEn: "Location", kind: "media" },
   { key: "audio", labelAr: "صوت", labelEn: "Audio", kind: "media", multiple: true },
   { key: "heading", labelAr: "عنوان", labelEn: "Heading", kind: "text" },
@@ -41,3 +42,14 @@ export function portfolioTypeLabel(key: string, locale: "ar" | "en"): string {
   if (!t) return key;
   return locale === "ar" ? t.labelAr : t.labelEn;
 }
+
+// Internal site pages selectable as a button target (extendable).
+export const SITE_PAGES: { key: string; labelAr: string; labelEn: string; href: string }[] = [
+  { key: "home", labelAr: "الرئيسية", labelEn: "Home", href: "/" },
+  { key: "about", labelAr: "من نحن", labelEn: "About", href: "/about" },
+  { key: "services", labelAr: "خدماتنا", labelEn: "Services", href: "/services" },
+  { key: "projects", labelAr: "أعمالنا", labelEn: "Work", href: "/projects" },
+  { key: "blog", labelAr: "الأخبار", labelEn: "News", href: "/blog" },
+  { key: "request-project", labelAr: "طلب مشروع", labelEn: "Request Project", href: "/request-project" },
+  { key: "contact", labelAr: "اتصل بنا", labelEn: "Contact", href: "/contact" },
+];

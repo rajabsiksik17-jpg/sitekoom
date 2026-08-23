@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, FileText, Download, MapPin, Play, X } from "lucide-react";
+import { ExternalLink, FileText, Download, MapPin, X } from "lucide-react";
 import { socialIcon } from "@/components/social-icons";
+import { Icon } from "@/components/icon";
 import { localize } from "@/lib/utils";
-import { portfolioTypeLabel } from "@/lib/portfolio";
+import { localizePath } from "@/lib/i18n/config";
+import { portfolioTypeLabel, SITE_PAGES } from "@/lib/portfolio";
 import { WebsiteScreenshot, VideoGallery } from "@/components/portfolio-media";
 import type { PortfolioItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,59 +31,66 @@ const btnStyles: Record<string, string> = {
   ghost: "text-brand-700 hover:bg-brand-50",
 };
 
-function CtaButton({ item, locale, icon }: { item: PortfolioItem; locale: "ar" | "en"; icon?: React.ReactNode }) {
+const ACTION_TYPES = ["button", "pdf", "file", "external_link", "website_url", "google_play", "app_store"];
+const IMAGE_TYPES = ["image", "gallery", "screenshots", "device_screenshots"];
+
+function hrefFor(item: PortfolioItem, locale: "ar" | "en"): string {
+  if (item.type === "button" && item.data?.link_type === "internal") {
+    const page = SITE_PAGES.find((p) => p.key === String(item.data?.internal_page));
+    return localizePath(page?.href ?? "/", locale);
+  }
+  return item.url ?? "#";
+}
+
+function CtaButton({ item, locale }: { item: PortfolioItem; locale: "ar" | "en" }) {
   const label = localize(locale, item.button_text_ar, item.button_text_en) || item.title_ar || portfolioTypeLabel(item.type, locale);
-  const href = item.url ?? "#";
   const isDownload = item.button_action === "download";
+  const isExternal = item.button_action === "new_tab" || isDownload || (item.type !== "pdf" && item.type !== "button");
+  const btnIcon = item.icon ? <Icon name={item.icon} className="h-4 w-4" /> : item.type === "pdf" ? <FileText className="h-4 w-4" /> : item.type === "file" ? <Download className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />;
   return (
     <a
-      href={href}
-      target={item.button_action === "new_tab" || isDownload || item.type !== "pdf" ? "_blank" : undefined}
+      href={hrefFor(item, locale)}
+      target={isExternal || (item.type === "button" && item.data?.link_type === "custom") ? "_blank" : undefined}
       rel="noopener noreferrer"
       download={isDownload || undefined}
       className={cn("inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold", btnStyles[item.button_style ?? "primary"] ?? "btn-primary")}
     >
-      {icon ?? <ExternalLink className="h-4 w-4" />}
+      {btnIcon}
       {label}
     </a>
   );
 }
 
-const IMAGE_TYPES = ["image", "gallery", "screenshots", "device_screenshots"];
+function modeOf(type: string): string {
+  if (ACTION_TYPES.includes(type)) return "action";
+  if (IMAGE_TYPES.includes(type)) return "image";
+  return type;
+}
 
-export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; locale: "ar" | "en" }) {
+export function ProjectPortfolio({ items, description, locale }: { items: PortfolioItem[]; description?: string; locale: "ar" | "en" }) {
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
   const visible = items.filter((i) => i.is_visible);
+  const before = visible.filter((i) => i.data?.before_description === true);
+  const after = visible.filter((i) => i.data?.before_description !== true);
 
-  const groups: { type: string; items: PortfolioItem[] }[] = [];
-  for (const it of visible) {
-    const g = groups.find((x) => x.type === it.type);
-    if (g) g.items.push(it);
-    else groups.push({ type: it.type, items: [it] });
-  }
+  function renderList(list: PortfolioItem[]) {
+    const groups: { mode: string; items: PortfolioItem[] }[] = [];
+    for (const it of list) {
+      const mode = modeOf(it.type);
+      const last = groups[groups.length - 1];
+      if (last && last.mode === mode) last.items.push(it);
+      else groups.push({ mode, items: [it] });
+    }
 
-  return (
-    <div className="space-y-12">
-      {groups.map((group) => {
-        const title = localize(locale, group.items[0]?.title_ar, group.items[0]?.title_en);
-        const isImage = IMAGE_TYPES.includes(group.type);
-
-        return (
-          <div key={group.type}>
-            {group.type === "heading" || group.type === "text_block" ? (
-              <div className="space-y-6">
-                {group.items.map((h) => (
-                  <div key={h.id} className={group.type === "heading" ? "text-center" : ""}>
-                    {localize(locale, h.title_ar, h.title_en) && (
-                      <h3 className="mb-2 text-xl font-bold text-ink-900">{localize(locale, h.title_ar, h.title_en)}</h3>
-                    )}
-                    {localize(locale, h.description_ar, h.description_en) && (
-                      <div className="prose-site" dangerouslySetInnerHTML={{ __html: localize(locale, h.description_ar, h.description_en) ?? "" }} />
-                    )}
-                  </div>
-                ))}
+    return (
+      <div className="space-y-12">
+        {groups.map((group, gi) => (
+          <div key={gi}>
+            {group.mode === "action" ? (
+              <div className="flex flex-wrap gap-3">
+                {group.items.map((it) => <CtaButton key={it.id} item={it} locale={locale} />)}
               </div>
-            ) : isImage ? (
+            ) : group.mode === "image" ? (
               <div className={cn("grid gap-4", group.items.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3")}>
                 {group.items.filter((i) => i.url).map((img) => {
                   const urls = group.items.filter((i) => i.url).map((i) => i.url!);
@@ -98,24 +107,14 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
                   );
                 })}
               </div>
-            ) : group.type === "website_screenshot" ? (
-              <div className="space-y-6">
-                {group.items.map((img) => <WebsiteScreenshot key={img.id} item={img} locale={locale} />)}
-              </div>
-            ) : group.type === "video" ? (
+            ) : group.mode === "video" ? (
               <div className="grid gap-6 sm:grid-cols-2">
                 {group.items.map((v) => {
                   const id = youtubeId(v.url ?? "");
                   return (
                     <div key={v.id} className="card overflow-hidden">
                       <div className="relative aspect-video w-full overflow-hidden bg-ink-900">
-                        {id ? (
-                          <iframe src={`https://www.youtube.com/embed/${id}?rel=0`} title={localize(locale, v.title_ar, v.title_en)} className="absolute inset-0 h-full w-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" />
-                        ) : v.url ? (
-                          <video src={v.url} controls preload="none" className="h-full w-full" />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-sm text-white">—</div>
-                        )}
+                        {id ? <iframe src={`https://www.youtube.com/embed/${id}?rel=0`} title={localize(locale, v.title_ar, v.title_en)} className="absolute inset-0 h-full w-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" /> : v.url ? <video src={v.url} controls preload="none" className="h-full w-full" /> : <div className="flex h-full items-center justify-center text-sm text-white">—</div>}
                       </div>
                       {(v.title_ar || v.description_ar) && (
                         <div className="p-4">
@@ -127,32 +126,29 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
                   );
                 })}
               </div>
-            ) : group.type === "video_gallery" ? (
+            ) : group.mode === "video_gallery" ? (
               <VideoGallery items={group.items} locale={locale} />
-            ) : group.type === "pdf" ? (
-              <div className="flex flex-wrap gap-3">
-                {group.items.map((f) => <CtaButton key={f.id} item={f} locale={locale} icon={<FileText className="h-4 w-4" />} />)}
+            ) : group.mode === "website_screenshot" ? (
+              <div className="space-y-6">
+                {group.items.map((img) => <WebsiteScreenshot key={img.id} item={img} locale={locale} />)}
               </div>
-            ) : group.type === "file" ? (
-              <div className="flex flex-wrap gap-3">
-                {group.items.map((f) => <CtaButton key={f.id} item={f} locale={locale} icon={<Download className="h-4 w-4" />} />)}
+            ) : group.mode === "heading" || group.mode === "text_block" ? (
+              <div className="space-y-6">
+                {group.items.map((h) => (
+                  <div key={h.id} className={group.mode === "heading" ? "text-center" : ""}>
+                    {localize(locale, h.title_ar, h.title_en) && <h3 className="mb-2 text-xl font-bold text-ink-900">{localize(locale, h.title_ar, h.title_en)}</h3>}
+                    {localize(locale, h.description_ar, h.description_en) && <div className="prose-site" dangerouslySetInnerHTML={{ __html: localize(locale, h.description_ar, h.description_en) ?? "" }} />}
+                  </div>
+                ))}
               </div>
-            ) : ["external_link", "website_url", "google_play", "app_store"].includes(group.type) ? (
-              <div className="flex flex-wrap gap-3">
-                {group.items.map((l) => <CtaButton key={l.id} item={l} locale={locale} />)}
-              </div>
-            ) : group.type === "social_links" ? (
+            ) : group.mode === "social_links" ? (
               <div className="flex flex-wrap gap-3">
                 {group.items.map((s) => {
-                  const Icon = socialIcon(s.platform ?? "");
-                  return (
-                    <a key={s.id} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-200/70 bg-brand-50 text-brand-700 transition-all hover:scale-105 hover:bg-brand-600 hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </a>
-                  );
+                  const Icon2 = socialIcon(s.platform ?? "");
+                  return <a key={s.id} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-200/70 bg-brand-50 text-brand-700 transition-all hover:scale-105 hover:bg-brand-600 hover:text-white"><Icon2 className="h-5 w-5" /></a>;
                 })}
               </div>
-            ) : group.type === "location" ? (
+            ) : group.mode === "location" ? (
               <div className="flex flex-wrap gap-3">
                 {group.items.map((m) => (
                   <a key={m.id} href={m.url ?? "#"} target="_blank" rel="noopener noreferrer" className="card flex items-center gap-3 p-4">
@@ -164,7 +160,7 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
                   </a>
                 ))}
               </div>
-            ) : group.type === "audio" ? (
+            ) : group.mode === "audio" ? (
               <div className="space-y-4">
                 {group.items.map((a) => (
                   <div key={a.id} className="card p-4">
@@ -175,8 +171,16 @@ export function ProjectPortfolio({ items, locale }: { items: PortfolioItem[]; lo
               </div>
             ) : null}
           </div>
-        );
-      })}
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {renderList(before)}
+      {description && <div className="prose-site" dangerouslySetInnerHTML={{ __html: description }} />}
+      {renderList(after)}
 
       {lightbox && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/90 p-4" onClick={() => setLightbox(null)}>

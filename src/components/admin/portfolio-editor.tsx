@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Eye, EyeOff, Star, GripVertical }
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { FileUpload } from "@/components/admin/file-upload";
-import { PORTFOLIO_FIELD_TYPES, portfolioFieldType, type PortfolioKind } from "@/lib/portfolio";
+import { PORTFOLIO_FIELD_TYPES, portfolioFieldType, SITE_PAGES, type PortfolioKind } from "@/lib/portfolio";
 import type { PortfolioItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -166,6 +166,14 @@ function ItemRow({
           <button type="button" onClick={() => onUpdate({ is_featured: !item.is_featured })} title="مميز" className={cn("rounded p-1", item.is_featured ? "text-amber-500" : "text-gray-400 hover:bg-brand-100")}>
             <Star className="h-4 w-4" />
           </button>
+          <button
+            type="button"
+            onClick={() => onUpdate({ data: { ...(item.data ?? {}), before_description: !(item.data?.before_description as boolean) } })}
+            title="عرض قبل وصف المشروع"
+            className={cn("rounded px-2 py-1 text-[11px] font-semibold", item.data?.before_description ? "bg-brand-100 text-brand-700" : "text-gray-400 hover:bg-brand-100")}
+          >
+            قبل الوصف
+          </button>
           <button type="button" onClick={() => setCollapsed((v) => !v)} className="rounded px-1 text-xs font-semibold text-gray-400 hover:bg-brand-100">{collapsed ? "فتح" : "طي"}</button>
           <button type="button" disabled={index === 0} onClick={() => onMove(-1)} className="rounded p-1 text-gray-500 hover:bg-brand-100 disabled:opacity-30"><ChevronUp className="h-4 w-4" /></button>
           <button type="button" disabled={index === total - 1} onClick={() => onMove(1)} className="rounded p-1 text-gray-500 hover:bg-brand-100 disabled:opacity-30"><ChevronDown className="h-4 w-4" /></button>
@@ -236,7 +244,32 @@ function ItemRow({
                   </select>
                 </Field>
               )}
-              <Field label="الرابط (URL)"><input className="input" dir="ltr" value={item.url ?? ""} onChange={(e) => set("url", e.target.value)} /></Field>
+              {item.type !== "button" && (
+                <Field label="الرابط (URL)"><input className="input" dir="ltr" value={item.url ?? ""} onChange={(e) => set("url", e.target.value)} /></Field>
+              )}
+
+              {item.type === "button" && (
+                <>
+                  <Field label="هدف الزر">
+                    <select className="input" value={String(item.data?.link_type ?? "custom")} onChange={(e) => set("data", { ...(item.data ?? {}), link_type: e.target.value })}>
+                      <option value="custom">رابط مخصص (Custom URL)</option>
+                      <option value="internal">صفحة داخلية من الموقع</option>
+                    </select>
+                  </Field>
+                  {String(item.data?.link_type ?? "custom") === "internal" ? (
+                    <Field label="الصفحة الداخلية">
+                      <select className="input" value={String(item.data?.internal_page ?? "")} onChange={(e) => set("data", { ...(item.data ?? {}), internal_page: e.target.value })}>
+                        <option value="">اختر صفحة...</option>
+                        {SITE_PAGES.map((p) => <option key={p.key} value={p.key}>{p.labelAr}</option>)}
+                      </select>
+                    </Field>
+                  ) : (
+                    <Field label="Custom URL"><input className="input" dir="ltr" placeholder="https://example.com أو /contact" value={item.url ?? ""} onChange={(e) => set("url", e.target.value)} /></Field>
+                  )}
+                  <Field label="أيقونة الزر (اختياري — اسم أيقونة)"><input className="input" dir="ltr" placeholder="arrow-right, external-link..." value={item.icon ?? ""} onChange={(e) => set("icon", e.target.value)} /></Field>
+                </>
+              )}
+
               {!isSingleLink && (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">

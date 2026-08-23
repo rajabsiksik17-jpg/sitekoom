@@ -91,6 +91,12 @@ export function SettingsManager() {
             <Field label="عرض شعار من نحن — Laptop (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_laptop ?? 84)} onChange={(e) => update("general", "about_logo_width_laptop", Number(e.target.value))} /></Field>
             <Field label="عرض شعار من نحن — Tablet (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_tablet ?? 72)} onChange={(e) => update("general", "about_logo_width_tablet", Number(e.target.value))} /></Field>
             <Field label="عرض شعار من نحن — Mobile (px)"><input className="input" dir="ltr" type="number" value={Number(g.about_logo_width_mobile ?? 64)} onChange={(e) => update("general", "about_logo_width_mobile", Number(e.target.value))} /></Field>
+            <Field label="إظهار قسم ابدأ مشروعك في صفحات الأعمال">
+              <label className="flex items-center gap-2 pt-3 text-sm text-gray-700">
+                <input type="checkbox" checked={Boolean(g.show_project_cta ?? true)} onChange={(e) => update("general", "show_project_cta", e.target.checked)} className="rounded border-brand-200 text-brand-600" />
+                تفعيل (Default: ON)
+              </label>
+            </Field>
           </div>
         )}
 
