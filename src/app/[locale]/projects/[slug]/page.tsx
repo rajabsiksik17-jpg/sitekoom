@@ -8,8 +8,9 @@ import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
 import { localize, formatDate } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { getProjectBySlug, getProjects, getProjectPortfolioItems } from "@/lib/queries";
+import { getProjectBySlug, getProjects, getProjectPortfolioItems, getProjectFeatures } from "@/lib/queries";
 import { ProjectPortfolio } from "@/components/project-portfolio";
+import { ProjectFeatures } from "@/components/project-features";
 import { ProjectCta } from "@/components/project-cta";
 import { getSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
@@ -60,6 +61,7 @@ export default async function ProjectDetailPage({
 
   const gallery = project.images ?? [];
   const portfolioItems = await getProjectPortfolioItems(project.id);
+  const features = await getProjectFeatures(project.id);
 
   const allProjects = await getProjects();
   const related = allProjects
@@ -114,6 +116,8 @@ export default async function ProjectDetailPage({
                 )}
               </>
             )}
+
+            <ProjectFeatures features={features} locale={locale} />
           </div>
 
           <aside className="space-y-6">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ZoomIn, ChevronLeft, ChevronRight, MousePointer2, X } from "lucide-react";
+import { ZoomIn, ChevronLeft, ChevronRight, MousePointer2, X, Monitor, Tablet, Smartphone } from "lucide-react";
 import { localize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { PortfolioItem } from "@/lib/types";
 
 function youtubeId(url: string): string | null {
@@ -24,8 +25,24 @@ function youtubeId(url: string): string | null {
  */
 export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; locale: "ar" | "en" }) {
   const isAr = locale === "ar";
+  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [scrolled, setScrolled] = useState(false);
   const [zoom, setZoom] = useState(false);
+
+  // Available devices: Desktop is always on (if it has an image); Tablet/Mobile
+  // require both the enable flag and an actual image.
+  const devices = [
+    { key: "desktop" as const, label: isAr ? "كمبيوتر" : "Desktop", icon: Monitor, url: item.url },
+    item.data?.enable_tablet !== false && item.data?.tablet_screenshot
+      ? { key: "tablet" as const, label: isAr ? "تابلت" : "Tablet", icon: Tablet, url: String(item.data.tablet_screenshot) }
+      : null,
+    item.data?.enable_mobile !== false && item.data?.mobile_screenshot
+      ? { key: "mobile" as const, label: isAr ? "هاتف" : "Mobile", icon: Smartphone, url: String(item.data.mobile_screenshot) }
+      : null,
+  ].filter(Boolean) as { key: "desktop" | "tablet" | "mobile"; label: string; icon: React.ComponentType<{ className?: string }>; url: string | null }[];
+
+  const active = devices.find((d) => d.key === device) ?? devices[0];
+  const scrollSpeed = Number(item.data?.scroll_speed ?? 8);
 
   return (
     <div className="card overflow-hidden">
@@ -39,6 +56,25 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
         </button>
       </div>
 
+      {devices.length > 1 && (
+        <div className="flex gap-1.5 border-b border-brand-100 bg-brand-50/40 px-3 py-2">
+          {devices.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => { setDevice(d.key); setScrolled(false); }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                active?.key === d.key ? "bg-brand-gradient text-white" : "text-brand-700 hover:bg-brand-100",
+              )}
+            >
+              <d.icon className="h-4 w-4" />
+              {d.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         className="group relative h-[440px] cursor-pointer overflow-hidden bg-ink-900"
         onClick={() => setScrolled((v) => !v)}
@@ -47,11 +83,11 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.url ?? ""}
+          src={active?.url ?? ""}
           alt={localize(locale, item.alt_ar, item.alt_en) || localize(locale, item.title_ar, item.title_en) || ""}
           loading="lazy"
-          className="w-full transition-transform duration-[8000ms] ease-linear"
-          style={{ transform: scrolled ? "translateY(calc(-100% + 440px))" : "translateY(0)", transitionDuration: scrolled ? "8s" : "1.5s" }}
+          className="w-full transition-transform ease-linear"
+          style={{ transform: scrolled ? "translateY(calc(-100% + 440px))" : "translateY(0)", transitionDuration: scrolled ? `${scrollSpeed}s` : "1.5s" }}
         />
       </div>
       {(item.title_ar || item.caption_ar || item.caption_en) && (
@@ -63,7 +99,7 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
           <button type="button" className="absolute end-4 top-4 rounded-full bg-white/10 p-2 text-white" onClick={() => setZoom(false)}><X className="h-6 w-6" /></button>
           <div className="h-full w-full overflow-auto rounded-xl" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.url ?? ""} alt="" className="mx-auto min-w-full" />
+            <img src={active?.url ?? ""} alt="" className="mx-auto min-w-full" />
           </div>
         </div>
       )}

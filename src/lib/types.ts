@@ -157,6 +157,17 @@ export interface ProjectImage {
   sort: number;
 }
 
+export interface ProjectFeature {
+  id: string;
+  project_id: string;
+  icon: string | null;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  sort: number;
+}
+
 export interface PortfolioItem {
   id: string;
   project_id: string;

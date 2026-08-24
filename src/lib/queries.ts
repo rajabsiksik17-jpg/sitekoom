@@ -13,6 +13,7 @@ import type {
   PortfolioItem,
   Project,
   ProjectCategory,
+  ProjectFeature,
   Service,
   ServiceCategory,
   ServiceFaq,
@@ -125,6 +126,15 @@ export const getProjectPortfolioItems = cache(async (projectId: string): Promise
     .eq("is_visible", true)
     .order("sort");
   return (data ?? []) as PortfolioItem[];
+});
+
+export const getProjectFeatures = cache(async (projectId: string): Promise<ProjectFeature[]> => {
+  const { data } = await supabase()
+    .from("project_features")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort");
+  return (data ?? []) as ProjectFeature[];
 });
 
 export const getSliders = cache(async (): Promise<HomepageSlider[]> => {

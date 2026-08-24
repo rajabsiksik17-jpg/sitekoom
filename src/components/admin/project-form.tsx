@@ -13,6 +13,7 @@ import { SeoFields } from "@/components/admin/seo-fields";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
 import { PortfolioEditor, type PortfolioItemDraft } from "@/components/admin/portfolio-editor";
+import { ProjectFeaturesEditor, type ProjectFeatureDraft } from "@/components/admin/project-features-editor";
 import type { Project, ProjectCategory, Service } from "@/lib/types";
 
 export function ProjectForm({ projectId }: { projectId?: string }) {
@@ -24,6 +25,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItemDraft[]>([]);
+  const [features, setFeatures] = useState<ProjectFeatureDraft[]>([]);
 
   const [form, setForm] = useState({
     title_ar: "", title_en: "", slug: "", short_desc_ar: "", short_desc_en: "",
@@ -52,7 +54,8 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         supabase.from("projects").select("*").eq("id", projectId).single(),
         supabase.from("project_images").select("*").eq("project_id", projectId).order("sort"),
         supabase.from("project_portfolio_items").select("*").eq("project_id", projectId).order("sort"),
-      ]).then(([p, imgs, ppi]) => {
+        supabase.from("project_features").select("*").eq("project_id", projectId).order("sort"),
+      ]).then(([p, imgs, ppi, feat]) => {
         if (p.data) {
           const d = p.data as Project;
           setForm({
@@ -77,6 +80,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
           button_style: x.button_style, button_action: x.button_action, display_mode: x.display_mode,
           is_visible: x.is_visible, is_featured: x.is_featured, sort: x.sort, data: x.data ?? {},
         })));
+        setFeatures((feat.data ?? []).map((f) => ({ icon: f.icon, title_ar: f.title_ar, title_en: f.title_en, description_ar: f.description_ar, description_en: f.description_en, sort: f.sort })));
         setLoading(false);
       });
     }
@@ -150,6 +154,21 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
           is_featured: it.is_featured,
           sort: i,
           data: it.data ?? {},
+        })),
+      );
+    }
+
+    await supabase.from("project_features").delete().eq("project_id", id);
+    if (features.length) {
+      await supabase.from("project_features").insert(
+        features.map((f, i) => ({
+          project_id: id,
+          icon: f.icon || null,
+          title_ar: f.title_ar,
+          title_en: f.title_en,
+          description_ar: f.description_ar || null,
+          description_en: f.description_en || null,
+          sort: i,
         })),
       );
     }
@@ -253,6 +272,12 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
             : "اختر الخدمة أولًا لتظهر أنواع المحتوى المفعّلة لها."}
         </p>
         <PortfolioEditor enabled={enabledTypes} value={portfolioItems} onChange={setPortfolioItems} />
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-1 text-lg font-bold text-ink-900">مميزات العمل</h2>
+        <p className="mb-4 text-sm text-gray-500">أضف مميزات العمل التي تظهر في صفحة العمل. إن تُركت فارغة لن يظهر القسم.</p>
+        <ProjectFeaturesEditor value={features} onChange={setFeatures} />
       </div>
 
       {isEdit && projectId && (

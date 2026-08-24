@@ -192,7 +192,30 @@ function ItemRow({
 
           {isImage && (
             <>
-              <Field label={item.type === "website_screenshot" ? "صورة الموقع الكاملة (طويلة)" : "الصورة"}><ImageUpload value={item.url ?? ""} onChange={(u) => set("url", u)} folder="projects" /></Field>
+              <Field label={item.type === "website_screenshot" ? "صورة الموقع الكاملة — Desktop (طويلة)" : "الصورة"}><ImageUpload value={item.url ?? ""} onChange={(u) => set("url", u)} folder="projects" /></Field>
+
+              {item.type === "website_screenshot" && (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Tablet Screenshot (اختياري)"><ImageUpload value={String(item.data?.tablet_screenshot ?? "")} onChange={(u) => set("data", { ...(item.data ?? {}), tablet_screenshot: u })} folder="projects" /></Field>
+                    <Field label="Mobile Screenshot (اختياري)"><ImageUpload value={String(item.data?.mobile_screenshot ?? "")} onChange={(u) => set("data", { ...(item.data ?? {}), mobile_screenshot: u })} folder="projects" /></Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={item.data?.enable_tablet !== false} onChange={(e) => set("data", { ...(item.data ?? {}), enable_tablet: e.target.checked })} className="rounded border-brand-200 text-brand-600" />
+                      تفعيل معاينة Tablet
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={item.data?.enable_mobile !== false} onChange={(e) => set("data", { ...(item.data ?? {}), enable_mobile: e.target.checked })} className="rounded border-brand-200 text-brand-600" />
+                      تفعيل معاينة Mobile
+                    </label>
+                  </div>
+                  <Field label={`سرعة تمرير الصورة: ${Number(item.data?.scroll_speed ?? 8)} ثانية`}>
+                    <input type="range" min={3} max={15} className="w-full" value={Number(item.data?.scroll_speed ?? 8)} onChange={(e) => set("data", { ...(item.data ?? {}), scroll_speed: Number(e.target.value) })} />
+                  </Field>
+                </>
+              )}
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="العنوان (عربي)"><input className="input" value={item.title_ar ?? ""} onChange={(e) => set("title_ar", e.target.value)} /></Field>
                 <Field label="Title (EN)"><input className="input" dir="ltr" value={item.title_en ?? ""} onChange={(e) => set("title_en", e.target.value)} /></Field>
