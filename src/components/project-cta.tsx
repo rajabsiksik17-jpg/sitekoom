@@ -111,7 +111,7 @@ export function ProjectCta({
             relative
             h-fit
             min-w-0
-            self-start
+            lg:self-center
             overflow-hidden
             rounded-3xl
             bg-ink-900
