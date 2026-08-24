@@ -101,7 +101,7 @@ export function ProjectCta({
        *
        * Each card now has its own natural height.
        */}
-      <div className="grid w-full min-w-0 items-start gap-4 sm:gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="grid w-full min-w-0 items-start gap-4 sm:gap-6 lg:grid-cols-2 lg:items-center">
 
         {/* =====================================================
             PROJECT CTA
