@@ -44,6 +44,13 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
   const active = devices.find((d) => d.key === device) ?? devices[0];
   const scrollSpeed = Number(item.data?.scroll_speed ?? 8);
 
+  const deviceConfig: Record<"desktop" | "tablet" | "mobile", { wrap: string; height: number }> = {
+    desktop: { wrap: "w-full", height: 440 },
+    tablet: { wrap: "mx-auto w-full max-w-[640px]", height: 500 },
+    mobile: { wrap: "mx-auto w-full max-w-[360px]", height: 600 },
+  };
+  const cfg = deviceConfig[active?.key ?? "desktop"];
+
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b border-brand-100 px-4 py-2.5">
@@ -76,7 +83,8 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
       )}
 
       <div
-        className="group relative h-[440px] cursor-pointer overflow-hidden bg-ink-900"
+        className={cn("group relative cursor-pointer overflow-hidden bg-ink-900", cfg.wrap)}
+        style={{ height: cfg.height }}
         onClick={() => setScrolled((v) => !v)}
         onMouseEnter={() => setScrolled(true)}
         onMouseLeave={() => setScrolled(false)}
@@ -87,7 +95,7 @@ export function WebsiteScreenshot({ item, locale }: { item: PortfolioItem; local
           alt={localize(locale, item.alt_ar, item.alt_en) || localize(locale, item.title_ar, item.title_en) || ""}
           loading="lazy"
           className="w-full transition-transform ease-linear"
-          style={{ transform: scrolled ? "translateY(calc(-100% + 440px))" : "translateY(0)", transitionDuration: scrolled ? `${scrollSpeed}s` : "1.5s" }}
+          style={{ transform: scrolled ? `translateY(calc(-100% + ${cfg.height}px))` : "translateY(0)", transitionDuration: scrolled ? `${scrollSpeed}s` : "1.5s" }}
         />
       </div>
       {(item.title_ar || item.caption_ar || item.caption_en) && (

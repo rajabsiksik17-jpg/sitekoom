@@ -4,6 +4,9 @@ import { Reveal } from "@/components/reveal";
 import { Icon } from "@/components/icon";
 import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { CompanyInfoSection } from "@/components/home/company-info-section";
+import { CounterValue } from "@/components/home/counter";
+import { TeamCard } from "@/components/home/team-card";
+import { TeamSlider } from "@/components/home/team-slider";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@/lib/queries";
@@ -112,28 +115,17 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
               {locale === "ar" ? "فريق العمل" : "Our Team"}
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {team.map((m, i) => (
-                <Reveal key={m.id} delay={i * 50}>
-                  <div className="card overflow-hidden text-center">
-                    <div className="aspect-square w-full overflow-hidden bg-brand-50">
-                      {m.photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.photo} alt={localize(locale, m.name_ar, m.name_en)} loading="lazy" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-4xl font-bold text-brand-200">
-                          {localize(locale, m.name_ar, m.name_en)[0]}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-ink-900">{localize(locale, m.name_ar, m.name_en)}</h3>
-                      <p className="text-sm text-gray-500">{localize(locale, m.position_ar, m.position_en)}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            {settings.team.display_type === "slider" ? (
+              <TeamSlider members={team} locale={locale} autoplay={settings.team.autoplay} speed={settings.team.speed} />
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {team.map((m, i) => (
+                  <Reveal key={m.id} delay={i * 50}>
+                    <TeamCard member={m} locale={locale} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -143,8 +135,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
               {stats.map((s) => (
                 <div key={s.id}>
                   <p className="text-4xl font-extrabold text-brand-300">
-                    {s.value}
-                    {s.suffix}
+                    <CounterValue value={s.value} suffix={s.suffix} />
                   </p>
                   <p className="mt-1 text-sm text-white/70">{localize(locale, s.label_ar, s.label_en)}</p>
                 </div>

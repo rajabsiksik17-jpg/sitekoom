@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
 import { Field, Bilingual } from "@/components/admin/fields";
+import { IconPicker } from "@/components/admin/icon-picker";
 import type { ProjectFeature } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -67,9 +68,7 @@ export function ProjectFeaturesEditor({ value, onChange }: { value: ProjectFeatu
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="الأيقونة (اسم أيقونة)"><input className="input" dir="ltr" placeholder="sparkles, check-circle..." value={f.icon ?? ""} onChange={(e) => update(i, { icon: e.target.value })} /></Field>
-              </div>
+              <Field label="الأيقونة"><IconPicker value={f.icon ?? ""} onChange={(name) => update(i, { icon: name })} /></Field>
               <Bilingual label="عنوان الميزة" ar={f.title_ar} en={f.title_en} onAr={(v) => update(i, { title_ar: v })} onEn={(v) => update(i, { title_en: v })} />
               <Bilingual label="الوصف (اختياري)" ar={f.description_ar ?? ""} en={f.description_en ?? ""} onAr={(v) => update(i, { description_ar: v })} onEn={(v) => update(i, { description_en: v })} type="textarea" />
             </div>

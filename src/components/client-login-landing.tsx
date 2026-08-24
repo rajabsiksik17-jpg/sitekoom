@@ -19,11 +19,6 @@ export function ClientLoginLanding({ settings }: { settings: GeneralSettings }) 
   const isAr = locale === "ar";
   const t = (ar: string, en: string) => (isAr ? ar : en);
   const p = (path: string) => localizePath(path, locale);
-  const companyName = isAr ? settings.company_name_ar : settings.company_name_en;
-  const logo = settings.logo;
-  const logoDesktop = settings.logo_width_desktop ?? 170;
-  const logoTablet = settings.logo_width_tablet ?? 140;
-  const logoMobile = settings.logo_width_mobile ?? 120;
   const Arrow = isAr ? ArrowLeft : ArrowRight;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -108,30 +103,6 @@ export function ClientLoginLanding({ settings }: { settings: GeneralSettings }) 
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-brand-100 bg-white/80 backdrop-blur">
-        <style>{`:root{--header-logo-w:${logoDesktop}px}@media(max-width:1023px){:root{--header-logo-w:${logoTablet}px}}@media(max-width:639px){:root{--header-logo-w:${logoMobile}px}}`}</style>
-        <div className="container-site flex h-16 items-center justify-between">
-          <Link href={p("/")} className="flex items-center gap-2">
-            {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logo} alt={companyName} style={{ width: "var(--header-logo-w)", height: "auto" }} />
-            ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">S</span>
-            )}
-            <span className="text-lg font-extrabold text-ink-900">{companyName}</span>
-          </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <a href="#features" className="text-sm font-medium text-gray-600 hover:text-brand-700">{t("المميزات", "Features")}</a>
-            <a href="#how" className="text-sm font-medium text-gray-600 hover:text-brand-700">{t("كيف تعمل", "How it works")}</a>
-            <a href={p("/contact")} className="text-sm font-medium text-gray-600 hover:text-brand-700">{t("الدعم", "Support")}</a>
-          </nav>
-          <button type="button" onClick={() => setModalOpen(true)} className="btn-primary px-4 py-2 text-sm">
-            {t("تسجيل الدخول", "Login")}
-          </button>
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="relative overflow-hidden bg-ink-900">
         <div className="absolute inset-0 bg-hero-gradient" />

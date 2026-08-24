@@ -11,10 +11,10 @@ import type { Service, SocialLink } from "@/lib/types";
 
 /**
  * Wraps a locale segment with the public marketing chrome (Header / Footer /
- * floating widgets). The client portal and client login landing page render
- * their OWN chrome, so the public fixed header and floating support widget are
- * omitted there — this keeps the portal's header/sidebar from being overlapped
- * and prevents the floating support button from appearing inside the portal.
+ * floating widgets). The client portal renders its OWN chrome, so the public
+ * fixed header and floating support widget are omitted there — this keeps the
+ * portal's header/sidebar from being overlapped and prevents the floating
+ * support button from appearing inside the portal.
  */
 export function SiteChrome({
   locale,
@@ -32,10 +32,7 @@ export function SiteChrome({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() ?? "";
-  const isClientArea =
-    /(^|\/)client-portal(\/|$)/.test(pathname) ||
-    pathname === "/client-login" ||
-    pathname === "/en/client-login";
+  const isClientArea = /(^|\/)client-portal(\/|$)/.test(pathname);
 
   const dir = locale === "ar" ? "rtl" : "ltr";
 

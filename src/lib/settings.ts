@@ -69,6 +69,12 @@ export interface IntegrationsSettings {
   google_maps_api_key: string;
 }
 
+export interface TeamSettings {
+  display_type: "grid" | "slider";
+  autoplay: boolean;
+  speed: number;
+}
+
 const defaults = {
   general: {
     company_name_ar: "سايتكم",
@@ -131,6 +137,11 @@ const defaults = {
     google_maps_url: "",
     google_maps_api_key: "",
   } as IntegrationsSettings,
+  team: {
+    display_type: "grid",
+    autoplay: true,
+    speed: 30,
+  } as TeamSettings,
 };
 
 export const getSettings = cache(async () => {
@@ -152,6 +163,10 @@ export const getSettings = cache(async () => {
       ...defaults.integrations,
       ...((map.integrations as object) ?? {}),
     } as IntegrationsSettings,
+    team: {
+      ...defaults.team,
+      ...((map.team as object) ?? {}),
+    } as TeamSettings,
     raw: map,
   };
 });

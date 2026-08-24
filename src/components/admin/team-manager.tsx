@@ -17,11 +17,16 @@ export function TeamManager() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<TeamMember> | null>(null);
   const [deleting, setDeleting] = useState<TeamMember | null>(null);
+  const [teamSettings, setTeamSettings] = useState<{ display_type: string; autoplay: boolean; speed: number }>({ display_type: "grid", autoplay: true, speed: 30 });
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase.from("team_members").select("*").order("sort");
-    setItems((data ?? []) as TeamMember[]);
+    const [m, ts] = await Promise.all([
+      supabase.from("team_members").select("*").order("sort"),
+      supabase.from("site_settings").select("value").eq("key", "team").single(),
+    ]);
+    setItems((m.data ?? []) as TeamMember[]);
+    if (ts.data?.value) setTeamSettings((prev) => ({ ...prev, ...(ts.data.value as object) }));
     setLoading(false);
   }, []);
 
@@ -54,11 +59,40 @@ export function TeamManager() {
     load();
   }
 
+  async function saveTeamSettings() {
+    const supabase = createClient();
+    const { error } = await supabase.from("site_settings").upsert({ key: "team", value: teamSettings });
+    if (error) push("error", error.message);
+    else push("success", "تم حفظ إعدادات عرض الفريق");
+  }
+
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
 
   return (
     <div>
       <PageTitle title="فريق العمل" action={<button type="button" onClick={() => setEditing({ ...empty })} className="btn-primary px-4 py-2.5"><Plus className="h-4 w-4" /> إضافة عضو</button>} />
+
+      <div className="card mb-4 flex flex-wrap items-end gap-4 p-4">
+        <div>
+          <span className="mb-1 block text-xs text-gray-400">طريقة العرض في صفحة من نحن</span>
+          <select className="input" value={teamSettings.display_type} onChange={(e) => setTeamSettings({ ...teamSettings, display_type: e.target.value })}>
+            <option value="grid">شبكة (Grid)</option>
+            <option value="slider">سلايدر متحرك</option>
+          </select>
+        </div>
+        {teamSettings.display_type === "slider" && (
+          <>
+            <div>
+              <span className="mb-1 block text-xs text-gray-400">السرعة (ثانية)</span>
+              <input className="input" dir="ltr" type="number" min={5} max={120} value={teamSettings.speed} onChange={(e) => setTeamSettings({ ...teamSettings, speed: Number(e.target.value) })} />
+            </div>
+            <label className="flex items-center gap-2 pb-2 text-sm text-gray-700">
+              <input type="checkbox" checked={teamSettings.autoplay} onChange={(e) => setTeamSettings({ ...teamSettings, autoplay: e.target.checked })} className="rounded border-brand-200 text-brand-600" /> تشغيل تلقائي
+            </label>
+          </>
+        )}
+        <button type="button" onClick={saveTeamSettings} className="btn-secondary px-4 py-2 text-sm"><Save className="h-4 w-4" /> حفظ الإعدادات</button>
+      </div>
 
       {items.length === 0 ? (
         <EmptyState title="لا يوجد أعضاء" action={<button type="button" onClick={() => setEditing({ ...empty })} className="btn-primary px-4 py-2.5"><Plus className="h-4 w-4" /> إضافة عضو</button>} />

@@ -1,5 +1,6 @@
 import { Icon } from "@/components/icon";
 import { Reveal } from "@/components/reveal";
+import { CounterValue } from "@/components/home/counter";
 import { localize } from "@/lib/utils";
 import type { Statistic } from "@/lib/types";
 
@@ -50,8 +51,7 @@ export function StatisticsSection({
             <Reveal key={s.id} className="text-center">
               <Icon name={s.icon} className="mx-auto mb-3 h-8 w-8 text-white/80" />
               <p className="text-4xl font-extrabold">
-                {s.value}
-                {s.suffix}
+                <CounterValue value={s.value} suffix={s.suffix} />
               </p>
               <p className="mt-1 text-sm text-white/80">{localize(locale, s.label_ar, s.label_en)}</p>
             </Reveal>

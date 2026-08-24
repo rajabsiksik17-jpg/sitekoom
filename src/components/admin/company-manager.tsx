@@ -8,6 +8,8 @@ import { PageTitle, Spinner } from "@/components/admin/ui";
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { VideoUpload } from "@/components/admin/video-upload";
+import { IconPicker } from "@/components/admin/icon-picker";
+import { Icon } from "@/components/icon";
 import type { CompanyInfo, CompanyImage } from "@/lib/types";
 
 export function CompanyManager() {
@@ -32,6 +34,42 @@ export function CompanyManager() {
 
   function update(field: string, value: unknown) {
     setInfo((prev) => ({ ...(prev as CompanyInfo), [field]: value }));
+  }
+
+  function addWhy() {
+    setInfo((prev) => ({
+      ...(prev as CompanyInfo),
+      why_ar: [...(prev?.why_ar ?? []), { icon: "sparkles", title: "", description: "" }],
+      why_en: [...(prev?.why_en ?? []), { icon: "sparkles", title: "", description: "" }],
+    }));
+  }
+
+  function updateWhy(i: number, patch: { icon?: string; title_ar?: string; title_en?: string; description_ar?: string; description_en?: string }) {
+    setInfo((prev) => {
+      const ar = [...(prev?.why_ar ?? [])];
+      const en = [...(prev?.why_en ?? [])];
+      const curAr = ar[i] ?? { icon: "sparkles", title: "", description: "" };
+      const curEn = en[i] ?? { icon: "sparkles", title: "", description: "" };
+      ar[i] = {
+        icon: patch.icon ?? curAr.icon,
+        title: patch.title_ar ?? curAr.title,
+        description: patch.description_ar ?? curAr.description,
+      };
+      en[i] = {
+        icon: patch.icon ?? curEn.icon,
+        title: patch.title_en ?? curEn.title,
+        description: patch.description_en ?? curEn.description,
+      };
+      return { ...(prev as CompanyInfo), why_ar: ar, why_en: en };
+    });
+  }
+
+  function removeWhy(i: number) {
+    setInfo((prev) => ({
+      ...(prev as CompanyInfo),
+      why_ar: (prev?.why_ar ?? []).filter((_, j) => j !== i),
+      why_en: (prev?.why_en ?? []).filter((_, j) => j !== i),
+    }));
   }
 
   async function save() {
@@ -82,6 +120,37 @@ export function CompanyManager() {
         </Field>
         <Bilingual label="عنوان قسم الفيديو" ar={info.video_title_ar ?? ""} en={info.video_title_en ?? ""} onAr={(v) => update("video_title_ar", v)} onEn={(v) => update("video_title_en", v)} />
         <Bilingual label="نص تعريفي قصير أسفل العنوان" ar={info.video_intro_ar ?? ""} en={info.video_intro_en ?? ""} onAr={(v) => update("video_intro_ar", v)} onEn={(v) => update("video_intro_en", v)} type="textarea" />
+      </div>
+
+      <div className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-ink-900">لماذا تختار Sitekoom (مميزات)</h2>
+          <button type="button" onClick={addWhy} className="btn-secondary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> إضافة ميزة</button>
+        </div>
+        {(info.why_ar ?? []).length === 0 ? (
+          <p className="text-sm text-gray-400">لا توجد ميزات بعد.</p>
+        ) : (
+          <div className="space-y-4">
+            {(info.why_ar ?? []).map((w, i) => {
+              const enItem = (info.why_en ?? [])[i] ?? { icon: w.icon, title: "", description: "" };
+              return (
+                <div key={i} className="rounded-xl border border-brand-100 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-500">
+                      <Icon name={w.icon} className="h-5 w-5 text-brand-600" /> ميزة {i + 1}
+                    </span>
+                    <button type="button" onClick={() => removeWhy(i)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                  <div className="grid gap-3">
+                    <Field label="الأيقونة"><IconPicker value={w.icon} onChange={(name) => updateWhy(i, { icon: name })} /></Field>
+                    <Bilingual label="العنوان" ar={w.title} en={enItem.title} onAr={(v) => updateWhy(i, { title_ar: v })} onEn={(v) => updateWhy(i, { title_en: v })} />
+                    <Bilingual label="الوصف" ar={w.description} en={enItem.description} onAr={(v) => updateWhy(i, { description_ar: v })} onEn={(v) => updateWhy(i, { description_en: v })} type="textarea" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="card p-6">

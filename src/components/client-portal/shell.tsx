@@ -98,6 +98,7 @@ export function PortalShell({
   const pathname = usePathname();
   const router = useRouter();
   const isAr = locale === "ar";
+  const base = locale === "ar" ? "" : "/en";
   const nav = buildNav(locale);
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
@@ -119,8 +120,30 @@ export function PortalShell({
   }
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} className="container-site py-8">
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <div dir={isAr ? "rtl" : "ltr"}>
+      <header className="sticky top-0 z-40 border-b border-brand-100 bg-white/80 backdrop-blur">
+        <div className="container-site flex h-16 items-center justify-between">
+          <Link href={base || "/"} className="flex items-center gap-2 text-lg font-extrabold text-ink-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-white">S</span>
+            {isAr ? "بوابة العملاء" : "Client Portal"}
+          </Link>
+          <div className="flex items-center gap-1">
+            <Link href={`${base}/client-portal/notifications`} aria-label={isAr ? "الإشعارات" : "Notifications"} className="relative rounded-lg p-2 text-gray-600 hover:bg-brand-50">
+              <Bell className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{unread}</span>
+              )}
+            </Link>
+            <button type="button" onClick={logout} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-red-500">
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">{isAr ? "خروج" : "Logout"}</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="container-site py-8">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="card h-fit p-4 lg:sticky lg:top-6">
           <div className="flex items-center gap-3 border-b border-brand-50 px-2 pb-4">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient text-lg font-extrabold text-white">
@@ -188,6 +211,7 @@ export function PortalShell({
         </aside>
 
         <div className="min-w-0">{children}</div>
+        </div>
       </div>
     </div>
   );
