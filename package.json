@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^149.0.0",
     "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "2.45.4",
     "clsx": "2.1.1",
@@ -19,7 +18,7 @@
     "lucide-react": "0.446.0",
     "next": "^14.2.35",
     "nodemailer": "6.9.15",
-    "playwright-core": "^1.62.1",
+    "playwright": "^1.62.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "recharts": "2.12.7",

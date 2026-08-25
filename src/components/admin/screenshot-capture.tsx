@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/components/admin/toast";
+import type { DeviceKey } from "@/lib/screenshots";
+
+type ScreenshotMap = Partial<Record<DeviceKey, string>>;
 
 export function ScreenshotCapture({
   url,
@@ -10,8 +13,8 @@ export function ScreenshotCapture({
   onCaptured,
 }: {
   url: string;
-  previous: { desktop?: string | null; tablet?: string | null; mobile?: string | null };
-  onCaptured: (r: { desktop: string; tablet: string; mobile: string }) => void;
+  previous: ScreenshotMap;
+  onCaptured: (images: ScreenshotMap) => void;
 }) {
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
@@ -27,15 +30,24 @@ export function ScreenshotCapture({
       const res = await fetch("/api/admin/screenshots", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: target,
-          remove: [previous.desktop, previous.tablet, previous.mobile].filter(Boolean),
-        }),
+        body: JSON.stringify({ url: target, old: previous }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "فشل التقاط الصور");
-      onCaptured({ desktop: data.desktop, tablet: data.tablet, mobile: data.mobile });
-      push("success", "تم التقاط Screenshots الموقع بنجاح");
+
+      const images: ScreenshotMap = data.images ?? {};
+      const errors: ScreenshotMap = data.errors ?? {};
+      onCaptured(images);
+
+      const okCount = Object.keys(images).length;
+      const errCount = Object.keys(errors).length;
+      if (errCount === 0) {
+        push("success", "تم إنشاء Screenshots بنجاح");
+      } else if (okCount > 0) {
+        push("success", `تم إنشاء ${okCount} صورة، وتعذر إنشاء ${errCount}`);
+      } else {
+        push("error", Object.values(errors)[0] ?? "فشل التقاط الصور");
+      }
     } catch (e) {
       push("error", e instanceof Error ? e.message : "فشل التقاط الصور");
     } finally {
@@ -46,7 +58,7 @@ export function ScreenshotCapture({
   return (
     <button type="button" onClick={run} disabled={busy} className="btn-secondary px-4 py-2 text-sm">
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-      {busy ? "جارٍ التقاط الصور..." : "جلب Screenshots الموقع"}
+      {busy ? "جارٍ التقاط الصور..." : "جلب Screenshot للموقع من جميع الأجهزة"}
     </button>
   );
 }

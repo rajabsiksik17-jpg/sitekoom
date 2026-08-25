@@ -210,19 +210,17 @@ function ItemRow({
                       <ScreenshotCapture
                         url={String(item.data?.source_url ?? projectUrl ?? "")}
                         previous={{
-                          desktop: item.url,
-                          tablet: item.data?.tablet_screenshot ? String(item.data.tablet_screenshot) : null,
-                          mobile: item.data?.mobile_screenshot ? String(item.data.mobile_screenshot) : null,
+                          desktop: item.url ?? undefined,
+                          tablet: item.data?.tablet_screenshot ? String(item.data.tablet_screenshot) : undefined,
+                          mobile: item.data?.mobile_screenshot ? String(item.data.mobile_screenshot) : undefined,
                         }}
-                        onCaptured={(r) =>
+                        onCaptured={(images) =>
                           onUpdate({
-                            url: r.desktop,
+                            ...(images.desktop ? { url: images.desktop } : {}),
                             data: {
                               ...(item.data ?? {}),
-                              tablet_screenshot: r.tablet,
-                              mobile_screenshot: r.mobile,
-                              enable_tablet: true,
-                              enable_mobile: true,
+                              ...(images.tablet ? { tablet_screenshot: images.tablet, enable_tablet: true } : {}),
+                              ...(images.mobile ? { mobile_screenshot: images.mobile, enable_mobile: true } : {}),
                             },
                           })
                         }

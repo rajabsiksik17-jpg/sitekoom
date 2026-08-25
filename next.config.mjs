@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
-    serverComponentsExternalPackages: ["@sparticuz/chromium", "playwright-core"],
+    serverComponentsExternalPackages: ["playwright", "playwright-core"],
   },
   images: {
     remotePatterns: [
