@@ -18,6 +18,7 @@ const oldSchema = z
 const schema = z.object({
   url: z.string().min(1).max(2000),
   old: oldSchema,
+  devices: z.array(z.enum(["desktop", "tablet", "mobile"])).max(3).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await captureScreenshots(body.url);
+    const result = await captureScreenshots(body.url, body.devices);
 
     // Cleanup: only remove the old files of the devices that were successfully
     // re-captured, so a failed device keeps its previous screenshot.

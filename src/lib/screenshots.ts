@@ -142,9 +142,12 @@ async function uploadScreenshot(buffer: Buffer, name: string): Promise<string> {
  * Each device is captured independently: if one fails, the others still succeed
  * and the failure is reported per-device (never a cryptic technical error).
  */
-export async function captureScreenshots(rawUrl: string): Promise<CaptureResult> {
+export async function captureScreenshots(rawUrl: string, devices?: DeviceKey[]): Promise<CaptureResult> {
   const url = normalizeUrl(rawUrl);
   if (!url) throw new Error("رابط الموقع غير صالح");
+
+  // Only the requested devices are captured (defaults to all three).
+  const targets = devices && devices.length ? DEVICES.filter((d) => devices.includes(d.key)) : DEVICES;
 
   // Normalize PLAYWRIGHT_BROWSERS_PATH BEFORE importing playwright, because
   // playwright-core computes its registry directory once at module load.
@@ -192,7 +195,7 @@ export async function captureScreenshots(rawUrl: string): Promise<CaptureResult>
   const errors: Partial<Record<DeviceKey, string>> = {};
 
   try {
-    for (const device of DEVICES) {
+    for (const device of targets) {
       try {
         const buffer = await captureDevice(browser, url, device.width, device.height);
         images[device.key] = await uploadScreenshot(buffer, device.key);

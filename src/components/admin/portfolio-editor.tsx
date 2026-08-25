@@ -206,7 +206,7 @@ function ItemRow({
                     <Field label="رابط الالتقاط (اختياري — إن تُرك فارغًا يُستخدم رابط المشروع)" hint="يتم فتح الموقع فعليًا بثلاثة مقاسات والتقاط Full Page Screenshot.">
                       <input className="input" dir="ltr" placeholder="https://example.com" value={String(item.data?.source_url ?? "")} onChange={(e) => set("data", { ...(item.data ?? {}), source_url: e.target.value })} />
                     </Field>
-                    <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <ScreenshotCapture
                         url={String(item.data?.source_url ?? projectUrl ?? "")}
                         previous={{
@@ -224,6 +224,14 @@ function ItemRow({
                             },
                           })
                         }
+                      />
+                      <ScreenshotCapture
+                        devices={["desktop"]}
+                        url={String(item.data?.source_url ?? projectUrl ?? "")}
+                        previous={{ desktop: item.url ?? undefined }}
+                        onCaptured={(images) => {
+                          if (images.desktop) onUpdate({ url: images.desktop });
+                        }}
                       />
                     </div>
                   </div>
