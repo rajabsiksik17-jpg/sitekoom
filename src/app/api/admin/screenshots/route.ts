@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { captureScreenshots, storagePathFromUrl, type DeviceKey } from "@/lib/screenshots";
+import { captureScreenshots, storagePathFromUrl } from "@/lib/screenshots";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (e) {
     const message = e instanceof Error ? e.message : "فشل التقاط الصور";
-    console.error("[screenshots] capture failed:", message);
+    console.error(
+      "[SCREENSHOT DEBUG] captureError:",
+      e instanceof Error ? (e.stack ?? e.message) : String(e),
+    );
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

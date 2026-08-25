@@ -1,6 +1,6 @@
 import "server-only";
 
-import { existsSync } from "node:fs";
+import { accessSync, constants, existsSync } from "node:fs";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Real, per-device viewports. Each device is opened and captured separately —
@@ -29,82 +29,6 @@ function normalizeUrl(raw: string): string | null {
   } catch {
     return null;
   }
-}
-
-// Common system browser locations. Used for local dev (Windows/macOS) and for
-// normal Linux servers (e.g. Hostinger) where Chromium/Chrome is installed.
-function candidateBrowserPaths(): string[] {
-  if (process.platform === "win32") {
-    return [
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-    ];
-  }
-  if (process.platform === "darwin") {
-    return [
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-      "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    ];
-  }
-  return [
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/microsoft-edge",
-    "/snap/bin/chromium",
-    "/usr/local/bin/chromium",
-    "/usr/local/bin/google-chrome",
-  ];
-}
-
-// Flags required to run a real Chromium in a container/limited Linux server.
-function linuxFlags(): string[] {
-  return ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"];
-}
-
-interface ResolvedChromium {
-  executablePath: string;
-  args: string[];
-}
-
-/**
- * Resolve a real Chromium executable, in priority order:
- *   1. CHROMIUM_EXECUTABLE_PATH (explicit override)
- *   2. System-installed Chrome/Edge/Chromium (local dev + Linux servers)
- *   3. Playwright-managed Chromium (npx playwright install chromium)
- * Throws a clear, actionable error if none is available.
- */
-async function resolveChromium(): Promise<ResolvedChromium> {
-  const explicit = process.env.CHROMIUM_EXECUTABLE_PATH?.trim();
-  if (explicit) {
-    if (existsSync(explicit)) {
-      return { executablePath: explicit, args: process.platform === "linux" ? linuxFlags() : [] };
-    }
-    throw new Error(`CHROMIUM_EXECUTABLE_PATH يشير إلى مسار غير موجود: ${explicit}`);
-  }
-
-  const system = candidateBrowserPaths().find((p) => existsSync(p));
-  if (system) {
-    return { executablePath: system, args: process.platform === "linux" ? linuxFlags() : [] };
-  }
-
-  try {
-    const { chromium } = await import("playwright");
-    const pwPath = chromium.executablePath();
-    if (pwPath && existsSync(pwPath)) {
-      return { executablePath: pwPath, args: process.platform === "linux" ? linuxFlags() : [] };
-    }
-  } catch {
-    /* playwright not resolvable — ignore */
-  }
-
-  throw new Error(
-    "لم يتم العثور على متصفح Chromium على الخادم. قم بتثبيت Chromium (مثال: npx playwright install chromium) أو اضبط CHROMIUM_EXECUTABLE_PATH.",
-  );
 }
 
 // Scroll through the whole page (down then back up) to force lazy-loaded
@@ -191,10 +115,43 @@ export async function captureScreenshots(rawUrl: string): Promise<CaptureResult>
   const url = normalizeUrl(rawUrl);
   if (!url) throw new Error("رابط الموقع غير صالح");
 
-  const { executablePath, args } = await resolveChromium();
+  // Resolve the Chromium executable — do NOT use a hardcoded path. Prefer an
+  // explicit override only when it actually exists; otherwise trust Playwright.
   const { chromium } = await import("playwright");
+  const configuredPath = process.env.CHROMIUM_EXECUTABLE_PATH?.trim();
+  const playwrightPath = chromium.executablePath();
+  const executablePath =
+    configuredPath && existsSync(configuredPath) ? configuredPath : playwrightPath;
 
-  const browser = await chromium.launch({ executablePath, args, headless: true });
+  // Temporary diagnostic logging (see server logs on the Hostinger side).
+  console.log("[SCREENSHOT DEBUG] Node:", process.version);
+  console.log("[SCREENSHOT DEBUG] CWD:", process.cwd());
+  console.log("[SCREENSHOT DEBUG] PATH:", process.env.PATH ?? "");
+  console.log("[SCREENSHOT DEBUG] PLAYWRIGHT_BROWSERS_PATH:", process.env.PLAYWRIGHT_BROWSERS_PATH ?? "");
+  console.log("[SCREENSHOT DEBUG] CHROMIUM_EXECUTABLE_PATH:", configuredPath ?? "");
+  console.log("[SCREENSHOT DEBUG] resolvedExecutablePath:", executablePath);
+  console.log("[SCREENSHOT DEBUG] exists:", existsSync(executablePath));
+  try {
+    accessSync(executablePath, constants.X_OK);
+    console.log("[SCREENSHOT DEBUG] executable: true");
+  } catch (e) {
+    console.log("[SCREENSHOT DEBUG] executable: false", e instanceof Error ? e.message : String(e));
+  }
+
+  if (!existsSync(executablePath)) {
+    throw new Error(`لم يتم العثور على Chromium في المسار: ${executablePath}`);
+  }
+
+  let browser: import("playwright").Browser;
+  try {
+    browser = await chromium.launch({ executablePath, headless: true });
+  } catch (e) {
+    console.error(
+      "[SCREENSHOT DEBUG] launchError:",
+      e instanceof Error ? (e.stack ?? e.message) : String(e),
+    );
+    throw new Error("تعذر تشغيل Chromium. راجع Server Logs للتفاصيل.");
+  }
 
   const images: Partial<Record<DeviceKey, string>> = {};
   const errors: Partial<Record<DeviceKey, string>> = {};
@@ -206,7 +163,10 @@ export async function captureScreenshots(rawUrl: string): Promise<CaptureResult>
         images[device.key] = await uploadScreenshot(buffer, device.key);
       } catch (e) {
         const message = e instanceof Error ? e.message : "خطأ غير معروف";
-        console.error(`[screenshots] تعذر إنشاء Screenshot لـ ${device.key} (${url}):`, message);
+        console.error(
+          `[SCREENSHOT DEBUG] تعذر إنشاء Screenshot لـ ${device.key} (${url}):`,
+          e instanceof Error ? (e.stack ?? e.message) : String(e),
+        );
         errors[device.key] = message;
       }
     }
