@@ -271,7 +271,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
             ? "تظهر هنا أنواع المحتوى المفعّلة لخدمة " + selectedService.title_ar + " فقط."
             : "اختر الخدمة أولًا لتظهر أنواع المحتوى المفعّلة لها."}
         </p>
-        <PortfolioEditor enabled={enabledTypes} value={portfolioItems} onChange={setPortfolioItems} />
+        <PortfolioEditor enabled={enabledTypes} value={portfolioItems} onChange={setPortfolioItems} projectUrl={form.project_url} />
       </div>
 
       <div className="card p-6">

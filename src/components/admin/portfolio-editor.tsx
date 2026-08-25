@@ -5,6 +5,7 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Eye, EyeOff, Star, GripVertical }
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { FileUpload } from "@/components/admin/file-upload";
+import { ScreenshotCapture } from "@/components/admin/screenshot-capture";
 import { PORTFOLIO_FIELD_TYPES, portfolioFieldType, SITE_PAGES, type PortfolioKind } from "@/lib/portfolio";
 import type { PortfolioItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,10 +31,12 @@ export function PortfolioEditor({
   enabled,
   value,
   onChange,
+  projectUrl,
 }: {
   enabled: string[];
   value: PortfolioItemDraft[];
   onChange: (items: PortfolioItemDraft[]) => void;
+  projectUrl?: string | null;
 }) {
   const enabledTypes = PORTFOLIO_FIELD_TYPES.filter((t) => enabled.includes(t.key));
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -97,6 +100,7 @@ export function PortfolioEditor({
               index={index}
               total={value.length}
               dragIndex={dragIndex}
+              projectUrl={projectUrl ?? ""}
               onDragStart={() => setDragIndex(index)}
               onDragEnter={() => dragIndex !== null && dragIndex !== index && onDrop(index)}
               onDragEnd={() => setDragIndex(null)}
@@ -116,6 +120,7 @@ function ItemRow({
   index,
   total,
   dragIndex,
+  projectUrl,
   onDragStart,
   onDragEnter,
   onDragEnd,
@@ -127,6 +132,7 @@ function ItemRow({
   index: number;
   total: number;
   dragIndex: number | null;
+  projectUrl: string;
   onDragStart: () => void;
   onDragEnter: () => void;
   onDragEnd: () => void;
@@ -196,6 +202,34 @@ function ItemRow({
 
               {item.type === "website_screenshot" && (
                 <>
+                  <div className="rounded-xl border border-brand-100 bg-brand-50/30 p-3">
+                    <Field label="رابط الالتقاط (اختياري — إن تُرك فارغًا يُستخدم رابط المشروع)" hint="يتم فتح الموقع فعليًا بثلاثة مقاسات والتقاط Full Page Screenshot.">
+                      <input className="input" dir="ltr" placeholder="https://example.com" value={String(item.data?.source_url ?? "")} onChange={(e) => set("data", { ...(item.data ?? {}), source_url: e.target.value })} />
+                    </Field>
+                    <div className="mt-3">
+                      <ScreenshotCapture
+                        url={String(item.data?.source_url ?? projectUrl ?? "")}
+                        previous={{
+                          desktop: item.url,
+                          tablet: item.data?.tablet_screenshot ? String(item.data.tablet_screenshot) : null,
+                          mobile: item.data?.mobile_screenshot ? String(item.data.mobile_screenshot) : null,
+                        }}
+                        onCaptured={(r) =>
+                          onUpdate({
+                            url: r.desktop,
+                            data: {
+                              ...(item.data ?? {}),
+                              tablet_screenshot: r.tablet,
+                              mobile_screenshot: r.mobile,
+                              enable_tablet: true,
+                              enable_mobile: true,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Tablet Screenshot (اختياري)"><ImageUpload value={String(item.data?.tablet_screenshot ?? "")} onChange={(u) => set("data", { ...(item.data ?? {}), tablet_screenshot: u })} folder="projects" /></Field>
                     <Field label="Mobile Screenshot (اختياري)"><ImageUpload value={String(item.data?.mobile_screenshot ?? "")} onChange={(u) => set("data", { ...(item.data ?? {}), mobile_screenshot: u })} folder="projects" /></Field>
