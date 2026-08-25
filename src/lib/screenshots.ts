@@ -1,6 +1,8 @@
 import "server-only";
 
 import { accessSync, constants, existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { isAbsolute, resolve } from "node:path";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Real, per-device viewports. Each device is opened and captured separately —
@@ -29,6 +31,35 @@ function normalizeUrl(raw: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Playwright resolves a relative PLAYWRIGHT_BROWSERS_PATH against `process.cwd()`
+ * (or INIT_CWD), which on Hostinger points into the app directory
+ * (`…/domains/sitekoom.com`), producing a wrong path like
+ * `…/domains/sitekoom.com/.cache/ms-playwright`.
+ *
+ * Node does NOT expand `~`, so we normalize the value ourselves:
+ *   - empty / "0" → leave untouched (Playwright defaults are correct)
+ *   - absolute  → leave untouched
+ *   - `~…`      → expand against os.homedir()
+ *   - relative  → resolve against os.homedir() (the browser cache lives under
+ *                 the user's HOME, never under the app cwd)
+ */
+function normalizePlaywrightBrowsersPath(): string {
+  const raw = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "0" || isAbsolute(trimmed)) return trimmed;
+
+  let resolvedPath: string;
+  if (trimmed === "~" || trimmed.startsWith("~/")) {
+    resolvedPath = resolve(homedir(), trimmed.slice(trimmed === "~" ? 1 : 2));
+  } else {
+    resolvedPath = resolve(homedir(), trimmed);
+  }
+  process.env.PLAYWRIGHT_BROWSERS_PATH = resolvedPath;
+  return resolvedPath;
 }
 
 // Scroll through the whole page (down then back up) to force lazy-loaded
@@ -115,6 +146,10 @@ export async function captureScreenshots(rawUrl: string): Promise<CaptureResult>
   const url = normalizeUrl(rawUrl);
   if (!url) throw new Error("رابط الموقع غير صالح");
 
+  // Normalize PLAYWRIGHT_BROWSERS_PATH BEFORE importing playwright, because
+  // playwright-core computes its registry directory once at module load.
+  const normalizedBrowsersPath = normalizePlaywrightBrowsersPath();
+
   // Resolve the Chromium executable — do NOT use a hardcoded path. Prefer an
   // explicit override only when it actually exists; otherwise trust Playwright.
   const { chromium } = await import("playwright");
@@ -127,7 +162,7 @@ export async function captureScreenshots(rawUrl: string): Promise<CaptureResult>
   console.log("[SCREENSHOT DEBUG] Node:", process.version);
   console.log("[SCREENSHOT DEBUG] CWD:", process.cwd());
   console.log("[SCREENSHOT DEBUG] PATH:", process.env.PATH ?? "");
-  console.log("[SCREENSHOT DEBUG] PLAYWRIGHT_BROWSERS_PATH:", process.env.PLAYWRIGHT_BROWSERS_PATH ?? "");
+  console.log("[SCREENSHOT DEBUG] PLAYWRIGHT_BROWSERS_PATH:", normalizedBrowsersPath || "(unset)");
   console.log("[SCREENSHOT DEBUG] CHROMIUM_EXECUTABLE_PATH:", configuredPath ?? "");
   console.log("[SCREENSHOT DEBUG] resolvedExecutablePath:", executablePath);
   console.log("[SCREENSHOT DEBUG] exists:", existsSync(executablePath));
