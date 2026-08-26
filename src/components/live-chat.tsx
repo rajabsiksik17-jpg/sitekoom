@@ -156,6 +156,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         typingTimer.current = setTimeout(() => setAgentTyping(false), 2500);
       })
       .subscribe((status) => {
+        console.log("[CHAT REALTIME] subscription status:", status, "conversation:", conversation.id);
         setReconnecting(status !== "SUBSCRIBED");
       });
 

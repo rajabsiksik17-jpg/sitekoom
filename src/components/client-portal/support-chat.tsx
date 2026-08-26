@@ -99,7 +99,9 @@ export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons:
           if (conv.status === "closed") setPhase("closed");
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[CHAT REALTIME] subscription status:", status, "conversation:", conversation.id);
+      });
 
     return () => {
       supabase.removeChannel(channel);

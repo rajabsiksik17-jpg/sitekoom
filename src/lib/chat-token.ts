@@ -20,12 +20,19 @@ export function mintChatAccessToken(visitorToken: string): string | null {
   if (!secret) return null;
 
   const now = Math.floor(Date.now() / 1000);
+  let ref = "";
+  try {
+    ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname.split(".")[0];
+  } catch {
+    /* keep ref empty */
+  }
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = b64url(
     JSON.stringify({
       role: "anon",
       chat_token: visitorToken,
       iss: "supabase",
+      ref,
       iat: now,
       exp: now + 60 * 60 * 24 * 30, // 30 days
     }),
