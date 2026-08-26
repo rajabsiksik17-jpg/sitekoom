@@ -68,6 +68,7 @@ export default async function ProjectDetailPage({
     .filter((p) => p.id !== project.id && (p.category_id === project.category_id || p.service_id === project.service_id))
     .slice(0, 3);
   const fallbackRelated = related.length ? related : allProjects.filter((p) => p.id !== project.id).slice(0, 3);
+  const hasSidebar = project.technologies.length > 0 || features.length > 0 || !!project.project_url;
 
   return (
     <>
@@ -96,8 +97,8 @@ export default async function ProjectDetailPage({
           ]}
         />
 
-        <div className={cn("grid gap-10", project.project_url && "lg:grid-cols-3")}>
-          <div className={cn(project.project_url && "lg:col-span-2")}>
+        <div className={cn("grid gap-10", hasSidebar && "lg:grid-cols-3")}>
+          <div className={cn(hasSidebar && "lg:col-span-2")}>
             {portfolioItems.length > 0 ? (
               <ProjectPortfolio items={portfolioItems} description={fullDesc ?? undefined} locale={locale} />
             ) : (
@@ -116,34 +117,36 @@ export default async function ProjectDetailPage({
                 )}
               </>
             )}
-
-            {project.technologies.length > 0 && (
-              <div className="mt-10">
-                <h3 className="mb-4 text-xl font-extrabold text-ink-900">{dict.service.technologies}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((t) => (
-                    <span key={t} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <ProjectFeatures features={features} locale={locale} />
           </div>
 
-          {project.project_url && (
+          {hasSidebar && (
             <aside className="space-y-6">
-              <a
-                href={project.project_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary w-full px-5 py-3"
-              >
-                {dict.common.viewProject}
-                <ExternalLink className="h-4 w-4" />
-              </a>
+              {project.technologies.length > 0 && (
+                <div className="card p-6">
+                  <h3 className="mb-4 font-bold text-ink-900">{dict.service.technologies}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {project.technologies.map((t) => (
+                      <span key={t} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <ProjectFeatures features={features} locale={locale} />
+
+              {project.project_url && (
+                <a
+                  href={project.project_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary w-full px-5 py-3"
+                >
+                  {dict.common.viewProject}
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
             </aside>
           )}
         </div>

@@ -6,16 +6,16 @@ export function ProjectFeatures({ features, locale }: { features: ProjectFeature
   if (features.length === 0) return null;
 
   return (
-    <section className="mt-12">
-      <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{locale === "ar" ? "مميزات العمل" : "Project Features"}</h2>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+    <section>
+      <h3 className="mb-4 text-lg font-extrabold text-ink-900">{locale === "ar" ? "مميزات العمل" : "Project Features"}</h3>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
         {features.map((f) => (
-          <div key={f.id} className="card h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-              <Icon name={f.icon} className="h-6 w-6" />
+          <div key={f.id} className="card p-4">
+            <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <Icon name={f.icon} className="h-5 w-5" />
             </span>
-            <h3 className="mb-2 font-bold text-ink-900">{localize(locale, f.title_ar, f.title_en)}</h3>
-            {(f.description_ar || f.description_en) && <p className="text-sm leading-relaxed text-gray-600">{localize(locale, f.description_ar, f.description_en)}</p>}
+            <h3 className="text-sm font-bold text-ink-900">{localize(locale, f.title_ar, f.title_en)}</h3>
+            {(f.description_ar || f.description_en) && <p className="mt-1 text-xs leading-relaxed text-gray-600">{localize(locale, f.description_ar, f.description_en)}</p>}
           </div>
         ))}
       </div>
