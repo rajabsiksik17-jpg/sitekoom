@@ -76,6 +76,7 @@ export interface ServiceCategory {
   og_image: string | null;
   sort: number;
   is_active: boolean;
+  portfolio_config: string[];
   created_at: string;
   updated_at: string;
 }

@@ -8,7 +8,7 @@ export function ProjectFeatures({ features, locale }: { features: ProjectFeature
   return (
     <section className="mt-12">
       <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{locale === "ar" ? "مميزات العمل" : "Project Features"}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {features.map((f) => (
           <div key={f.id} className="card h-full p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
             <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">

@@ -14,7 +14,7 @@ import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
 import { PortfolioEditor, type PortfolioItemDraft } from "@/components/admin/portfolio-editor";
 import { ProjectFeaturesEditor, type ProjectFeatureDraft } from "@/components/admin/project-features-editor";
-import type { Project, ProjectCategory, Service } from "@/lib/types";
+import type { Project, ProjectCategory, Service, ServiceCategory } from "@/lib/types";
 
 export function ProjectForm({ projectId }: { projectId?: string }) {
   const router = useRouter();
@@ -23,7 +23,9 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
+  const [serviceCategoryId, setServiceCategoryId] = useState("");
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItemDraft[]>([]);
   const [features, setFeatures] = useState<ProjectFeatureDraft[]>([]);
 
@@ -37,19 +39,28 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [descTab, setDescTab] = useState<"ar" | "en">("ar");
 
   const selectedService = services.find((s) => s.id === form.service_id);
-  const enabledTypes = selectedService?.portfolio_config ?? [];
+  const selectedCategory = serviceCategories.find((c) => c.id === selectedService?.category_id);
+  const filteredServices = serviceCategoryId ? services.filter((s) => s.category_id === serviceCategoryId) : services;
+
+  // Portfolio settings priority: service override → service category default → none.
+  const serviceConfig = selectedService?.portfolio_config ?? [];
+  const categoryConfig = selectedCategory?.portfolio_config ?? [];
+  const enabledTypes = serviceConfig.length > 0 ? serviceConfig : categoryConfig;
+  const portfolioSource = serviceConfig.length > 0 ? "service" : categoryConfig.length > 0 ? "category" : "none";
 
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      supabase.from("services").select("id,title_ar,title_en,portfolio_config").order("sort"),
+      supabase.from("services").select("id,title_ar,title_en,category_id,portfolio_config").order("sort"),
+      supabase.from("service_categories").select("id,name_ar,name_en,portfolio_config").order("sort"),
       supabase.from("project_categories").select("*").order("sort"),
-    ]).then(([s, c]) => {
+    ]).then(([s, sc, c]) => {
       setServices((s.data ?? []) as Service[]);
+      setServiceCategories((sc.data ?? []) as ServiceCategory[]);
       setCategories((c.data ?? []) as ProjectCategory[]);
-    });
 
-    if (projectId) {
+      if (!projectId) return;
+
       Promise.all([
         supabase.from("projects").select("*").eq("id", projectId).single(),
         supabase.from("project_images").select("*").eq("project_id", projectId).order("sort"),
@@ -68,6 +79,8 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
             project_url: d.project_url ?? "", technologies: (d.technologies ?? []).join(", "),
             status_field: d.status_field, is_featured: d.is_featured,
           });
+          const svc = (s.data ?? []).find((x) => (x as Service).id === d.service_id);
+          setServiceCategoryId((svc as Service | undefined)?.category_id ?? "");
         }
         setGallery((imgs.data ?? []).map((i) => i.url));
         setPortfolioItems((ppi.data ?? []).map((x) => ({
@@ -83,16 +96,32 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         setFeatures((feat.data ?? []).map((f) => ({ icon: f.icon, title_ar: f.title_ar, title_en: f.title_en, description_ar: f.description_ar, description_en: f.description_en, sort: f.sort })));
         setLoading(false);
       });
-    }
+    });
   }, [projectId]);
 
   function update(field: string, value: unknown) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function updateServiceCategory(categoryId: string) {
+    setServiceCategoryId(categoryId);
+    setForm((f) => {
+      if (!categoryId) return f;
+      const svc = services.find((s) => s.id === f.service_id);
+      if (svc && svc.category_id !== categoryId) return { ...f, service_id: "" };
+      return f;
+    });
+  }
+
   async function handleSave() {
     if (!form.title_ar.trim() || !form.title_en.trim()) return push("error", "أدخل العنوان بالعربية والإنجليزية");
     if (!form.slug.trim()) return push("error", "أدخل Slug");
+    if (form.service_id && serviceCategoryId) {
+      const svc = services.find((s) => s.id === form.service_id);
+      if (svc && svc.category_id !== serviceCategoryId) {
+        return push("error", "الخدمة المختارة لا تنتمي إلى تصنيف الخدمة المحدد");
+      }
+    }
     setSaving(true);
     const supabase = createClient();
     const payload = {
@@ -193,26 +222,37 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         <Bilingual label="العنوان" required ar={form.title_ar} en={form.title_en} onAr={(v) => update("title_ar", v)} onEn={(v) => update("title_en", v)} />
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Slug"><input className="input" dir="ltr" value={form.slug} onChange={(e) => update("slug", e.target.value)} /></Field>
+          <Field label="تصنيف الخدمة">
+            <select className="input" value={serviceCategoryId} onChange={(e) => updateServiceCategory(e.target.value)}>
+              <option value="">— كل التصنيفات —</option>
+              {serviceCategories.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+            </select>
+          </Field>
           <Field label="الخدمة">
             <select className="input" value={form.service_id} onChange={(e) => update("service_id", e.target.value)}>
               <option value="">—</option>
-              {services.map((s) => <option key={s.id} value={s.id}>{s.title_ar}</option>)}
+              {filteredServices.map((s) => <option key={s.id} value={s.id}>{s.title_ar}</option>)}
             </select>
+            {serviceCategoryId && filteredServices.length === 0 && (
+              <p className="mt-1 text-xs text-amber-600">لا توجد خدمات لهذا التصنيف</p>
+            )}
           </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="التصنيف">
             <select className="input" value={form.category_id} onChange={(e) => update("category_id", e.target.value)}>
               <option value="">—</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
             </select>
           </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="حالة المشروع">
             <select className="input" value={form.status} onChange={(e) => update("status", e.target.value)}>
               {["in_progress", "preparing", "ready", "maintenance", "completed", "paused"].map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
           <Field label="تاريخ الإنجاز"><input type="date" className="input" value={form.completion_date} onChange={(e) => update("completion_date", e.target.value)} /></Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="حالة النشر">
             <select className="input" value={form.status_field} onChange={(e) => update("status_field", e.target.value)}>
               <option value="published">منشور</option>
@@ -269,7 +309,16 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         <p className="mb-4 text-sm text-gray-500">
           {selectedService
             ? "تظهر هنا أنواع المحتوى المفعّلة لخدمة " + selectedService.title_ar + " فقط."
-            : "اختر الخدمة أولًا لتظهر أنواع المحتوى المفعّلة لها."}
+            : "اختر تصنيف الخدمة ثم الخدمة لتظهر أنواع المحتوى المفعّلة لها."}
+          {portfolioSource === "service" && (
+            <span className="mt-1 block text-xs font-semibold text-brand-600">إعدادات Portfolio من الخدمة</span>
+          )}
+          {portfolioSource === "category" && (
+            <span className="mt-1 block text-xs font-semibold text-brand-600">إعدادات Portfolio من تصنيف الخدمة</span>
+          )}
+          {portfolioSource === "none" && selectedService && (
+            <span className="mt-1 block text-xs font-semibold text-gray-400">لا توجد إعدادات Portfolio لهذه الخدمة أو تصنيفها</span>
+          )}
         </p>
         <PortfolioEditor enabled={enabledTypes} value={portfolioItems} onChange={setPortfolioItems} projectUrl={form.project_url} />
       </div>

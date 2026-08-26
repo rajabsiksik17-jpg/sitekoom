@@ -6,7 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
-import { localize, formatDate } from "@/lib/utils";
+import { localize, formatDate, cn } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getProjectBySlug, getProjects, getProjectPortfolioItems, getProjectFeatures } from "@/lib/queries";
 import { ProjectPortfolio } from "@/components/project-portfolio";
@@ -96,8 +96,8 @@ export default async function ProjectDetailPage({
           ]}
         />
 
-        <div className="grid gap-10 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className={cn("grid gap-10", project.project_url && "lg:grid-cols-3")}>
+          <div className={cn(project.project_url && "lg:col-span-2")}>
             {portfolioItems.length > 0 ? (
               <ProjectPortfolio items={portfolioItems} description={fullDesc ?? undefined} locale={locale} />
             ) : (
@@ -117,13 +117,9 @@ export default async function ProjectDetailPage({
               </>
             )}
 
-            <ProjectFeatures features={features} locale={locale} />
-          </div>
-
-          <aside className="space-y-6">
             {project.technologies.length > 0 && (
-              <div className="card p-6">
-                <h3 className="mb-4 font-bold text-ink-900">{dict.service.technologies}</h3>
+              <div className="mt-10">
+                <h3 className="mb-4 text-xl font-extrabold text-ink-900">{dict.service.technologies}</h3>
                 <div className="flex flex-wrap gap-2">
                   {project.technologies.map((t) => (
                     <span key={t} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
@@ -134,7 +130,11 @@ export default async function ProjectDetailPage({
               </div>
             )}
 
-            {project.project_url && (
+            <ProjectFeatures features={features} locale={locale} />
+          </div>
+
+          {project.project_url && (
+            <aside className="space-y-6">
               <a
                 href={project.project_url}
                 target="_blank"
@@ -144,8 +144,8 @@ export default async function ProjectDetailPage({
                 {dict.common.viewProject}
                 <ExternalLink className="h-4 w-4" />
               </a>
-            )}
-          </aside>
+            </aside>
+          )}
         </div>
       </div>
 
