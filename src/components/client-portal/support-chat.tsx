@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Headset, LifeBuoy, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { createChatClient } from "@/lib/supabase/chat-client";
 import { cn } from "@/lib/utils";
 
 interface Conversation {
@@ -59,6 +60,9 @@ export function SupportChat({ locale, reasons }: { locale: "ar" | "en"; reasons:
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "error");
+      if (data.access_token) {
+        supabaseRef.current = createChatClient(data.access_token);
+      }
       setConversation(data.conversation);
       setPhase("waiting");
     } catch (err) {

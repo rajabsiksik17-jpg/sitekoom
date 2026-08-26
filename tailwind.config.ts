@@ -56,9 +56,9 @@ const config: Config = {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
-        "marquee-reverse": {
-          "0%": { transform: "translateX(-50%)" },
-          "100%": { transform: "translateX(0)" },
+        "marquee-rtl": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(50%)" },
         },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
@@ -67,7 +67,7 @@ const config: Config = {
       animation: {
         "fade-up": "fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both",
         marquee: "marquee 30s linear infinite",
-        "marquee-reverse": "marquee-reverse 30s linear infinite",
+        "marquee-rtl": "marquee-rtl 30s linear infinite",
         shimmer: "shimmer 1.6s infinite",
       },
     },

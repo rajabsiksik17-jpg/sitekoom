@@ -140,7 +140,7 @@ const defaults = {
   team: {
     display_type: "grid",
     autoplay: true,
-    speed: 30,
+    speed: 5,
   } as TeamSettings,
 };
 

@@ -131,7 +131,7 @@ export function ClientDetailManager({ clientId }: { clientId: string }) {
   const load = useCallback(async () => {
     const supabase = createClient();
     const [c, w, s, d, h, r] = await Promise.all([
-      supabase.from("clients").select("*").eq("id", clientId).single(),
+      supabase.from("clients").select("id, name, company, email, phone, username, website_url, admin_url, website_type, auth_method, status, preferred_language, created_at, updated_at, deleted_at").eq("id", clientId).single(),
       supabase.from("client_websites").select("id, client_id, name, domain, website_url, admin_url, website_type, status, login_username, login_email, credentials_type, ga4_property_id, ga4_measurement_id, created_at").eq("client_id", clientId).order("created_at"),
       supabase.from("client_subscriptions").select("*").eq("client_id", clientId).order("expiry_date"),
       supabase.from("client_domains").select("*").eq("client_id", clientId).order("expiry_date"),

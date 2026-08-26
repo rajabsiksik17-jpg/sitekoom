@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientSession } from "@/lib/client-auth";
 import { notifyAdminEmail } from "@/lib/admin-notify";
+import { mintChatAccessToken } from "@/lib/chat-token";
 
 const schema = z.object({
   message: z.string().min(1).max(3000),
@@ -115,5 +116,6 @@ export async function POST(request: NextRequest) {
       agent_avatar: null,
       agent_position: null,
     },
+    access_token: mintChatAccessToken(conversation.visitor_token),
   });
 }

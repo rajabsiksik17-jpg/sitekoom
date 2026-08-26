@@ -5,14 +5,14 @@ import { localize } from "@/lib/utils";
 import type { MarqueeMessage } from "@/lib/types";
 
 /**
- * Infinite seamless marquee. The animated track is duplicated into two
- * identical, self-contained groups (A → B → A → B …). Because each group
- * carries its own trailing padding, `translateX(±50%)` moves exactly one group
- * width — a real gapless loop with no jump, no white gap and no half-word cut.
+ * Infinite seamless marquee. The track is duplicated into two identical,
+ * self-contained groups (A → B → A → B …) so `translateX(±50%)` moves exactly
+ * one group width — a real gapless loop with no jump, no white gap and no
+ * half-word cut.
  *
- * The track is always laid out `dir="ltr"` so the physical `translateX`
- * math stays correct; the text itself uses `dir="auto"` so Arabic renders RTL.
- * LTR scrolls leftward, Arabic (RTL) scrolls rightward via the reverse keyframe.
+ * The direction is locale-aware: English lays out and scrolls LTR
+ * (`translateX(0 → -50%)`), Arabic lays out and scrolls RTL
+ * (`translateX(0 → +50%)`). No hardcoded `dir="ltr"` on the animated track.
  */
 export function Marquee({ messages }: { messages: MarqueeMessage[] }) {
   const { locale } = useLocale();
@@ -22,11 +22,8 @@ export function Marquee({ messages }: { messages: MarqueeMessage[] }) {
   const items = messages.map((m) => localize(locale, m.text_ar, m.text_en));
 
   return (
-    <div className="overflow-hidden border-y border-brand-100 bg-brand-50/50 py-4">
-      <div
-        dir="ltr"
-        className={`flex w-max will-change-transform ${isAr ? "animate-marquee-reverse" : "animate-marquee"}`}
-      >
+    <div dir={isAr ? "rtl" : "ltr"} className="overflow-hidden border-y border-brand-100 bg-brand-50/50 py-4">
+      <div className={`flex w-max will-change-transform ${isAr ? "animate-marquee-rtl" : "animate-marquee"}`}>
         {[0, 1].map((dup) => (
           <div
             key={dup}
@@ -36,7 +33,6 @@ export function Marquee({ messages }: { messages: MarqueeMessage[] }) {
             {items.map((text, i) => (
               <span
                 key={i}
-                dir="auto"
                 className="flex shrink-0 items-center gap-3 whitespace-nowrap text-sm font-semibold text-brand-800"
               >
                 <span>{text}</span>

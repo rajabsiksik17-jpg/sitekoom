@@ -17,7 +17,7 @@ export function TeamManager() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<TeamMember> | null>(null);
   const [deleting, setDeleting] = useState<TeamMember | null>(null);
-  const [teamSettings, setTeamSettings] = useState<{ display_type: string; autoplay: boolean; speed: number }>({ display_type: "grid", autoplay: true, speed: 30 });
+  const [teamSettings, setTeamSettings] = useState<{ display_type: string; autoplay: boolean; speed: number }>({ display_type: "grid", autoplay: true, speed: 5 });
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -83,8 +83,8 @@ export function TeamManager() {
         {teamSettings.display_type === "slider" && (
           <>
             <div>
-              <span className="mb-1 block text-xs text-gray-400">السرعة (ثانية)</span>
-              <input className="input" dir="ltr" type="number" min={5} max={120} value={teamSettings.speed} onChange={(e) => setTeamSettings({ ...teamSettings, speed: Number(e.target.value) })} />
+              <span className="mb-1 block text-xs text-gray-400">سرعة التنقل (ثانية)</span>
+              <input className="input" dir="ltr" type="number" min={2} max={30} value={teamSettings.speed} onChange={(e) => setTeamSettings({ ...teamSettings, speed: Number(e.target.value) })} />
             </div>
             <label className="flex items-center gap-2 pb-2 text-sm text-gray-700">
               <input type="checkbox" checked={teamSettings.autoplay} onChange={(e) => setTeamSettings({ ...teamSettings, autoplay: e.target.checked })} className="rounded border-brand-200 text-brand-600" /> تشغيل تلقائي

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Headset, MessageCircle, Minus, Send, Volume2, VolumeX, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { createChatClient } from "@/lib/supabase/chat-client";
 import { useLocale } from "@/components/providers";
 import { Draggable } from "@/components/draggable";
 import { PhoneInput, type PhoneInputResult } from "@/components/phone-input";
@@ -31,6 +32,7 @@ interface Message {
 }
 
 const TOKEN_KEY = "sitekoom_chat_token";
+const ACCESS_KEY = "sitekoom_chat_access";
 
 function appendMessage(prev: Message[], next: Message): Message[] {
   if (prev.some((m) => m.id === next.id)) return prev;
@@ -110,7 +112,10 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) loadConversation(token);
+    if (!token) return;
+    const access = localStorage.getItem(ACCESS_KEY);
+    if (access) supabaseRef.current = createChatClient(access);
+    loadConversation(token);
   }, [loadConversation]);
 
   // Single realtime subscription per conversation (cleanup on change/unmount).
@@ -161,6 +166,8 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
 
   function resetToForm() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACCESS_KEY);
+    supabaseRef.current = createClient();
     setConversation(null);
     setMessages([]);
     setPhase("form");
@@ -207,6 +214,10 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "error");
       localStorage.setItem(TOKEN_KEY, data.conversation.visitor_token);
+      if (data.access_token) {
+        localStorage.setItem(ACCESS_KEY, data.access_token);
+        supabaseRef.current = createChatClient(data.access_token);
+      }
       setConversation(data.conversation);
       setPhase("waiting");
     } catch (err) {
