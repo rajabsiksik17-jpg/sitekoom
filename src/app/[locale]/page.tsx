@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { HeroSlider } from "@/components/home/hero-slider";
@@ -12,6 +13,7 @@ import { CtaSection } from "@/components/home/cta-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
+import { createClient } from "@/lib/supabase/server";
 import {
   getSliders,
   getMarqueeMessages,
@@ -23,6 +25,35 @@ import {
   getStatistics,
   getSocialLinks,
 } from "@/lib/queries";
+
+export async function generateMetadata({ params }: { params: { locale: "ar" | "en" } }): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: seo } = await supabase
+    .from("seo_metadata")
+    .select("seo_title, meta_description, keywords, og_title, og_description, og_image")
+    .eq("entity_type", "home")
+    .is("entity_id", null)
+    .eq("locale", params.locale)
+    .maybeSingle();
+
+  return {
+    title: seo?.seo_title || undefined,
+    description: seo?.meta_description || undefined,
+    keywords: seo?.keywords ?? undefined,
+    openGraph: {
+      title: seo?.og_title || seo?.seo_title || undefined,
+      description: seo?.og_description || seo?.meta_description || undefined,
+      images: seo?.og_image ? [{ url: seo.og_image }] : undefined,
+    },
+    alternates: {
+      canonical: params.locale === "ar" ? "/" : "/en",
+      languages: {
+        ar: "/",
+        en: "/en",
+      },
+    },
+  };
+}
 
 export default async function HomePage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;

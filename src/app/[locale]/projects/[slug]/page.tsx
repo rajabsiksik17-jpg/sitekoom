@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
     .eq("locale", params.locale)
     .maybeSingle();
   const title = params.locale === "ar" ? project.title_ar : project.title_en;
+  const canonical = params.locale === "ar" ? `/projects/${project.slug}` : `/en/projects/${project.slug}`;
   return {
     title: seo?.seo_title || title,
     description: seo?.meta_description || (params.locale === "ar" ? project.short_desc_ar : project.short_desc_en) || undefined,
@@ -36,7 +37,13 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
         ? [{ url: seo?.og_image || project.cover_image || project.thumbnail! }]
         : undefined,
     },
-    alternates: { canonical: `/projects/${project.slug}` },
+    alternates: {
+      canonical,
+      languages: {
+        ar: `/projects/${project.slug}`,
+        en: `/en/projects/${project.slug}`,
+      },
+    },
   };
 }
 

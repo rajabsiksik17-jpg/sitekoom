@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
     .maybeSingle();
 
   const title = params.locale === "ar" ? service.title_ar : service.title_en;
+  const canonical = params.locale === "ar" ? `/services/${service.slug}` : `/en/services/${service.slug}`;
   return {
     title: seo?.seo_title || title,
     description: seo?.meta_description || (params.locale === "ar" ? service.short_desc_ar : service.short_desc_en) || undefined,
@@ -38,7 +39,13 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
       description: seo?.og_description || undefined,
       images: seo?.og_image || service.main_image ? [{ url: seo?.og_image || service.main_image! }] : undefined,
     },
-    alternates: { canonical: `/services/${service.slug}` },
+    alternates: {
+      canonical,
+      languages: {
+        ar: `/services/${service.slug}`,
+        en: `/en/services/${service.slug}`,
+      },
+    },
   };
 }
 

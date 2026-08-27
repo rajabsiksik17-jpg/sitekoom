@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { ServiceCard } from "@/components/service-card";
@@ -19,6 +20,8 @@ interface ArticleRow {
   cover_image: string | null;
   published_at: string | null;
 }
+
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default async function SearchPage({
   params,

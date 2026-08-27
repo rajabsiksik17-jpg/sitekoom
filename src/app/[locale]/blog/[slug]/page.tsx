@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
     .eq("locale", params.locale)
     .maybeSingle();
   const title = params.locale === "ar" ? article.title_ar : article.title_en;
+  const canonical = params.locale === "ar" ? `/blog/${article.slug}` : `/en/blog/${article.slug}`;
   return {
     title: seo?.seo_title || title,
     description: seo?.meta_description || (params.locale === "ar" ? article.excerpt_ar : article.excerpt_en) || undefined,
@@ -34,7 +35,13 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
       images: (seo?.og_image || article.cover_image) ? [{ url: seo?.og_image || article.cover_image! }] : undefined,
       publishedTime: article.published_at ?? undefined,
     },
-    alternates: { canonical: `/blog/${article.slug}` },
+    alternates: {
+      canonical,
+      languages: {
+        ar: `/blog/${article.slug}`,
+        en: `/en/blog/${article.slug}`,
+      },
+    },
   };
 }
 

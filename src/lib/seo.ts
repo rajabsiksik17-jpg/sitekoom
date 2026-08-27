@@ -1,13 +1,20 @@
 import type { GeneralSettings } from "@/lib/settings";
+import type { SocialLink } from "@/lib/types";
 
-export function organizationSchema(settings: GeneralSettings, siteUrl: string) {
+function absoluteUrl(url: string, siteUrl: string): string | undefined {
+  if (!url) return undefined;
+  return url.startsWith("http") ? url : `${siteUrl}${url}`;
+}
+
+export function organizationSchema(settings: GeneralSettings, siteUrl: string, social: SocialLink[] = []) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${siteUrl}/#organization`,
-    name: settings.company_name_en,
+    name: settings.company_name_en || "Sitekoom",
+    alternateName: settings.company_name_ar || "سايتكم",
     url: siteUrl,
-    logo: settings.logo ? `${siteUrl}${settings.logo}` : undefined,
+    logo: absoluteUrl(settings.logo, siteUrl),
     email: settings.email || undefined,
     telephone: settings.phone || undefined,
     address: {
@@ -16,7 +23,7 @@ export function organizationSchema(settings: GeneralSettings, siteUrl: string) {
       addressLocality: "Amman",
       addressCountry: "JO",
     },
-    sameAs: [],
+    sameAs: social.map((s) => s.url).filter(Boolean),
   };
 }
 
@@ -51,7 +58,9 @@ export function websiteSchema(siteUrl: string, siteTitle: string) {
     "@type": "WebSite",
     "@id": `${siteUrl}/#website`,
     url: siteUrl,
-    name: siteTitle,
+    name: "Sitekoom",
+    alternateName: "سايتكم",
+    inLanguage: ["ar", "en"],
     potentialAction: {
       "@type": "SearchAction",
       target: `${siteUrl}/search?q={search_term_string}`,

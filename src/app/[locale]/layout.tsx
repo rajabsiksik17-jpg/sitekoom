@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: { params: { locale: Locale } 
     },
     description: settings.seo.meta_description,
     keywords: settings.seo.keywords.split(",").map((k) => k.trim()),
+    icons: settings.general.favicon ? { icon: settings.general.favicon } : undefined,
     openGraph: {
       type: "website",
       locale: params.locale,
@@ -57,7 +58,7 @@ export default async function LocaleLayout({
   const [social, services] = await Promise.all([getSocialLinks(), getServices()]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sitekoom.com";
-  const orgSchema = organizationSchema(settings.general, siteUrl);
+  const orgSchema = organizationSchema(settings.general, siteUrl, social);
   const localSchema = localBusinessSchema(settings.general, siteUrl);
   const webSchema = websiteSchema(siteUrl, settings.seo.site_title);
 
