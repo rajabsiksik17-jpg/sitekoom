@@ -147,6 +147,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Failed" }, { status: 400 });
   }
 
+  const subjectFromValues = body.values.find((v) => v.field_key === "subject")?.value;
+  const subject = body.subject || (typeof subjectFromValues === "string" ? subjectFromValues : "");
+
   const ipHash = createHash("sha256").update(ip).digest("hex").slice(0, 32);
 
   const { data: submission, error } = await admin
@@ -157,7 +160,7 @@ export async function POST(request: NextRequest) {
       customer_name: body.name || null,
       customer_email: body.email || null,
       customer_phone: body.phone || null,
-      subject: body.subject || null,
+      subject: subject || null,
       language: body.language,
       page_url: body.page_url || null,
       source: body.source || "form",
@@ -209,19 +212,42 @@ export async function POST(request: NextRequest) {
   const destination = await getAdminNotificationEmail();
   if (destination && body.offer_id) {
     const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const rows = [
-      ["Name", body.name],
-      ["Email", body.email],
-      ["Phone", body.phone],
-      ["Subject", body.subject],
-      ["Offer", offerTitle],
-      ["Base Price", pricing?.base_price ? `${pricing.base_price} ${pricing.currency}` : ""],
-      ["Total", pricing?.calculated_total ? `${pricing.calculated_total} ${pricing.currency}` : ""],
-    ];
-    const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">${rows
-      .filter(([, v]) => v)
-      .map(([k, v]) => `<tr><td style="padding:8px 0;color:#9ca3af;width:140px;vertical-align:top;font-size:13px;">${esc(k)}</td><td style="padding:8px 0;color:#1f2937;font-weight:500;">${esc(v)}</td></tr>`)
-      .join("")}</table>`;
+    const row = (k: string, v: unknown) =>
+      v ? `<tr><td style="padding:8px 0;color:#9ca3af;width:150px;vertical-align:top;font-size:13px;">${esc(k)}</td><td style="padding:8px 0;color:#1f2937;font-weight:500;">${esc(v)}</td></tr>` : "";
+    const header = (t: string) => `<tr><td colspan="2" style="padding:14px 0 4px;color:#6d28d9;font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;">${esc(t)}</td></tr>`;
+
+    let html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">`;
+    html += header(body.language === "en" ? "Customer" : "العميل");
+    html += row("Name / الاسم", body.name);
+    html += row("Email / البريد", body.email);
+    html += row("Phone / الهاتف", body.phone);
+    html += row("Subject / الموضوع", subject);
+    if (offerTitle) html += row(body.language === "en" ? "Offer" : "العرض", offerTitle);
+
+    if (pricing) {
+      html += header(body.language === "en" ? "Pricing" : "التسعير");
+      html += row(body.language === "en" ? "Base Price" : "السعر الأساسي", pricing.base_price ? `${pricing.base_price} ${pricing.currency}` : "");
+      if (pricing.selected_options.length) {
+        html += row(body.language === "en" ? "Options" : "الخيارات", pricing.selected_options.map((o: Record<string, unknown>) => `${body.language === "en" ? o.label_en : o.label_ar} (${o.price_delta} ${pricing.currency})`).join(", "));
+      }
+      if (pricing.selected_addons.length) {
+        html += row(body.language === "en" ? "Add-ons" : "الإضافات", pricing.selected_addons.map((a: Record<string, unknown>) => `${body.language === "en" ? a.title_en : a.title_ar} (${a.price} ${pricing.currency})`).join(", "));
+      }
+      if (pricing.pricing_rules_applied.length) {
+        html += row(body.language === "en" ? "Applied Rules" : "قواعد مطبقة", pricing.pricing_rules_applied.map((r: Record<string, unknown>) => `${body.language === "en" ? r.title_en : r.title_ar} (${r.price_delta} ${pricing.currency})`).join(", "));
+      }
+      html += row(body.language === "en" ? "Total" : "الإجمالي", pricing.calculated_total ? `${pricing.calculated_total} ${pricing.currency}` : "");
+    }
+
+    if (body.values.length) {
+      html += header(body.language === "en" ? "Form Answers" : "إجابات النموذج");
+      for (const v of body.values) {
+        if (v.field_key === "subject") continue;
+        html += row(v.label || v.field_key, typeof v.value === "string" ? v.value : JSON.stringify(v.value ?? ""));
+      }
+    }
+    html += `</table>`;
+
     await sendSiteEmail({
       to: destination,
       subject: `New offer request — ${offerTitle ?? ""}`,

@@ -10,7 +10,7 @@ import { Field, Bilingual } from "@/components/admin/fields";
 import { Spinner } from "@/components/admin/ui";
 import type { DynamicForm, DynamicFormField, DynamicFormOption } from "@/lib/types";
 
-const FIELD_TYPES = ["text", "textarea", "email", "phone", "number", "url", "date", "select", "multiselect", "radio", "checkbox", "checkbox_group", "switch", "file", "textarea", "section", "description", "consent", "hidden"];
+const FIELD_TYPES = ["text", "textarea", "email", "phone", "number", "url", "date", "select", "multiselect", "radio", "checkbox", "checkbox_group", "switch", "file", "section", "description", "consent", "subject", "hidden"];
 
 type FieldDraft = { id?: string; field_key: string; type: string; label_ar: string; label_en: string; placeholder_ar: string; placeholder_en: string; required: boolean; width: string; options: { id?: string; label_ar: string; label_en: string; value: string; price_delta: number }[] };
 type RuleDraft = { field_key: string; condition_field_key: string; operator: string; value: string; action: string };

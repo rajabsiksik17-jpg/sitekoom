@@ -68,7 +68,6 @@ export function OfferPricing({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [subject, setSubject] = useState("");
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -152,6 +151,7 @@ export function OfferPricing({
     setError("");
     try {
       const values = fields.filter((f) => !["section", "description"].includes(f.type) && isVisible(f)).map((f) => ({ field_key: f.field_key, label: localize(locale, f.label_ar, f.label_en), value: fieldValues[f.field_key] ?? "" }));
+      const subject = fieldValues["subject"] ?? "";
       const res = await fetch("/api/forms/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-device-id": getDeviceId() },
@@ -194,7 +194,8 @@ export function OfferPricing({
 
     switch (f.type) {
       case "textarea":
-        return <textarea className="input min-h-[80px]" dir={isAr ? "rtl" : "ltr"} placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} />;
+      case "subject":
+        return <textarea className="input min-h-[80px] resize-y" dir={isAr ? "rtl" : "ltr"} placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} />;
       case "section":
         return <h4 className="font-bold text-ink-900">{localize(locale, f.label_ar, f.label_en)}</h4>;
       case "description":
@@ -285,7 +286,6 @@ export function OfferPricing({
         <input className="input" dir={isAr ? "rtl" : "ltr"} placeholder={t("الاسم", "Name")} value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="input" dir="ltr" type="email" placeholder={t("البريد الإلكتروني", "Email")} value={email} onChange={(e) => setEmail(e.target.value)} required />
         <PhoneInput label={t("الهاتف", "Phone")} onChange={(r) => setPhone(r.value?.e164 ?? "")} />
-        <input className="input" dir={isAr ? "rtl" : "ltr"} placeholder={t("الموضوع", "Subject")} value={subject} onChange={(e) => setSubject(e.target.value)} />
 
         {fields.filter(isVisible).map((f) => {
           const opts = formOptions.filter((o) => o.field_id === f.id);
@@ -312,7 +312,7 @@ export function OfferPricing({
         onClick={() => {
           const summary = [
             localize(locale, offer.title_ar, offer.title_en),
-            subject ? `${t("الموضوع", "Subject")}: ${subject}` : "",
+            fieldValues["subject"] ? `${t("الموضوع", "Subject")}: ${fieldValues["subject"]}` : "",
             t("السعر التقديري", "Estimated price") + `: ${total} ${offer.currency}`,
           ].filter(Boolean).join("\n");
           window.dispatchEvent(new CustomEvent("sitekoom:chat", {

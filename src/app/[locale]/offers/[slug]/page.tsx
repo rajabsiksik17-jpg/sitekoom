@@ -34,11 +34,16 @@ export default async function OfferDetailPage({ params }: { params: { locale: "a
   const { offer, images, stages, included, features, optionGroups, optionValues, addons, packages } = details;
 
   let formConfig: { fields: Awaited<ReturnType<typeof getDynamicFormFields>>; options: Awaited<ReturnType<typeof getDynamicFormOptions>>; rules: Awaited<ReturnType<typeof getDynamicFormRules>> } | null = null;
-  if (offer.form_id) {
-    const [fields, opts, rules] = await Promise.all([getDynamicFormFields(offer.form_id), getDynamicFormOptions(offer.form_id), getDynamicFormRules(offer.form_id)]);
+  const supabase = createClient();
+  let formId = offer.form_id;
+  if (!formId) {
+    const { data: defaultForm } = await supabase.from("dynamic_forms").select("id").eq("placement", "offer").eq("is_active", true).order("sort").limit(1).maybeSingle();
+    formId = defaultForm?.id ?? null;
+  }
+  if (formId) {
+    const [fields, opts, rules] = await Promise.all([getDynamicFormFields(formId), getDynamicFormOptions(formId), getDynamicFormRules(formId)]);
     formConfig = { fields, options: opts, rules };
   }
-  const supabase = createClient();
   const { data: pricingRules } = await supabase.from("offer_pricing_rules").select("*").eq("offer_id", offer.id).eq("enabled", true).order("sort");
 
   const title = localize(locale, offer.title_ar, offer.title_en);

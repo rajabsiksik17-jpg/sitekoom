@@ -203,7 +203,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredOffers.map((o, i) => (
                 <Reveal key={o.id} delay={i * 60}>
-                  <OfferCard offer={o} locale={locale} />
+                  <OfferCard offer={o} locale={locale} glass />
                 </Reveal>
               ))}
             </div>

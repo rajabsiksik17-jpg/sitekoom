@@ -80,7 +80,7 @@ export const adminNavGroups: NavGroup[] = [
     children: [
       { key: "contacts", label: "طلبات التواصل", href: "/admin/contacts", permission: "contacts.view" },
       { key: "quotes", label: "طلبات التسعير", href: "/admin/quotes", permission: "contacts.view" },
-      { key: "submissions", label: "طلبات النماذج", href: "/admin/forms/submissions", permission: "submissions.view" },
+      { key: "submissions", label: "طلبات العروض", href: "/admin/forms/submissions", permission: "submissions.view" },
       { key: "chat", label: "الاتصال المباشر", href: "/admin/chat", permission: "chat.view" },
       { key: "notifications", label: "الإشعارات", href: "/admin/notifications", permission: "notifications.view" },
     ],
