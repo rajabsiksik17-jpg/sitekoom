@@ -13,6 +13,7 @@ const schema = z.object({
   message: z.string().min(1).max(3000),
   source_page: z.string().max(500).optional(),
   referrer: z.string().max(500).optional(),
+  offer_id: z.string().uuid().optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {
@@ -33,6 +34,13 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+
+  let offerTitle: string | null = null;
+  if (body.offer_id) {
+    const { data: offer } = await admin.from("offers").select("title_ar").eq("id", body.offer_id).maybeSingle();
+    offerTitle = offer?.title_ar ?? null;
+  }
+
   const { data: conversation, error } = await admin
     .from("live_chat_conversations")
     .insert({
@@ -43,6 +51,8 @@ export async function POST(request: NextRequest) {
       status: "waiting",
       source_page: body.source_page || null,
       referrer: body.referrer || null,
+      offer_id: body.offer_id || null,
+      offer_title: offerTitle,
       last_message_at: new Date().toISOString(),
     })
     .select()

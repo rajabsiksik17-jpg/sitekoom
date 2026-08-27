@@ -32,6 +32,7 @@ export interface GeneralSettings {
   about_logo_width_tablet: number;
   about_logo_width_mobile: number;
   show_project_cta: boolean;
+  chat_retention_hours: number;
 }
 
 export interface SeoSettings {
@@ -105,6 +106,7 @@ const defaults = {
     about_logo_width_tablet: 72,
     about_logo_width_mobile: 64,
     show_project_cta: true,
+    chat_retention_hours: 24,
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",

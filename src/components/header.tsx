@@ -14,9 +14,10 @@ const navKeys = [
   { key: "home", href: "/" },
   { key: "about", href: "/about" },
   { key: "services", href: "/services" },
+  { key: "offers", href: "/offers" },
+  { key: "achievements", href: "/achievements" },
   { key: "projects", href: "/projects" },
   { key: "blog", href: "/blog" },
-  { key: "requestProject", href: "/request-project" },
   { key: "contact", href: "/contact" },
 ] as const;
 

@@ -6,13 +6,15 @@ export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sitekoom.com";
   const supabase = createClient();
 
-  const [services, projects, articles] = await Promise.all([
+  const [services, projects, articles, offers, achievements] = await Promise.all([
     supabase.from("services").select("slug,updated_at").eq("status", "published").is("deleted_at", null),
     supabase.from("projects").select("slug,updated_at").eq("status_field", "published").is("deleted_at", null),
     supabase.from("articles").select("slug,updated_at").eq("status", "published").is("deleted_at", null),
+    supabase.from("offers").select("slug,updated_at").eq("status", "published").is("deleted_at", null),
+    supabase.from("achievements").select("slug,updated_at").eq("status_field", "published").is("deleted_at", null),
   ]);
 
-  const staticPages = ["", "/about", "/services", "/projects", "/blog", "/request-project", "/contact", "/privacy", "/terms"];
+  const staticPages = ["", "/about", "/services", "/offers", "/achievements", "/projects", "/blog", "/request-project", "/contact", "/privacy", "/terms"];
 
   const urls: string[] = [];
 
@@ -32,6 +34,14 @@ export async function GET() {
   for (const a of articles.data ?? []) {
     urls.push(`<url><loc>${siteUrl}/blog/${a.slug}</loc><lastmod>${a.updated_at?.slice(0, 10) ?? ""}</lastmod></url>`);
     urls.push(`<url><loc>${siteUrl}/en/blog/${a.slug}</loc></url>`);
+  }
+  for (const o of offers.data ?? []) {
+    urls.push(`<url><loc>${siteUrl}/offers/${o.slug}</loc></url>`);
+    urls.push(`<url><loc>${siteUrl}/en/offers/${o.slug}</loc></url>`);
+  }
+  for (const ac of achievements.data ?? []) {
+    urls.push(`<url><loc>${siteUrl}/achievements/${ac.slug}</loc></url>`);
+    urls.push(`<url><loc>${siteUrl}/en/achievements/${ac.slug}</loc></url>`);
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

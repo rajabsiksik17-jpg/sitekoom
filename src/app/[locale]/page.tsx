@@ -5,6 +5,8 @@ import { HeroSlider } from "@/components/home/hero-slider";
 import { Marquee } from "@/components/home/marquee";
 import { Reveal } from "@/components/reveal";
 import { ProjectCard } from "@/components/project-card";
+import { OfferCard } from "@/components/offer-card";
+import { AchievementCard } from "@/components/achievement-card";
 import { Icon } from "@/components/icon";
 import { ContactForm } from "@/components/contact-form";
 import { CompanyVideoSection } from "@/components/home/company-video-section";
@@ -24,6 +26,8 @@ import {
   getCompanyInfo,
   getStatistics,
   getSocialLinks,
+  getOffers,
+  getAchievements,
 } from "@/lib/queries";
 
 export async function generateMetadata({ params }: { params: { locale: "ar" | "en" } }): Promise<Metadata> {
@@ -60,7 +64,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, categories, projects, company, stats, social] = await Promise.all([
+  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
@@ -70,6 +74,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
     getCompanyInfo(),
     getStatistics(),
     getSocialLinks(),
+    getOffers(),
+    getAchievements(),
   ]);
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.key, s]));
@@ -78,6 +84,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
 
   const whyItems = (locale === "ar" ? company?.why_ar : company?.why_en) ?? [];
   const featuredProjects = projects.slice(0, 6);
+  const featuredOffers = offers.slice(0, Number(sectionMap.offers?.data?.limit ?? 3));
+  const featuredAchievements = achievements.slice(0, Number(sectionMap.achievements?.data?.limit ?? 6));
 
   return (
     <>
@@ -149,6 +157,37 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
         </section>
       )}
 
+      {isActive("offers") && featuredOffers.length > 0 && (
+        <section className="relative overflow-hidden bg-ink-900 py-20">
+          <div className="absolute inset-0 bg-hero-gradient" />
+          <div className="container-site relative">
+            <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+                  {localize(locale, sectionMap.offers?.title_ar, sectionMap.offers?.title_en) ?? (locale === "ar" ? "عروض مميزة" : "Featured Offers")}
+                </h2>
+                <p className="mt-3 text-white/70">
+                  {localize(locale, sectionMap.offers?.description_ar, sectionMap.offers?.description_en) ?? (locale === "ar" ? "عروض أسعار مميزة لحلولنا الرقمية" : "Special pricing on our digital solutions")}
+                </p>
+              </div>
+              {offers.length > featuredOffers.length && (
+                <Link href={p("/offers")} className="btn-secondary bg-white/10 px-5 py-2.5 text-white hover:bg-white/20">
+                  {locale === "ar" ? "رؤية جميع العروض" : "View all offers"}
+                  <Arrow className="h-4 w-4" />
+                </Link>
+              )}
+            </Reveal>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredOffers.map((o, i) => (
+                <Reveal key={o.id} delay={i * 60}>
+                  <OfferCard offer={o} locale={locale} />
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {isActive("statistics") && stats.length > 0 && (
         <StatisticsSection
           locale={locale}
@@ -211,6 +250,34 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
                 </Reveal>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {isActive("achievements") && featuredAchievements.length > 0 && (
+        <section className="container-site py-20">
+          <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">
+                {localize(locale, sectionMap.achievements?.title_ar, sectionMap.achievements?.title_en) ?? (locale === "ar" ? "إنجازاتنا" : "Our Achievements")}
+              </h2>
+              <p className="mt-3 text-gray-600">
+                {localize(locale, sectionMap.achievements?.description_ar, sectionMap.achievements?.description_en) ?? (locale === "ar" ? "مشاريع وتجارب نفخر بها" : "Projects and experiences we are proud of")}
+              </p>
+            </div>
+            {achievements.length > featuredAchievements.length && (
+              <Link href={p("/achievements")} className="btn-secondary px-5 py-2.5">
+                {locale === "ar" ? "رؤية المزيد" : "View more"}
+                <Arrow className="h-4 w-4" />
+              </Link>
+            )}
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredAchievements.map((a, i) => (
+              <Reveal key={a.id} delay={i * 60}>
+                <AchievementCard achievement={a} locale={locale} />
+              </Reveal>
+            ))}
           </div>
         </section>
       )}

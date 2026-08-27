@@ -19,6 +19,7 @@ const schema = z.object({
   selected_option_values: z.array(z.string().uuid()).default([]),
   selected_addons: z.array(z.string().uuid()).default([]),
   selected_packages: z.array(z.string().uuid()).default([]),
+  selected_form_option_ids: z.array(z.string().uuid()).default([]),
   name: z.string().max(120).optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().max(40).optional().or(z.literal("")),
@@ -69,6 +70,40 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
     }
   }
 
+  // Dynamic form field options that carry a price delta.
+  if (body.selected_form_option_ids.length) {
+    const { data: fieldOptions } = await admin
+      .from("dynamic_form_options")
+      .select("*")
+      .in("id", body.selected_form_option_ids);
+    for (const o of fieldOptions ?? []) {
+      const delta = Number(o.price_delta) || 0;
+      if (delta !== 0) {
+        total += delta;
+        selectedAddons.push({ id: o.id, title_ar: o.label_ar, title_en: o.label_en, price: delta });
+      }
+    }
+  }
+
+  const pricingRulesApplied: Record<string, unknown>[] = [];
+  const { data: rules } = await admin.from("offer_pricing_rules").select("*").eq("offer_id", body.offer_id).eq("enabled", true);
+  for (const r of rules ?? []) {
+    const cond = (r.condition ?? {}) as { field_key?: string; operator?: string; value?: unknown };
+    const fieldVal = body.values.find((v) => v.field_key === cond.field_key)?.value;
+    const op = cond.operator ?? "equals";
+    const expected = cond.value;
+    let match = false;
+    if (op === "equals") match = String(fieldVal ?? "") === String(expected ?? "");
+    else if (op === "not_equals") match = String(fieldVal ?? "") !== String(expected ?? "");
+    else if (op === "contains") match = String(fieldVal ?? "").includes(String(expected ?? ""));
+    else if (op === "greater_than") match = Number(fieldVal) > Number(expected);
+    if (match) {
+      const delta = Number(r.price_delta) || 0;
+      total += delta;
+      pricingRulesApplied.push({ id: r.id, title_ar: r.title_ar, title_en: r.title_en, price_delta: delta });
+    }
+  }
+
   return {
     offer,
     base_price: Number(offer.base_price) || 0,
@@ -76,7 +111,7 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
     calculated_total: total,
     selected_options: selectedOptions,
     selected_addons: selectedAddons,
-    pricing_rules_applied: [] as Record<string, unknown>[],
+    pricing_rules_applied: pricingRulesApplied,
   };
 }
 

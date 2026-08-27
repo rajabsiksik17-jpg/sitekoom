@@ -97,6 +97,7 @@ export function SettingsManager() {
                 تفعيل (Default: ON)
               </label>
             </Field>
+            <Field label="مدة الاحتفاظ بمحادثات الزوار (ساعة)"><input className="input" dir="ltr" type="number" value={Number(g.chat_retention_hours ?? 24)} onChange={(e) => update("general", "chat_retention_hours", Number(e.target.value))} /></Field>
           </div>
         )}
 

@@ -487,6 +487,8 @@ export interface LiveChatConversation {
   is_registered: boolean;
   conversation_type: string | null;
   support_reason: string | null;
+  offer_id: string | null;
+  offer_title: string | null;
   agent?: User | null;
 }
 

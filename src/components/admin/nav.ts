@@ -6,6 +6,9 @@ import {
   MonitorSmartphone,
   LineChart,
   Settings,
+  Tag,
+  Award,
+  FormInput,
   type LucideIcon,
 } from "lucide-react";
 
@@ -59,6 +62,9 @@ export const adminNavGroups: NavGroup[] = [
       { key: "serviceCategories", label: "تصنيفات الخدمات", href: "/admin/service-categories", permission: "services.view" },
       { key: "services", label: "الخدمات", href: "/admin/services", permission: "services.view" },
       { key: "projects", label: "الأعمال", href: "/admin/projects", permission: "projects.view" },
+      { key: "offers", label: "العروض", href: "/admin/offers", permission: "offers.view" },
+      { key: "achievements", label: "الإنجازات", href: "/admin/achievements", permission: "achievements.view" },
+      { key: "forms", label: "النماذج", href: "/admin/forms", permission: "forms.view" },
       { key: "articles", label: "المقالات", href: "/admin/articles", permission: "articles.view" },
       { key: "categories", label: "التصنيفات", href: "/admin/categories", permission: "articles.view" },
       { key: "pages", label: "الصفحات", href: "/admin/pages", permission: "articles.view" },
@@ -74,6 +80,7 @@ export const adminNavGroups: NavGroup[] = [
     children: [
       { key: "contacts", label: "طلبات التواصل", href: "/admin/contacts", permission: "contacts.view" },
       { key: "quotes", label: "طلبات التسعير", href: "/admin/quotes", permission: "contacts.view" },
+      { key: "submissions", label: "طلبات النماذج", href: "/admin/forms/submissions", permission: "submissions.view" },
       { key: "chat", label: "الاتصال المباشر", href: "/admin/chat", permission: "chat.view" },
       { key: "notifications", label: "الإشعارات", href: "/admin/notifications", permission: "notifications.view" },
     ],

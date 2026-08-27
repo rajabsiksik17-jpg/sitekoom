@@ -250,6 +250,9 @@ export function ChatConsole() {
                 <div>
                   <p className="font-bold text-ink-900">{selected.visitor_name ?? "زائر"}</p>
                   <p className="text-xs text-gray-400" dir="ltr">{selected.visitor_email} {selected.visitor_phone}</p>
+                  {selected.offer_title && (
+                    <p className="mt-1 text-xs font-semibold text-brand-700">{selected.offer_title}</p>
+                  )}
                   {(selected.conversation_type || selected.support_reason) && (
                     <p className="mt-1 text-xs font-semibold text-brand-700">
                       {selected.support_reason ? `${typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type ?? ""} — ${selected.support_reason}` : typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type}

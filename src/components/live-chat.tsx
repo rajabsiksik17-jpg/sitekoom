@@ -22,6 +22,7 @@ interface Conversation {
   agent_name: string | null;
   agent_avatar: string | null;
   agent_position: string | null;
+  created_at: string;
 }
 
 interface Message {
@@ -60,6 +61,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   const [agentTyping, setAgentTyping] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [offerCtx, setOfferCtx] = useState<{ offer_id: string; offer_title: string } | null>(null);
 
   const viewRef = useRef(view);
   const soundOnRef = useRef(soundOn);
@@ -74,6 +76,18 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   }, [soundOn]);
   useEffect(() => {
     setSoundOn(getSoundPref());
+  }, []);
+
+  // Open the chat with an offer context (dispatched from the offer page).
+  useEffect(() => {
+    function onOfferChat(e: Event) {
+      const detail = (e as CustomEvent).detail as { offer_id?: string; offer_title?: string } | undefined;
+      if (detail?.offer_id) setOfferCtx({ offer_id: detail.offer_id, offer_title: detail.offer_title ?? "" });
+      setMenuOpen(false);
+      setView("open");
+    }
+    window.addEventListener("sitekoom:chat", onOfferChat);
+    return () => window.removeEventListener("sitekoom:chat", onOfferChat);
   }, []);
 
   const showToast = useCallback((text: string) => {
@@ -92,6 +106,13 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         .single();
       if (!data) return;
       const conv = data as Conversation;
+      // Anonymous chat retention: conversations older than the configured
+      // retention window are treated as expired and reset to the entry form.
+      const retentionMs = Math.max(1, Number(settings.chat_retention_hours) || 24) * 60 * 60 * 1000;
+      if (conv.status !== "active" && Date.now() - new Date(conv.created_at).getTime() > retentionMs) {
+        resetToForm();
+        return;
+      }
       setConversation(conv);
       if (conv.status === "closed") {
         setPhase("closed");
@@ -107,7 +128,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
         .order("created_at");
       setMessages((msgs ?? []) as Message[]);
     },
-    [],
+    [settings],
   );
 
   useEffect(() => {
@@ -210,6 +231,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
           message: form.message,
           source_page: window.location.pathname,
           referrer: document.referrer,
+          offer_id: offerCtx?.offer_id ?? null,
         }),
       });
       const data = await res.json();
