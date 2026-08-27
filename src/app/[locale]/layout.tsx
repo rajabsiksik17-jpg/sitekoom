@@ -5,7 +5,7 @@ import { SiteChrome } from "@/components/site-chrome";
 import { Footer } from "@/components/footer";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { getSettings } from "@/lib/settings";
-import { getServices, getSocialLinks } from "@/lib/queries";
+import { getServices, getSocialLinks, getOffers, getAchievements } from "@/lib/queries";
 import { organizationSchema, localBusinessSchema, websiteSchema, jsonLdToString } from "@/lib/seo";
 
 export function generateStaticParams() {
@@ -55,7 +55,7 @@ export default async function LocaleLayout({
   if (!locales.includes(params.locale)) notFound();
 
   const settings = await getSettings();
-  const [social, services] = await Promise.all([getSocialLinks(), getServices()]);
+  const [social, services, offers, achievements] = await Promise.all([getSocialLinks(), getServices(), getOffers(), getAchievements()]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sitekoom.com";
   const orgSchema = organizationSchema(settings.general, siteUrl, social);
@@ -69,6 +69,8 @@ export default async function LocaleLayout({
         settings={settings.general}
         social={social}
         services={services}
+        hasOffers={offers.length > 0}
+        hasAchievements={achievements.length > 0}
         footer={<Footer locale={params.locale} settings={settings.general} services={services} social={social} />}
       >
         {children}

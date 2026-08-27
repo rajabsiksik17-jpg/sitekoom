@@ -9,9 +9,11 @@ import { useToast } from "@/components/admin/toast";
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { SeoFields } from "@/components/admin/seo-fields";
+import { IconPicker } from "@/components/admin/icon-picker";
+import { Icon } from "@/components/icon";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
-import type { Offer, Service } from "@/lib/types";
+import type { Offer, Service, DynamicForm } from "@/lib/types";
 
 type Stage = { title_ar: string; title_en: string; description_ar: string; description_en: string; duration: string; icon: string };
 type Included = { title_ar: string; title_en: string; description_ar: string; description_en: string; icon: string; enabled: boolean };
@@ -30,6 +32,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [forms, setForms] = useState<DynamicForm[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [included, setIncluded] = useState<Included[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -39,14 +42,15 @@ export function OfferForm({ offerId }: { offerId?: string }) {
 
   const [form, setForm] = useState({
     title_ar: "", title_en: "", slug: "", main_image: "", short_desc_ar: "", short_desc_en: "",
-    full_desc_ar: "", full_desc_en: "", base_price: "0", currency: "JOD",
+    full_desc_ar: "", full_desc_en: "",     base_price: "0", currency: "JOD",
     pricing_type: "simple", price_display: "fixed", duration: "", status: "draft" as string,
-    service_ids: [] as string[], cta_text_ar: "", cta_text_en: "", chat_text_ar: "", chat_text_en: "",
+    service_ids: [] as string[], form_id: "", cta_text_ar: "", cta_text_en: "", chat_text_ar: "", chat_text_en: "",
   });
 
   useEffect(() => {
     const supabase = createClient();
     supabase.from("services").select("id,title_ar,title_en").eq("status", "published").is("deleted_at", null).order("sort").then(({ data }) => setServices((data ?? []) as Service[]));
+    supabase.from("dynamic_forms").select("id,key,title_ar,title_en,placement").order("sort").then(({ data }) => setForms((data ?? []) as DynamicForm[]));
     if (!offerId) return;
 
     Promise.all([
@@ -66,7 +70,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
           full_desc_ar: d.full_desc_ar ?? "", full_desc_en: d.full_desc_en ?? "",
           base_price: String(d.base_price ?? 0), currency: d.currency, pricing_type: d.pricing_type,
           price_display: d.price_display, duration: d.duration ?? "", status: d.status,
-          service_ids: d.service_ids ?? [], cta_text_ar: d.cta_text_ar ?? "", cta_text_en: d.cta_text_en ?? "",
+          service_ids: d.service_ids ?? [], form_id: d.form_id ?? "", cta_text_ar: d.cta_text_ar ?? "", cta_text_en: d.cta_text_en ?? "",
           chat_text_ar: d.chat_text_ar ?? "", chat_text_en: d.chat_text_en ?? "",
         });
       }
@@ -101,7 +105,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
       full_desc_ar: form.full_desc_ar || null, full_desc_en: form.full_desc_en || null,
       base_price: Number(form.base_price) || 0, currency: form.currency, pricing_type: form.pricing_type,
       price_display: form.price_display, duration: form.duration || null, status: form.status,
-      service_ids: form.service_ids, cta_text_ar: form.cta_text_ar || null, cta_text_en: form.cta_text_en || null,
+      service_ids: form.service_ids, form_id: form.form_id || null, cta_text_ar: form.cta_text_ar || null, cta_text_en: form.cta_text_en || null,
       chat_text_ar: form.chat_text_ar || null, chat_text_en: form.chat_text_en || null,
     };
 
@@ -162,6 +166,12 @@ export function OfferForm({ offerId }: { offerId?: string }) {
             </select>
           </Field>
         </div>
+        <Field label="نموذج العرض (Offer Form)">
+          <select className="input" value={form.form_id} onChange={(e) => update("form_id", e.target.value)}>
+            <option value="">— النموذج الافتراضي للعروض —</option>
+            {forms.map((f) => <option key={f.id} value={f.id}>{f.title_ar || f.key}</option>)}
+          </select>
+        </Field>
         <Field label="الصورة الرئيسية"><ImageUpload value={form.main_image} onChange={(u) => update("main_image", u)} folder="offers" /></Field>
         <Bilingual label="وصف مختصر" ar={form.short_desc_ar} en={form.short_desc_en} onAr={(v) => update("short_desc_ar", v)} onEn={(v) => update("short_desc_en", v)} type="textarea" />
         <Bilingual label="وصف كامل" ar={form.full_desc_ar} en={form.full_desc_en} onAr={(v) => update("full_desc_ar", v)} onEn={(v) => update("full_desc_en", v)} type="textarea" />
@@ -270,10 +280,14 @@ export function OfferForm({ offerId }: { offerId?: string }) {
       <div className="card p-6">
         <div className="mb-2 flex items-center justify-between"><h2 className="text-lg font-bold text-ink-900">ماذا يشمل العرض</h2><button type="button" onClick={() => setIncluded((x) => [...x, { ...emptyIncluded }])} className="btn-secondary px-3 py-1.5 text-xs"><Plus className="h-4 w-4" /> عنصر</button></div>
         {included.map((x, i) => (
-          <div key={i} className="mb-1 flex items-center gap-2">
-            <input className="input" placeholder="العربية" value={x.title_ar} onChange={(e) => setIncluded((a) => a.map((y, j) => j === i ? { ...y, title_ar: e.target.value } : y))} />
-            <input className="input" dir="ltr" placeholder="English" value={x.title_en} onChange={(e) => setIncluded((a) => a.map((y, j) => j === i ? { ...y, title_en: e.target.value } : y))} />
-            <button type="button" onClick={() => setIncluded((a) => a.filter((_, j) => j !== i))} className="text-red-500"><Trash2 className="h-4 w-4" /></button>
+          <div key={i} className="mb-2 rounded-xl border border-brand-100 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><Icon name={x.icon} className="h-5 w-5" /></span>
+              <input className="input" placeholder="العربية" value={x.title_ar} onChange={(e) => setIncluded((a) => a.map((y, j) => j === i ? { ...y, title_ar: e.target.value } : y))} />
+              <input className="input" dir="ltr" placeholder="English" value={x.title_en} onChange={(e) => setIncluded((a) => a.map((y, j) => j === i ? { ...y, title_en: e.target.value } : y))} />
+              <button type="button" onClick={() => setIncluded((a) => a.filter((_, j) => j !== i))} className="text-red-500"><Trash2 className="h-4 w-4" /></button>
+            </div>
+            <IconPicker value={x.icon} onChange={(name) => setIncluded((a) => a.map((y, j) => j === i ? { ...y, icon: name } : y))} />
           </div>
         ))}
       </div>

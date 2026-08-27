@@ -863,6 +863,7 @@ export interface OfferPackage {
 export interface DynamicForm {
   id: string;
   key: string;
+  placement: string;
   title_ar: string;
   title_en: string;
   description_ar: string | null;
@@ -926,6 +927,7 @@ export interface FormSubmission {
   form_id: string | null;
   offer_id: string | null;
   status: string;
+  subject: string | null;
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;

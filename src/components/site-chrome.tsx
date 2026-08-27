@@ -21,6 +21,8 @@ export function SiteChrome({
   settings,
   social,
   services,
+  hasOffers,
+  hasAchievements,
   footer,
   children,
 }: {
@@ -28,6 +30,8 @@ export function SiteChrome({
   settings: GeneralSettings;
   social: SocialLink[];
   services: Service[];
+  hasOffers: boolean;
+  hasAchievements: boolean;
   footer: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -42,7 +46,7 @@ export function SiteChrome({
 
   return (
     <>
-      <Header settings={settings} />
+      <Header settings={settings} hasOffers={hasOffers} hasAchievements={hasAchievements} />
       <main dir={dir} className="min-h-screen">{children}</main>
       {footer}
       <FloatingContact settings={settings} />

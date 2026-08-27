@@ -35,6 +35,20 @@ interface Message {
 const TOKEN_KEY = "sitekoom_chat_token";
 const ACCESS_KEY = "sitekoom_chat_access";
 
+function deviceId(): string {
+  const KEY = "sitekoom_device_id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return "unknown";
+  }
+}
+
 function appendMessage(prev: Message[], next: Message): Message[] {
   if (prev.some((m) => m.id === next.id)) return prev;
   return [...prev, next].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
@@ -81,8 +95,15 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
   // Open the chat with an offer context (dispatched from the offer page).
   useEffect(() => {
     function onOfferChat(e: Event) {
-      const detail = (e as CustomEvent).detail as { offer_id?: string; offer_title?: string } | undefined;
+      const detail = (e as CustomEvent).detail as { offer_id?: string; offer_title?: string; name?: string; email?: string; phone?: string; message?: string } | undefined;
       if (detail?.offer_id) setOfferCtx({ offer_id: detail.offer_id, offer_title: detail.offer_title ?? "" });
+      if (detail) {
+        setForm((f) => ({
+          name: detail.name ?? f.name,
+          email: detail.email ?? f.email,
+          message: detail.message ?? f.message,
+        }));
+      }
       setMenuOpen(false);
       setView("open");
     }
@@ -223,7 +244,7 @@ export function FloatingContact({ settings }: { settings: GeneralSettings }) {
     try {
       const res = await fetch("/api/chat/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-device-id": deviceId() },
         body: JSON.stringify({
           name: form.name,
           email: form.email,

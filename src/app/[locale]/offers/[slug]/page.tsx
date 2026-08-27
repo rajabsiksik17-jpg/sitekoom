@@ -92,7 +92,7 @@ export default async function OfferDetailPage({ params }: { params: { locale: "a
             )}
           </div>
 
-          <div className="lg:sticky lg:top-6 lg:self-start">
+          <div>
             <OfferPricing offer={offer} optionGroups={optionGroups} optionValues={optionValues} addons={addons} packages={packages} pricingRules={(pricingRules ?? []) as { id: string; title_ar: string; title_en: string; condition: Record<string, unknown>; price_delta: number }[]} formConfig={formConfig} locale={locale} />
           </div>
         </div>

@@ -25,7 +25,7 @@ function setLocaleCookie(locale: string) {
   document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
 }
 
-export function Header({ settings }: { settings: GeneralSettings }) {
+export function Header({ settings, hasOffers, hasAchievements }: { settings: GeneralSettings; hasOffers: boolean; hasAchievements: boolean }) {
   const { locale, dict } = useLocale();
   const href = useLocalizedHref();
   const pathname = usePathname();
@@ -68,6 +68,12 @@ export function Header({ settings }: { settings: GeneralSettings }) {
   const strippedPath = pathname.replace(/^\/(ar|en)(?=\/|$)/, "") || "/";
   const switchHref = localizePath(strippedPath, otherLocale);
 
+  const visibleNavKeys = navKeys.filter((item) => {
+    if (item.key === "offers") return hasOffers;
+    if (item.key === "achievements") return hasAchievements;
+    return true;
+  });
+
   const logo = settings.logo;
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
   const logoDesktop = settings.logo_width_desktop ?? 170;
@@ -105,7 +111,7 @@ export function Header({ settings }: { settings: GeneralSettings }) {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {navKeys.map((item) => {
+          {visibleNavKeys.map((item) => {
             const itemHref = href(item.href);
             const active =
               item.href === "/"
@@ -172,7 +178,7 @@ export function Header({ settings }: { settings: GeneralSettings }) {
       {open && (
         <div className="border-t border-brand-100 bg-white/95 backdrop-blur-xl lg:hidden">
           <nav className="container-site flex flex-col gap-1 py-4">
-            {navKeys.map((item) => (
+            {visibleNavKeys.map((item) => (
               <Link
                 key={item.key}
                 href={href(item.href)}

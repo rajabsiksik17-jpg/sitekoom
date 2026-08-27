@@ -172,6 +172,40 @@ export function HomepageContentManager() {
                 </div>
               )}
 
+              {item.key === "offers" && (
+                <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/30 p-4">
+                  <p className="mb-3 text-sm font-bold text-ink-900">إعدادات قسم العروض</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="عدد العروض الظاهرة"><input className="input" dir="ltr" type="number" min={1} value={Number(item.data?.limit ?? 3)} onChange={(e) => updateSectionData(item.id, { limit: Number(e.target.value) })} /></Field>
+                    <Field label="نوع الخلفية">
+                      <select className="input" value={String(item.data?.bg_type ?? "gradient")} onChange={(e) => updateSectionData(item.id, { bg_type: e.target.value })}>
+                        <option value="gradient">Gradient</option>
+                        <option value="solid">لون واحد</option>
+                        <option value="image">صورة</option>
+                      </select>
+                    </Field>
+                    {String(item.data?.bg_type ?? "gradient") === "solid" && (
+                      <Field label="اللون"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_color ?? "#0b0a1a")} onChange={(e) => updateSectionData(item.id, { bg_color: e.target.value })} /></Field>
+                    )}
+                    {String(item.data?.bg_type ?? "gradient") === "gradient" && (
+                      <>
+                        <Field label="اللون 1"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[0] ?? "#0b0a1a")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#0b0a1a", "#2c036e"])]; c[0] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="اللون 2"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String((item.data?.bg_colors as string[] | undefined)?.[1] ?? "#2c036e")} onChange={(e) => { const c = [...(item.data?.bg_colors as string[] ?? ["#0b0a1a", "#2c036e"])]; c[1] = e.target.value; updateSectionData(item.id, { bg_colors: c }); }} /></Field>
+                        <Field label="زاوية الـGradient"><input className="input" dir="ltr" type="number" value={Number(item.data?.bg_angle ?? 135)} onChange={(e) => updateSectionData(item.id, { bg_angle: Number(e.target.value) })} /></Field>
+                      </>
+                    )}
+                    {String(item.data?.bg_type ?? "gradient") === "image" && (
+                      <>
+                        <Field label="صورة الخلفية"><ImageUpload value={String(item.data?.bg_image ?? "")} onChange={(u) => updateSectionData(item.id, { bg_image: u })} folder="homepage" /></Field>
+                        <Field label={`شفافية الصورة: ${Number(item.data?.bg_image_opacity ?? 100)}%`}><input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_image_opacity ?? 100)} onChange={(e) => updateSectionData(item.id, { bg_image_opacity: Number(e.target.value) })} /></Field>
+                      </>
+                    )}
+                    <Field label="لون الـOverlay (اختياري)"><input type="color" className="h-12 w-full cursor-pointer rounded-xl border border-brand-100" value={String(item.data?.bg_overlay_color ?? "#0b0a1a")} onChange={(e) => updateSectionData(item.id, { bg_overlay_color: e.target.value })} /></Field>
+                    <Field label={`شفافية الـOverlay: ${Number(item.data?.bg_overlay_opacity ?? 0)}%`}><input type="range" min={0} max={100} className="w-full" value={Number(item.data?.bg_overlay_opacity ?? 0)} onChange={(e) => updateSectionData(item.id, { bg_overlay_opacity: Number(e.target.value) })} /></Field>
+                  </div>
+                </div>
+              )}
+
               {item.key === "cta" && (
                 <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/30 p-4">
                   <p className="mb-3 text-sm font-bold text-ink-900">خلفية القسم (لديك فكرة لمشروعك القادم؟)</p>

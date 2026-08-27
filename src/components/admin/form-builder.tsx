@@ -23,9 +23,10 @@ export function FormBuilder({ formId }: { formId?: string }) {
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<FieldDraft[]>([]);
   const [rules, setRules] = useState<RuleDraft[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const [form, setForm] = useState({
-    key: "", title_ar: "", title_en: "", description_ar: "", description_en: "",
+    key: "", placement: "custom", title_ar: "", title_en: "", description_ar: "", description_en: "",
     success_message_ar: "", success_message_en: "", is_active: true,
   });
 
@@ -38,7 +39,7 @@ export function FormBuilder({ formId }: { formId?: string }) {
     ]).then(([f, fl]) => {
       if (f.data) {
         const d = f.data as DynamicForm;
-        setForm({ key: d.key, title_ar: d.title_ar, title_en: d.title_en, description_ar: d.description_ar ?? "", description_en: d.description_en ?? "", success_message_ar: d.success_message_ar ?? "", success_message_en: d.success_message_en ?? "", is_active: d.is_active });
+        setForm({ key: d.key, placement: d.placement ?? "custom", title_ar: d.title_ar, title_en: d.title_en, description_ar: d.description_ar ?? "", description_en: d.description_en ?? "", success_message_ar: d.success_message_ar ?? "", success_message_en: d.success_message_en ?? "", is_active: d.is_active });
       }
       const fd = (fl.data ?? []) as DynamicFormField[];
       const supabase2 = createClient();
@@ -66,11 +67,22 @@ export function FormBuilder({ formId }: { formId?: string }) {
 
   function update(field: string, value: unknown) { setForm((f) => ({ ...f, [field]: value })); }
 
+  function dropField(target: number) {
+    if (dragIndex === null || dragIndex === target) return;
+    setFields((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(target, 0, moved);
+      return next;
+    });
+    setDragIndex(null);
+  }
+
   async function handleSave() {
     if (!form.key.trim()) return push("error", "أدخل مفتاح النموذج");
     setSaving(true);
     const supabase = createClient();
-    const payload = { key: form.key.trim(), title_ar: form.title_ar, title_en: form.title_en, description_ar: form.description_ar || null, description_en: form.description_en || null, success_message_ar: form.success_message_ar || null, success_message_en: form.success_message_en || null, is_active: form.is_active };
+    const payload = { key: form.key.trim(), placement: form.placement, title_ar: form.title_ar, title_en: form.title_en, description_ar: form.description_ar || null, description_en: form.description_en || null, success_message_ar: form.success_message_ar || null, success_message_en: form.success_message_en || null, is_active: form.is_active };
     let id = formId;
     if (isEdit) {
       const { error } = await supabase.from("dynamic_forms").update(payload).eq("id", id);
@@ -117,6 +129,15 @@ export function FormBuilder({ formId }: { formId?: string }) {
         <h2 className="text-lg font-bold text-ink-900">إعدادات النموذج</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="مفتاح النموذج (Key)"><input className="input" dir="ltr" value={form.key} onChange={(e) => update("key", e.target.value)} /></Field>
+          <Field label="مكان الاستخدام">
+            <select className="input" value={form.placement} onChange={(e) => update("placement", e.target.value)}>
+              <option value="custom">مخصص</option>
+              <option value="contact">تواصل معنا</option>
+              <option value="pricing_request">طلب التسعير</option>
+              <option value="offer">العروض</option>
+              <option value="live_chat">المحادثة المباشرة</option>
+            </select>
+          </Field>
           <Field label="عنوان النموذج (عربي)"><input className="input" value={form.title_ar} onChange={(e) => update("title_ar", e.target.value)} /></Field>
           <Field label="عنوان النموذج (EN)"><input className="input" dir="ltr" value={form.title_en} onChange={(e) => update("title_en", e.target.value)} /></Field>
         </div>
@@ -132,7 +153,15 @@ export function FormBuilder({ formId }: { formId?: string }) {
       <div className="card p-6">
         <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-bold text-ink-900">الحقول</h2><button type="button" onClick={() => setFields((x) => [...x, { field_key: `field_${x.length + 1}`, type: "text", label_ar: "", label_en: "", placeholder_ar: "", placeholder_en: "", required: false, width: "100", options: [] }])} className="btn-secondary px-3 py-1.5 text-xs"><Plus className="h-4 w-4" /> حقل</button></div>
         {fields.map((f, fi) => (
-          <div key={fi} className="mb-3 rounded-xl border border-brand-100 p-4">
+          <div
+            key={fi}
+            draggable
+            onDragStart={() => setDragIndex(fi)}
+            onDragEnter={() => dragIndex !== null && dragIndex !== fi && dropField(fi)}
+            onDragEnd={() => setDragIndex(null)}
+            onDragOver={(e) => e.preventDefault()}
+            className={`mb-3 cursor-grab rounded-xl border border-brand-100 p-4 ${dragIndex === fi ? "border-brand-400 opacity-60" : ""}`}
+          >
             <div className="grid gap-2 sm:grid-cols-4">
               <Field label="المفتاح"><input className="input" dir="ltr" value={f.field_key} onChange={(e) => setFields((x) => x.map((y, i) => i === fi ? { ...y, field_key: e.target.value } : y))} /></Field>
               <Field label="النوع">

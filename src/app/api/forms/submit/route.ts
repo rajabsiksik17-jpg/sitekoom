@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rateLimit } from "@/lib/rate-limit";
+import { formRateLimit } from "@/lib/rate-limit";
 import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
 
@@ -23,6 +23,7 @@ const schema = z.object({
   name: z.string().max(120).optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().max(40).optional().or(z.literal("")),
+  subject: z.string().max(300).optional().or(z.literal("")),
   language: z.string().max(5).optional().default("ar"),
   page_url: z.string().max(500).optional().or(z.literal("")),
   source: z.string().max(50).optional().or(z.literal("")),
@@ -117,9 +118,13 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = rateLimit(`form:${ip}`, 10, 60_000);
+  const deviceId = request.headers.get("x-device-id");
+  const rl = formRateLimit("general", ip, deviceId);
   if (!rl.ok) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: rl.blocked ? "لقد استخدمت النماذج أكثر من المسموح مؤقتًا. تم تقييد الإرسال لمدة 24 ساعة." : "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
   }
 
   let body: z.infer<typeof schema>;
@@ -152,6 +157,7 @@ export async function POST(request: NextRequest) {
       customer_name: body.name || null,
       customer_email: body.email || null,
       customer_phone: body.phone || null,
+      subject: body.subject || null,
       language: body.language,
       page_url: body.page_url || null,
       source: body.source || "form",
@@ -207,6 +213,7 @@ export async function POST(request: NextRequest) {
       ["Name", body.name],
       ["Email", body.email],
       ["Phone", body.phone],
+      ["Subject", body.subject],
       ["Offer", offerTitle],
       ["Base Price", pricing?.base_price ? `${pricing.base_price} ${pricing.currency}` : ""],
       ["Total", pricing?.calculated_total ? `${pricing.calculated_total} ${pricing.currency}` : ""],

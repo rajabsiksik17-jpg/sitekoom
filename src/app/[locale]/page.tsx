@@ -87,6 +87,23 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const featuredOffers = offers.slice(0, Number(sectionMap.offers?.data?.limit ?? 3));
   const featuredAchievements = achievements.slice(0, Number(sectionMap.achievements?.data?.limit ?? 6));
 
+  const offersData = sectionMap.offers?.data ?? {};
+  const offersBgType = String(offersData.bg_type ?? "gradient");
+  let offersBgStyle: React.CSSProperties = {};
+  let offersBgImage: string | null = null;
+  let offersBgImageOpacity = 1;
+  if (offersBgType === "solid") {
+    offersBgStyle = { backgroundColor: String(offersData.bg_color ?? "#0b0a1a") };
+  } else if (offersBgType === "image" && offersData.bg_image) {
+    offersBgImage = String(offersData.bg_image);
+    offersBgImageOpacity = Number(offersData.bg_image_opacity ?? 100) / 100;
+  } else {
+    const colors = (offersData.bg_colors as string[] | undefined) ?? ["#0b0a1a", "#2c036e"];
+    offersBgStyle = { backgroundImage: `linear-gradient(${Number(offersData.bg_angle ?? 135)}deg, ${colors.join(", ")})` };
+  }
+  const offersOverlayColor = String(offersData.bg_overlay_color ?? "");
+  const offersOverlayOpacity = Number(offersData.bg_overlay_opacity ?? 0) / 100;
+
   return (
     <>
       {isActive("hero") && <HeroSlider slides={sliders} />}
@@ -158,8 +175,14 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
       )}
 
       {isActive("offers") && featuredOffers.length > 0 && (
-        <section className="relative overflow-hidden bg-ink-900 py-20">
-          <div className="absolute inset-0 bg-hero-gradient" />
+        <section className="relative overflow-hidden py-20" style={offersBgStyle}>
+          {offersBgImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={offersBgImage} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ opacity: offersBgImageOpacity }} loading="lazy" />
+          )}
+          {offersOverlayColor && offersOverlayOpacity > 0 && (
+            <div className="absolute inset-0" style={{ backgroundColor: offersOverlayColor, opacity: offersOverlayOpacity }} />
+          )}
           <div className="container-site relative">
             <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -188,36 +211,74 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
         </section>
       )}
 
-      {isActive("statistics") && stats.length > 0 && (
-        <StatisticsSection
-          locale={locale}
-          title={localize(locale, sectionMap.statistics?.title_ar, sectionMap.statistics?.title_en) ?? dict.home.statsTitle}
-          stats={stats}
-          data={sectionMap.statistics?.data ?? {}}
-        />
-      )}
-
-      {isActive("why") && whyItems.length > 0 && (
-        <section className="container-site py-20">
-          <Reveal className="mx-auto mb-12 max-w-2xl text-center">
-            <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">
-              {localize(locale, sectionMap.why?.title_ar, sectionMap.why?.title_en) ?? dict.home.whyTitle}
-            </h2>
-          </Reveal>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {whyItems.map((w, i) => (
-              <Reveal key={i} delay={i * 60}>
-                <div className="card h-full p-6 transition-all hover:-translate-y-1 hover:shadow-glow">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                    <Icon name={w.icon} className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
-                  <p className="text-sm text-gray-600">{w.description}</p>
-                </div>
+      {offers.length > 0 ? (
+        <>
+          {isActive("why") && whyItems.length > 0 && (
+            <section className="container-site py-20">
+              <Reveal className="mx-auto mb-12 max-w-2xl text-center">
+                <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">
+                  {localize(locale, sectionMap.why?.title_ar, sectionMap.why?.title_en) ?? dict.home.whyTitle}
+                </h2>
               </Reveal>
-            ))}
-          </div>
-        </section>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {whyItems.map((w, i) => (
+                  <Reveal key={i} delay={i * 60}>
+                    <div className="card h-full p-6 transition-all hover:-translate-y-1 hover:shadow-glow">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                        <Icon name={w.icon} className="h-6 w-6" />
+                      </div>
+                      <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
+                      <p className="text-sm text-gray-600">{w.description}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {isActive("statistics") && stats.length > 0 && (
+            <StatisticsSection
+              locale={locale}
+              title={localize(locale, sectionMap.statistics?.title_ar, sectionMap.statistics?.title_en) ?? dict.home.statsTitle}
+              stats={stats}
+              data={sectionMap.statistics?.data ?? {}}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {isActive("statistics") && stats.length > 0 && (
+            <StatisticsSection
+              locale={locale}
+              title={localize(locale, sectionMap.statistics?.title_ar, sectionMap.statistics?.title_en) ?? dict.home.statsTitle}
+              stats={stats}
+              data={sectionMap.statistics?.data ?? {}}
+            />
+          )}
+
+          {isActive("why") && whyItems.length > 0 && (
+            <section className="container-site py-20">
+              <Reveal className="mx-auto mb-12 max-w-2xl text-center">
+                <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl">
+                  {localize(locale, sectionMap.why?.title_ar, sectionMap.why?.title_en) ?? dict.home.whyTitle}
+                </h2>
+              </Reveal>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {whyItems.map((w, i) => (
+                  <Reveal key={i} delay={i * 60}>
+                    <div className="card h-full p-6 transition-all hover:-translate-y-1 hover:shadow-glow">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                        <Icon name={w.icon} className="h-6 w-6" />
+                      </div>
+                      <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
+                      <p className="text-sm text-gray-600">{w.description}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       {company && company.video_url && (

@@ -67,11 +67,11 @@ export function FormSubmissionsManager() {
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
 
-  const list = filter === "all" ? items : items.filter((i) => i.status === filter);
+  const list = (filter === "all" ? items : items.filter((i) => i.status === filter)).filter((i) => i.offer_id);
 
   return (
     <div>
-      <PageTitle title="طلبات النماذج" description="طلبات النماذج والعروض المرسلة." />
+      <PageTitle title="طلبات العروض" description="طلبات عروض الأسعار المرسلة من العملاء." />
       <div className="mb-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => setFilter("all")} className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold", filter === "all" ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700")}>الكل ({items.length})</button>
         {STATUS.map((s) => (
@@ -89,8 +89,13 @@ export function FormSubmissionsManager() {
                 <p className="font-semibold text-ink-900">{s.customer_name ?? "زائر"}</p>
                 <Badge color={statusMeta[s.status]?.color ?? "gray"}>{statusMeta[s.status]?.label ?? s.status}</Badge>
               </div>
-              {s.offer_id && <p className="mt-1 truncate text-sm text-brand-700">{s.offer?.title_ar}</p>}
-              {s.calculated_total != null && <p className="mt-1 text-sm font-bold text-ink-900">{s.calculated_total} {s.currency}</p>}
+              <p className="mt-1 text-sm text-gray-600" dir="ltr">{s.customer_phone} {s.customer_email}</p>
+              {s.subject && <p className="mt-1 text-sm font-medium text-ink-900">{s.subject}</p>}
+              <p className="mt-1 text-sm text-brand-700">{s.offer?.title_ar}</p>
+              <div className="mt-1 flex items-center justify-between text-sm">
+                {s.calculated_total != null && <span className="font-bold text-ink-900">{s.calculated_total} {s.currency}</span>}
+                <span className="text-xs text-gray-400">{new Date(s.created_at).toLocaleDateString("ar")}</span>
+              </div>
             </button>
           ))}
         </div>

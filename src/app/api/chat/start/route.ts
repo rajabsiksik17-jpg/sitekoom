@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rateLimit } from "@/lib/rate-limit";
+import { chatRateLimit } from "@/lib/rate-limit";
 import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
 import { mintChatAccessToken } from "@/lib/chat-token";
@@ -18,7 +18,7 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = rateLimit(`chat:${ip}`, 5, 60_000);
+  const rl = chatRateLimit(ip, request.headers.get("x-device-id"));
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },

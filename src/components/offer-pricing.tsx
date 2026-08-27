@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Loader2, MessageCircle, Send } from "lucide-react";
 import { localize } from "@/lib/utils";
+import { PhoneInput } from "@/components/phone-input";
 import type { Offer, OfferOptionGroup, OfferOptionValue, OfferAddon, OfferPackage, DynamicFormField, DynamicFormOption, DynamicFormRule } from "@/lib/types";
 
 type PricingRule = { id: string; title_ar: string; title_en: string; condition: Record<string, unknown>; price_delta: number };
@@ -14,6 +15,20 @@ function evalCondition(op: string, a: string, b: string): boolean {
   if (op === "contains") return String(a).includes(String(b));
   if (op === "greater_than") return Number(a) > Number(b);
   return false;
+}
+
+function getDeviceId(): string {
+  const KEY = "sitekoom_device_id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return "unknown";
+  }
 }
 
 export function OfferPricing({
@@ -53,6 +68,7 @@ export function OfferPricing({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [subject, setSubject] = useState("");
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -138,11 +154,11 @@ export function OfferPricing({
       const values = fields.filter((f) => !["section", "description"].includes(f.type) && isVisible(f)).map((f) => ({ field_key: f.field_key, label: localize(locale, f.label_ar, f.label_en), value: fieldValues[f.field_key] ?? "" }));
       const res = await fetch("/api/forms/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-device-id": getDeviceId() },
         body: JSON.stringify({
           offer_id: offer.id,
           form_id: offer.form_id,
-          name, email, phone,
+          name, email, phone, subject,
           language: locale,
           page_url: typeof window !== "undefined" ? window.location.pathname : "",
           selected_option_values: Object.values(selectedValues).flat(),
@@ -178,7 +194,7 @@ export function OfferPricing({
 
     switch (f.type) {
       case "textarea":
-        return <textarea className="input min-h-[80px]" placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} />;
+        return <textarea className="input min-h-[80px]" dir={isAr ? "rtl" : "ltr"} placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} />;
       case "section":
         return <h4 className="font-bold text-ink-900">{localize(locale, f.label_ar, f.label_en)}</h4>;
       case "description":
@@ -216,7 +232,7 @@ export function OfferPricing({
       case "checkbox":
         return <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={val === "yes"} onChange={(e) => setField(f.field_key, e.target.checked ? "yes" : "")} className="rounded border-brand-200 text-brand-600" /> {localize(locale, f.label_ar, f.label_en)}</label>;
       default:
-        return <input className="input" dir={f.type === "email" || f.type === "phone" || f.type === "number" || f.type === "url" || f.type === "date" ? "ltr" : undefined} type={f.type === "number" ? "number" : f.type === "date" ? "date" : f.type === "email" ? "email" : "text"} placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} required={f.required} />;
+        return <input className="input" dir={f.type === "email" || f.type === "phone" || f.type === "number" || f.type === "url" || f.type === "date" ? "ltr" : isAr ? "rtl" : "ltr"} type={f.type === "number" ? "number" : f.type === "date" ? "date" : f.type === "email" ? "email" : "text"} placeholder={localize(locale, f.placeholder_ar, f.placeholder_en)} value={val} onChange={(e) => setField(f.field_key, e.target.value)} required={f.required} />;
     }
   }
 
@@ -266,9 +282,10 @@ export function OfferPricing({
 
       <form onSubmit={submit} className="space-y-3 border-t border-brand-100 pt-5">
         <p className="font-bold text-ink-900">{t("اطلب العرض الآن", "Request this offer")}</p>
-        <input className="input" placeholder={t("الاسم", "Name")} value={name} onChange={(e) => setName(e.target.value)} required />
+        <input className="input" dir={isAr ? "rtl" : "ltr"} placeholder={t("الاسم", "Name")} value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="input" dir="ltr" type="email" placeholder={t("البريد الإلكتروني", "Email")} value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input className="input" dir="ltr" placeholder={t("الهاتف", "Phone")} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <PhoneInput label={t("الهاتف", "Phone")} onChange={(r) => setPhone(r.value?.e164 ?? "")} />
+        <input className="input" dir={isAr ? "rtl" : "ltr"} placeholder={t("الموضوع", "Subject")} value={subject} onChange={(e) => setSubject(e.target.value)} />
 
         {fields.filter(isVisible).map((f) => {
           const opts = formOptions.filter((o) => o.field_id === f.id);
@@ -290,9 +307,28 @@ export function OfferPricing({
         </button>
       </form>
 
-      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("sitekoom:chat", { detail: { offer_id: offer.id, offer_title: localize(locale, offer.title_ar, offer.title_en), offer_slug: offer.slug } }))} className="btn-secondary mt-3 flex w-full items-center justify-center gap-2 px-6 py-3">
+      <button
+        type="button"
+        onClick={() => {
+          const summary = [
+            localize(locale, offer.title_ar, offer.title_en),
+            subject ? `${t("الموضوع", "Subject")}: ${subject}` : "",
+            t("السعر التقديري", "Estimated price") + `: ${total} ${offer.currency}`,
+          ].filter(Boolean).join("\n");
+          window.dispatchEvent(new CustomEvent("sitekoom:chat", {
+            detail: {
+              offer_id: offer.id,
+              offer_title: localize(locale, offer.title_ar, offer.title_en),
+              offer_slug: offer.slug,
+              name, email, phone,
+              message: summary,
+            },
+          }));
+        }}
+        className="btn-secondary mt-3 flex w-full items-center justify-center gap-2 px-6 py-3"
+      >
         <MessageCircle className="h-4 w-4" />
-        {localize(locale, offer.chat_text_ar, offer.chat_text_en) || t("ابدأ محادثة", "Start a chat")}
+        {localize(locale, offer.chat_text_ar, offer.chat_text_en) || t("تحدث معنا", "Talk to us")}
       </button>
     </div>
   );
