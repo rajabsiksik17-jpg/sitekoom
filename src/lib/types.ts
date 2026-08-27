@@ -740,3 +740,272 @@ export interface ClientSession {
   username: string;
   website_type: string;
 }
+
+// ── Offers ─────────────────────────────────────────────────────────────────
+export interface Offer {
+  id: string;
+  title_ar: string;
+  title_en: string;
+  slug: string;
+  main_image: string | null;
+  short_desc_ar: string | null;
+  short_desc_en: string | null;
+  full_desc_ar: string | null;
+  full_desc_en: string | null;
+  base_price: number;
+  currency: string;
+  pricing_type: string;
+  price_display: string;
+  duration: string | null;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  is_featured: boolean;
+  sort: number;
+  form_id: string | null;
+  service_ids: string[];
+  cta_text_ar: string | null;
+  cta_text_en: string | null;
+  cta_url: string | null;
+  chat_text_ar: string | null;
+  chat_text_en: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface OfferStage {
+  id: string;
+  offer_id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  duration: string | null;
+  icon: string | null;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface OfferIncludedItem {
+  id: string;
+  offer_id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  icon: string | null;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface OfferFeature {
+  id: string;
+  offer_id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  icon: string | null;
+  sort: number;
+}
+
+export interface OfferOptionGroup {
+  id: string;
+  offer_id: string;
+  title_ar: string;
+  title_en: string;
+  selection_type: "single" | "multiple";
+  required: boolean;
+  sort: number;
+}
+
+export interface OfferOptionValue {
+  id: string;
+  option_id: string;
+  label_ar: string;
+  label_en: string;
+  price_delta: number;
+  is_default: boolean;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface OfferAddon {
+  id: string;
+  offer_id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  price: number;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface OfferPackage {
+  id: string;
+  offer_id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  price: number;
+  duration: string | null;
+  features: string[];
+  is_default: boolean;
+  sort: number;
+}
+
+// ── Dynamic forms ──────────────────────────────────────────────────────────
+export interface DynamicForm {
+  id: string;
+  key: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  success_message_ar: string | null;
+  success_message_en: string | null;
+  error_message_ar: string | null;
+  error_message_en: string | null;
+  redirect_url: string | null;
+  notify_admin: boolean;
+  is_active: boolean;
+  sort: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DynamicFormField {
+  id: string;
+  form_id: string;
+  field_key: string;
+  type: string;
+  label_ar: string;
+  label_en: string;
+  placeholder_ar: string | null;
+  placeholder_en: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  required: boolean;
+  default_value: string | null;
+  width: string;
+  validation: Record<string, unknown>;
+  pricing: Record<string, unknown>;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface DynamicFormOption {
+  id: string;
+  field_id: string;
+  label_ar: string;
+  label_en: string;
+  value: string;
+  price_delta: number;
+  enabled: boolean;
+  sort: number;
+}
+
+export interface DynamicFormRule {
+  id: string;
+  form_id: string;
+  field_id: string | null;
+  condition_field_id: string | null;
+  operator: string;
+  value: string;
+  action: string;
+  sort: number;
+}
+
+export interface FormSubmission {
+  id: string;
+  form_id: string | null;
+  offer_id: string | null;
+  status: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  language: string;
+  page_url: string | null;
+  source: string | null;
+  base_price: number | null;
+  currency: string | null;
+  calculated_total: number | null;
+  selected_options: unknown;
+  selected_addons: unknown;
+  pricing_rules_applied: unknown;
+  custom_admin_price: number | null;
+  final_admin_price: number | null;
+  price_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormSubmissionValue {
+  id: string;
+  submission_id: string;
+  field_key: string;
+  field_label: string | null;
+  value: string | null;
+  price_delta: number;
+  sort: number;
+}
+
+// ── Achievements ───────────────────────────────────────────────────────────
+export interface Achievement {
+  id: string;
+  title_ar: string;
+  title_en: string;
+  slug: string;
+  main_image: string | null;
+  short_desc_ar: string | null;
+  short_desc_en: string | null;
+  full_desc_ar: string | null;
+  full_desc_en: string | null;
+  type: string | null;
+  category: string | null;
+  date: string | null;
+  website_url: string | null;
+  project_url: string | null;
+  external_url: string | null;
+  iframe_url: string | null;
+  demo_url: string | null;
+  display_website: boolean;
+  video_url: string | null;
+  challenge_ar: string | null;
+  challenge_en: string | null;
+  solution_ar: string | null;
+  solution_en: string | null;
+  results_ar: string | null;
+  results_en: string | null;
+  service_ids: string[];
+  technologies: string[];
+  status_field: PublishStatus;
+  is_featured: boolean;
+  sort: number;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface AchievementImage {
+  id: string;
+  achievement_id: string;
+  url: string;
+  alt: string | null;
+  sort: number;
+}
+
+export interface AchievementFeature {
+  id: string;
+  achievement_id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  icon: string | null;
+  sort: number;
+}

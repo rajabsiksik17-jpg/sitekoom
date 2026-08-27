@@ -21,6 +21,21 @@ import type {
   SocialLink,
   Statistic,
   TeamMember,
+  Offer,
+  OfferStage,
+  OfferIncludedItem,
+  OfferFeature,
+  OfferOptionGroup,
+  OfferOptionValue,
+  OfferAddon,
+  OfferPackage,
+  Achievement,
+  AchievementImage,
+  AchievementFeature,
+  DynamicForm,
+  DynamicFormField,
+  DynamicFormOption,
+  DynamicFormRule,
 } from "@/lib/types";
 
 const supabase = () => createClient();
@@ -260,4 +275,148 @@ export const getPageBySlug = cache(async (slug: string): Promise<Page | null> =>
   } catch {
     return null;
   }
+});
+
+// ── Offers ────────────────────────────────────────────────────────────────
+export const getOffers = cache(async (): Promise<Offer[]> => {
+  const { data } = await supabase()
+    .from("offers")
+    .select("*")
+    .eq("status", "published")
+    .is("deleted_at", null)
+    .order("sort")
+    .order("created_at");
+  return (data ?? []) as Offer[];
+});
+
+export const getOfferBySlug = cache(async (slug: string): Promise<Offer | null> => {
+  const { data } = await supabase()
+    .from("offers")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .is("deleted_at", null)
+    .single();
+  return (data as Offer) ?? null;
+});
+
+export const getOfferDetails = cache(
+  async (slug: string) => {
+    const offer = await getOfferBySlug(slug);
+    if (!offer) return null;
+    const [
+      { data: images },
+      { data: stages },
+      { data: included },
+      { data: features },
+      { data: groups },
+      { data: addons },
+      { data: packages },
+    ] = await Promise.all([
+      supabase().from("offer_images").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_stages").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_included_items").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_features").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_option_groups").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_addons").select("*").eq("offer_id", offer.id).order("sort"),
+      supabase().from("offer_packages").select("*").eq("offer_id", offer.id).order("sort"),
+    ]);
+
+    const groupIds = (groups ?? []).map((g: { id: string }) => g.id);
+    const { data: values } = groupIds.length
+      ? await supabase().from("offer_option_values").select("*").in("option_id", groupIds).order("sort")
+      : { data: [] };
+
+    return {
+      offer,
+      images: (images ?? []) as { id: string; url: string; alt: string | null; sort: number }[],
+      stages: (stages ?? []) as OfferStage[],
+      included: (included ?? []) as OfferIncludedItem[],
+      features: (features ?? []) as OfferFeature[],
+      optionGroups: (groups ?? []) as OfferOptionGroup[],
+      optionValues: (values ?? []) as OfferOptionValue[],
+      addons: (addons ?? []) as OfferAddon[],
+      packages: (packages ?? []) as OfferPackage[],
+    };
+  },
+);
+
+// ── Achievements ───────────────────────────────────────────────────────────
+export const getAchievements = cache(async (): Promise<Achievement[]> => {
+  const { data } = await supabase()
+    .from("achievements")
+    .select("*")
+    .eq("status_field", "published")
+    .is("deleted_at", null)
+    .order("sort")
+    .order("created_at");
+  return (data ?? []) as Achievement[];
+});
+
+export const getAchievementBySlug = cache(async (slug: string): Promise<Achievement | null> => {
+  const { data } = await supabase()
+    .from("achievements")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status_field", "published")
+    .is("deleted_at", null)
+    .single();
+  return (data as Achievement) ?? null;
+});
+
+export const getAchievementDetails = cache(async (slug: string) => {
+  const achievement = await getAchievementBySlug(slug);
+  if (!achievement) return null;
+  const [{ data: images }, { data: features }] = await Promise.all([
+    supabase().from("achievement_images").select("*").eq("achievement_id", achievement.id).order("sort"),
+    supabase().from("achievement_features").select("*").eq("achievement_id", achievement.id).order("sort"),
+  ]);
+  return {
+    achievement,
+    images: (images ?? []) as AchievementImage[],
+    features: (features ?? []) as AchievementFeature[],
+  };
+});
+
+// ── Dynamic forms ─────────────────────────────────────────────────────────
+export const getDynamicFormById = cache(async (id: string): Promise<DynamicForm | null> => {
+  const { data } = await supabase()
+    .from("dynamic_forms")
+    .select("*")
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
+  return (data as DynamicForm) ?? null;
+});
+
+export const getDynamicFormFields = cache(async (formId: string): Promise<DynamicFormField[]> => {
+  const { data } = await supabase()
+    .from("dynamic_form_fields")
+    .select("*")
+    .eq("form_id", formId)
+    .eq("enabled", true)
+    .order("sort");
+  return (data ?? []) as DynamicFormField[];
+});
+
+export const getDynamicFormOptions = cache(async (formId: string): Promise<DynamicFormOption[]> => {
+  const { data: fields } = await supabase().from("dynamic_form_fields").select("id").eq("form_id", formId);
+  const fieldIds = (fields ?? []).map((f: { id: string }) => f.id);
+  if (!fieldIds.length) return [];
+  const { data } = await supabase()
+    .from("dynamic_form_options")
+    .select("*")
+    .in("field_id", fieldIds)
+    .eq("enabled", true)
+    .order("sort");
+  return (data ?? []) as DynamicFormOption[];
+});
+
+export const getDynamicFormRules = cache(async (formId: string): Promise<DynamicFormRule[]> => {
+  const { data } = await supabase()
+    .from("dynamic_form_rules")
+    .select("*")
+    .eq("form_id", formId)
+    .order("sort");
+  return (data ?? []) as DynamicFormRule[];
 });
