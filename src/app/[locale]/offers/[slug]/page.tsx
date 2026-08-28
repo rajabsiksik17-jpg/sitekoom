@@ -70,7 +70,7 @@ export default async function OfferDetailPage({ params }: { params: { locale: "a
                 <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{locale === "ar" ? "ماذا يشمل العرض" : "What's included"}</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {activeIncluded.map((x) => (
-                    <div key={x.id} className="flex items-center gap-3 rounded-xl border border-brand-100 p-3">
+                    <div key={x.id} className="card card-hover flex items-center gap-3 p-3">
                       <Icon name={x.icon} className="h-5 w-5 text-brand-600" />
                       <span className="text-sm font-semibold text-ink-900">{localize(locale, x.title_ar, x.title_en)}</span>
                     </div>
@@ -84,7 +84,7 @@ export default async function OfferDetailPage({ params }: { params: { locale: "a
                 <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{locale === "ar" ? "مراحل العمل" : "Process"}</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {activeStages.map((s, i) => (
-                    <div key={s.id} className="flex items-center gap-3 rounded-xl border border-brand-100 p-4">
+                    <div key={s.id} className="card card-hover flex items-center gap-3 p-4">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient font-bold text-white">{i + 1}</span>
                       <div>
                         <p className="font-bold text-ink-900">{localize(locale, s.title_ar, s.title_en)}</p>

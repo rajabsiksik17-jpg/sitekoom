@@ -39,7 +39,7 @@ export default async function ContactPage({ params }: { params: { locale: "ar" |
             {info.map((item) => {
               const Icon = item.icon;
               const content = (
-                <div className="flex items-start gap-4 rounded-2xl border border-brand-100 bg-white p-5 transition-colors hover:border-brand-300">
+                <div className="card card-hover flex items-start gap-4 p-5">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -59,7 +59,7 @@ export default async function ContactPage({ params }: { params: { locale: "ar" |
             })}
 
             {social.length > 0 && (
-              <div className="rounded-2xl border border-brand-100 bg-white p-5">
+              <div className="card p-5">
                 <p className="mb-3 text-xs font-semibold text-gray-400">{dict.contact.followUs}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {social.map((s) => {

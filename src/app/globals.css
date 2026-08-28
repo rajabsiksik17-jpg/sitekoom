@@ -7,6 +7,18 @@
   --brand-secondary: #9d72ff;
 }
 
+@property --card-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ring-spin {
+  to {
+    --card-angle: 360deg;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
@@ -89,7 +101,52 @@ html[dir="rtl"] body {
   }
 
   .card {
-    @apply rounded-2xl border border-brand-100/60 bg-white shadow-card;
+    @apply rounded-2xl border border-brand-100/70 bg-white/80 backdrop-blur-sm shadow-card;
+  }
+
+  /* Premium glassmorphism card: soft border, subtle blur, gentle hover glow */
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:border-brand-300/80 hover:bg-white/95 hover:shadow-glow;
+  }
+
+  .glass-premium {
+    @apply border border-white/50 bg-white/60 shadow-soft backdrop-blur-md;
+  }
+
+  /* Animated glowing border ring (conic gradient travelling around the border) */
+  .glow-ring {
+    position: relative;
+    isolation: isolate;
+  }
+  .glow-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--card-angle, 0deg),
+      rgba(122, 26, 255, 0) 0%,
+      rgba(122, 26, 255, 0.45) 12%,
+      rgba(157, 114, 255, 0.7) 25%,
+      rgba(122, 26, 255, 0) 42%,
+      rgba(122, 26, 255, 0) 60%,
+      rgba(122, 26, 255, 0.35) 78%,
+      rgba(157, 114, 255, 0.6) 90%,
+      rgba(122, 26, 255, 0) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: ring-spin 7s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+  @media (max-width: 640px), (prefers-reduced-motion: reduce) {
+    .glow-ring::before {
+      animation: none;
+    }
   }
 
   .input {

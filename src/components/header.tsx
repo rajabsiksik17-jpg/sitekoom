@@ -3,23 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Languages, Menu, X, LogIn, UserRound } from "lucide-react";
+import { Languages, Menu, X, LogIn, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
 import { localizePath } from "@/lib/i18n/config";
 import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import type { GeneralSettings } from "@/lib/settings";
 
-const navKeys = [
-  { key: "home", href: "/" },
-  { key: "about", href: "/about" },
-  { key: "services", href: "/services" },
-  { key: "offers", href: "/offers" },
-  { key: "achievements", href: "/achievements" },
-  { key: "projects", href: "/projects" },
-  { key: "blog", href: "/blog" },
-  { key: "contact", href: "/contact" },
-] as const;
+type NavChild = { key: string; href: string; label: string };
+type NavItem = { key: string; href: string; children?: NavChild[] };
 
 function setLocaleCookie(locale: string) {
   document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
@@ -33,6 +25,7 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
   const [open, setOpen] = useState(false);
   const [heroTheme, setHeroTheme] = useState<"light" | "dark">("dark");
   const [clientAuthed, setClientAuthed] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let active = true;
@@ -68,11 +61,34 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
   const strippedPath = pathname.replace(/^\/(ar|en)(?=\/|$)/, "") || "/";
   const switchHref = localizePath(strippedPath, otherLocale);
 
-  const visibleNavKeys = navKeys.filter((item) => {
-    if (item.key === "offers") return hasOffers;
-    if (item.key === "achievements") return hasAchievements;
-    return true;
-  });
+  const navItems: NavItem[] = [
+    { key: "home", href: "/" },
+    {
+      key: "about",
+      href: "/about",
+      children: [
+        { key: "about", href: "/about", label: dict.nav.about },
+        { key: "projects", href: "/projects", label: dict.nav.projects },
+      ],
+    },
+    {
+      key: "services",
+      href: "/services",
+      children: [
+        { key: "services", href: "/services", label: dict.nav.viewAllServices },
+        ...(hasOffers ? [{ key: "offers", href: "/offers", label: dict.nav.offers }] : []),
+      ],
+    },
+    ...(hasAchievements ? [{ key: "achievements", href: "/achievements" } as NavItem] : []),
+    { key: "blog", href: "/blog" },
+    { key: "contact", href: "/contact" },
+  ];
+
+  const isItemActive = (item: NavItem): boolean => {
+    const paths = [item.href, ...(item.children?.map((c) => c.href) ?? [])];
+    if (item.href === "/") return strippedPath === "/";
+    return paths.some((p) => strippedPath === p || strippedPath.startsWith(`${p}/`));
+  };
 
   const logo = settings.logo;
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
@@ -82,6 +98,15 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
 
   // White text over a dark hero (top of page), dark text otherwise.
   const lightText = !scrolled && heroTheme === "dark";
+
+  const linkClass = (active: boolean) =>
+    cn(
+      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+      lightText
+        ? "text-white/85 hover:bg-white/10 hover:text-white"
+        : "text-ink-800 hover:bg-brand-50 hover:text-brand-700",
+      active && (lightText ? "text-white" : "text-brand-700"),
+    );
 
   return (
     <header
@@ -111,25 +136,35 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {visibleNavKeys.map((item) => {
-            const itemHref = href(item.href);
-            const active =
-              item.href === "/"
-                ? strippedPath === "/"
-                : strippedPath === item.href || strippedPath.startsWith(`${item.href}/`);
+          {navItems.map((item) => {
+            const active = isItemActive(item);
+            if (item.children?.length) {
+              return (
+                <div key={item.key} className="group relative">
+                  <button
+                    type="button"
+                    className={cn(linkClass(active), "inline-flex items-center gap-1")}
+                  >
+                    {dict.nav[item.key as keyof typeof dict.nav]}
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:rotate-180" />
+                  </button>
+                  <div className="invisible absolute start-0 top-full z-50 w-56 translate-y-2 rounded-2xl border border-brand-100 bg-white/95 p-2 opacity-0 shadow-card backdrop-blur-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                    {item.children.map((c) => (
+                      <Link
+                        key={c.key}
+                        href={href(c.href)}
+                        className="block rounded-xl px-3 py-2.5 text-sm font-medium text-ink-800 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                      >
+                        {c.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
             return (
-              <Link
-                key={item.key}
-                href={itemHref}
-                className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  lightText
-                    ? "text-white/85 hover:bg-white/10 hover:text-white"
-                    : "text-ink-800 hover:bg-brand-50 hover:text-brand-700",
-                  active && (lightText ? "text-white" : "text-brand-700"),
-                )}
-              >
-                {dict.nav[item.key]}
+              <Link key={item.key} href={href(item.href)} className={linkClass(active)}>
+                {dict.nav[item.key as keyof typeof dict.nav]}
               </Link>
             );
           })}
@@ -150,8 +185,8 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
             <Languages className="h-4 w-4" />
             <span className="font-semibold">{otherLocale === "ar" ? "العربية" : "EN"}</span>
           </Link>
-          <Link href={href("/request-project")} className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
-            {dict.common.startProject}
+          <Link href={href("/appointment")} className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
+            {dict.nav.appointment}
           </Link>
           <Link
             href={href(clientAuthed ? "/client-portal" : "/client-login")}
@@ -178,20 +213,49 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
       {open && (
         <div className="border-t border-brand-100 bg-white/95 backdrop-blur-xl lg:hidden">
           <nav className="container-site flex flex-col gap-1 py-4">
-            {visibleNavKeys.map((item) => (
-              <Link
-                key={item.key}
-                href={href(item.href)}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-base font-medium text-ink-800 hover:bg-brand-50"
-              >
-                {dict.nav[item.key]}
-              </Link>
-            ))}
-            <Link href={href("/request-project")} onClick={() => setOpen(false)} className="btn-primary mt-2 px-4 py-2.5 text-sm">
-              {dict.common.startProject}
+            {navItems.map((item) => {
+              if (item.children?.length) {
+                const expanded = !!openGroups[item.key];
+                return (
+                  <div key={item.key}>
+                    <div className="flex items-center">
+                      <Link href={href(item.href)} onClick={() => setOpen(false)} className="flex-1 rounded-lg px-3 py-2.5 text-base font-medium text-ink-800 hover:bg-brand-50">
+                        {dict.nav[item.key as keyof typeof dict.nav]}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setOpenGroups((g) => ({ ...g, [item.key]: !expanded }))}
+                        className="rounded-lg p-2.5 text-brand-700 hover:bg-brand-50"
+                        aria-label={expanded ? "Collapse" : "Expand"}
+                      >
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
+                      </button>
+                    </div>
+                    {expanded && (
+                      <div className="ms-3 border-s-2 border-brand-100 ps-2">
+                        {item.children.map((c) => (
+                          <Link key={c.key} href={href(c.href)} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-base font-medium text-ink-700 hover:bg-brand-50">
+                            {c.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <Link key={item.key} href={href(item.href)} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-base font-medium text-ink-800 hover:bg-brand-50">
+                  {dict.nav[item.key as keyof typeof dict.nav]}
+                </Link>
+              );
+            })}
+            <Link href={href("/appointment")} onClick={() => setOpen(false)} className="btn-primary mt-2 px-4 py-2.5 text-sm">
+              {dict.nav.appointment}
             </Link>
-            <Link href={href(clientAuthed ? "/client-portal" : "/client-login")} onClick={() => setOpen(false)} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
+            <Link href={href("/request-project")} onClick={() => setOpen(false)} className="btn-secondary mt-1 px-4 py-2.5 text-sm">
+              {dict.nav.requestProject}
+            </Link>
+            <Link href={href(clientAuthed ? "/client-portal" : "/client-login")} onClick={() => setOpen(false)} className="btn-ghost mt-1 px-4 py-2.5 text-sm">
               {clientAuthed ? <UserRound className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
               {clientAuthed ? (locale === "ar" ? "حسابي" : "My Account") : dict.nav.clientLogin}
             </Link>

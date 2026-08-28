@@ -106,11 +106,23 @@ export function OfferPricing({
     return sum;
   }, [offer.base_price, selectedValues, selectedAddons, selectedPackage, selectedFormOptionIds, pricingRules, fieldValues, optionValues, addons, packages, formOptions]);
 
-  function toggleValue(groupId: string, valueId: string, single: boolean) {
+  function toggleValue(group: OfferOptionGroup, valueId: string) {
     setSelectedValues((prev) => {
-      const current = prev[groupId] ?? [];
-      if (single) return { ...prev, [groupId]: [valueId] };
-      return { ...prev, [groupId]: current.includes(valueId) ? current.filter((x) => x !== valueId) : [...current, valueId] };
+      const current = prev[group.id] ?? [];
+      const selected = current.includes(valueId);
+      if (group.selection_type === "single") {
+        if (selected) {
+          // Allow deselect only when enabled and the group is not required.
+          return group.allow_deselect && !group.required ? { ...prev, [group.id]: [] } : prev;
+        }
+        return { ...prev, [group.id]: [valueId] };
+      }
+      // Multi-select: toggling off is allowed, but a required group must keep at least one value.
+      if (selected) {
+        const canDeselect = group.required ? current.length > 1 : true;
+        return canDeselect ? { ...prev, [group.id]: current.filter((x) => x !== valueId) } : prev;
+      }
+      return { ...prev, [group.id]: [...current, valueId] };
     });
   }
 
@@ -238,7 +250,7 @@ export function OfferPricing({
   }
 
   return (
-    <div className="card p-6">
+    <div className="glass-premium rounded-3xl p-6 shadow-card">
       <div className="mb-6 flex items-baseline justify-between">
         <h3 className="text-xl font-extrabold text-ink-900">{t("احسب سعر العرض", "Calculate your price")}</h3>
         <div className="text-start">
@@ -249,12 +261,12 @@ export function OfferPricing({
 
       {optionGroups.map((g) => (
         <div key={g.id} className="mb-5">
-          <p className="mb-2 font-semibold text-ink-900">{localize(locale, g.title_ar, g.title_en)}</p>
+          <p className="mb-2 font-semibold text-ink-900">{localize(locale, g.title_ar, g.title_en)}{g.required && <span className="text-red-500"> *</span>}</p>
           <div className="space-y-2">
             {optionValues.filter((v) => v.option_id === g.id).map((v) => {
               const active = (selectedValues[g.id] ?? []).includes(v.id);
               return (
-                <button key={v.id} type="button" onClick={() => toggleValue(g.id, v.id, g.selection_type === "single")} className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-sm transition-colors ${active ? "border-brand-500 bg-brand-50 text-brand-700" : "border-brand-100 text-gray-600 hover:border-brand-300"}`}>
+                <button key={v.id} type="button" onClick={() => toggleValue(g, v.id)} className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-sm transition-colors ${active ? "border-brand-500 bg-brand-50 text-brand-700" : "border-brand-100 text-gray-600 hover:border-brand-300"}`}>
                   <span>{localize(locale, v.label_ar, v.label_en)}</span>
                   <span className="font-semibold">{Number(v.price_delta) > 0 ? `+${v.price_delta} ${offer.currency}` : "+0"}</span>
                 </button>

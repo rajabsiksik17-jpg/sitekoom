@@ -14,7 +14,9 @@ export const ar = {
     blog: "الأخبار",
     requestProject: "طلب مشروع",
     contact: "اتصل بنا",
-    clientLogin: "تسجيل دخول العملاء",
+    clientLogin: "دخول العملاء",
+    appointment: "حجز موعد",
+    viewAllServices: "جميع الخدمات",
   },
   common: {
     startProject: "ابدأ مشروعك الآن",
@@ -193,7 +195,9 @@ export const en: Dictionary = {
     blog: "News",
     requestProject: "Request a Project",
     contact: "Contact",
-    clientLogin: "Client Login",
+    clientLogin: "Login",
+    appointment: "Book Appointment",
+    viewAllServices: "All Services",
   },
   common: {
     startProject: "Start Your Project",

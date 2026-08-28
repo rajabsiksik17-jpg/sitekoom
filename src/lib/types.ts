@@ -526,6 +526,8 @@ export interface MediaItem {
   height: number | null;
   alt: string | null;
   folder: string;
+  hash: string | null;
+  storage_path: string | null;
   created_at: string;
 }
 
@@ -819,6 +821,7 @@ export interface OfferOptionGroup {
   title_en: string;
   selection_type: "single" | "multiple";
   required: boolean;
+  allow_deselect: boolean;
   sort: number;
 }
 
@@ -1012,4 +1015,46 @@ export interface AchievementFeature {
   description_en: string | null;
   icon: string | null;
   sort: number;
+}
+
+// ── Appointments ───────────────────────────────────────────────────────────
+export interface Appointment {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  service_ids: string[];
+  subject: string;
+  notes: string | null;
+  language: string;
+  requested_date: string;
+  requested_time: string;
+  duration_minutes: number;
+  status: string;
+  start_at: string | null;
+  end_at: string | null;
+  proposed_start_at: string | null;
+  proposed_end_at: string | null;
+  old_start_at: string | null;
+  old_end_at: string | null;
+  admin_note: string | null;
+  reject_reason: string | null;
+  reschedule_reason: string | null;
+  confirm_token: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Google Reviews ─────────────────────────────────────────────────────────
+export interface GoogleReview {
+  id: string;
+  author_name: string | null;
+  author_photo: string | null;
+  rating: number;
+  text: string | null;
+  review_date: string | null;
+  review_url: string | null;
+  sort: number;
+  is_active: boolean;
+  created_at: string;
 }

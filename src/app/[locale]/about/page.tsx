@@ -40,7 +40,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
           {(mission || vision) && (
             <>
               {mission && (
-                <Reveal className="card p-8">
+                <Reveal className="card card-hover p-8">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white">
                     <Icon name="target" className="h-6 w-6" />
                   </div>
@@ -51,7 +51,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
                 </Reveal>
               )}
               {vision && (
-                <Reveal className="card p-8">
+                <Reveal className="card card-hover p-8">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white">
                     <Icon name="eye" className="h-6 w-6" />
                   </div>
@@ -73,7 +73,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
               {values.map((v, i) => (
                 <Reveal key={i} delay={i * 40}>
-                  <div className="flex h-full items-center gap-2 rounded-2xl border border-brand-100 bg-white px-3 py-3 shadow-sm transition-colors hover:border-brand-300 sm:gap-3 sm:px-5 sm:py-4">
+                  <div className="card card-hover flex h-full items-center gap-2 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 sm:h-9 sm:w-9">
                       <Icon name="check-circle" className="h-5 w-5" />
                     </span>
@@ -97,7 +97,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {whyItems.map((w, i) => (
                 <Reveal key={i} delay={i * 50}>
-                  <div className="card h-full p-6">
+                  <div className="card card-hover h-full p-6">
                     <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                       <Icon name={w.icon} className="h-6 w-6" />
                     </div>
@@ -130,10 +130,10 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
         )}
 
         {stats.length > 0 && (
-          <section className="mt-16 rounded-3xl bg-ink-900 p-10">
-            <div className="grid grid-cols-2 gap-8 text-center lg:grid-cols-4">
+          <section className="mt-16 rounded-3xl bg-ink-900 p-6 sm:p-10">
+            <div className="grid grid-cols-2 gap-4 text-center lg:grid-cols-4">
               {stats.map((s) => (
-                <div key={s.id}>
+                <div key={s.id} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-colors hover:border-white/20">
                   <p className="text-4xl font-extrabold text-brand-300">
                     <CounterValue value={s.value} suffix={s.suffix} />
                   </p>

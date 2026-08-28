@@ -17,6 +17,24 @@ export async function uploadFile(
   folder = "general",
 ): Promise<{ url: string; path: string }> {
   const supabase = createClient();
+
+  // Content hash so identical files are never uploaded twice.
+  let hash: string | null = null;
+  try {
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    hash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    hash = null;
+  }
+
+  if (hash) {
+    const { data: existing } = await supabase.from("media").select("url").eq("hash", hash).limit(1);
+    if (existing && existing.length) {
+      return { url: existing[0].url, path: existing[0].url };
+    }
+  }
+
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const safeBase = file.name
     .replace(/\.[^.]+$/, "")
@@ -31,6 +49,19 @@ export async function uploadFile(
   if (error) throw new Error(error.message);
 
   const url = supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+
+  if (hash) {
+    await supabase.from("media").insert({
+      url,
+      name: file.name,
+      mime_type: file.type,
+      size: file.size,
+      folder,
+      hash,
+      storage_path: `${bucket}/${path}`,
+    });
+  }
+
   return { url, path };
 }
 

@@ -72,8 +72,8 @@ export function CompanyVideoSection({
               <Link href={p("/contact")} className="btn-primary px-6 py-3">
                 {dict.home.contactUs}
               </Link>
-              <Link href={p("/request-project")} className="btn-secondary px-6 py-3">
-                {dict.home.requestProjectNow}
+              <Link href={p("/appointment")} className="btn-secondary px-6 py-3">
+                {dict.nav.appointment}
               </Link>
             </div>
           </Reveal>

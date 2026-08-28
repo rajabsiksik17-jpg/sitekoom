@@ -18,4 +18,9 @@ export const PERMISSION_GROUPS: Record<string, { ar: string; en: string }> = {
   settings: { ar: "الإعدادات", en: "Settings" },
   integrations: { ar: "التكاملات", en: "Integrations" },
   audit: { ar: "سجل النشاطات", en: "Audit Log" },
+  offers: { ar: "العروض", en: "Offers" },
+  forms: { ar: "النماذج", en: "Forms" },
+  achievements: { ar: "الإنجازات", en: "Achievements" },
+  appointments: { ar: "المواعيد", en: "Appointments" },
+  reviews: { ar: "تقييمات Google", en: "Google Reviews" },
 };

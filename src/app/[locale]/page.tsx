@@ -12,10 +12,12 @@ import { ContactForm } from "@/components/contact-form";
 import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { StatisticsSection } from "@/components/home/statistics-section";
 import { CtaSection } from "@/components/home/cta-section";
+import { GoogleReviewsSection } from "@/components/home/google-reviews-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
+import { getGoogleReviews, getGoogleReviewsSettings } from "@/lib/reviews";
 import {
   getSliders,
   getMarqueeMessages,
@@ -64,7 +66,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements] = await Promise.all([
+  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements, reviews, reviewsSettings] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
@@ -76,6 +78,8 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
     getSocialLinks(),
     getOffers(),
     getAchievements(),
+    getGoogleReviews(),
+    getGoogleReviewsSettings(),
   ]);
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.key, s]));
@@ -127,7 +131,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
               const catServices = services.filter((s) => s.category_id === cat.id).slice(0, 6);
               return (
                 <Reveal key={cat.id}>
-                  <div className="group relative h-full overflow-hidden rounded-3xl border border-brand-100/60 bg-white p-8 shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow">
+                  <div className="glow-ring group relative h-full overflow-hidden rounded-3xl border border-brand-100/70 bg-white/80 p-8 shadow-card backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-300/80 hover:bg-white/95 hover:shadow-glow">
                     <div className="pointer-events-none absolute -end-12 -top-12 h-44 w-44 rounded-full bg-brand-50 blur-3xl transition-opacity group-hover:opacity-100" />
                     <div className="relative">
                       <div className="mb-4 flex items-center gap-4">
@@ -223,7 +227,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {whyItems.map((w, i) => (
                   <Reveal key={i} delay={i * 60}>
-                    <div className="card h-full p-6 transition-all hover:-translate-y-1 hover:shadow-glow">
+                    <div className="card card-hover h-full p-6">
                       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                         <Icon name={w.icon} className="h-6 w-6" />
                       </div>
@@ -266,7 +270,7 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {whyItems.map((w, i) => (
                   <Reveal key={i} delay={i * 60}>
-                    <div className="card h-full p-6 transition-all hover:-translate-y-1 hover:shadow-glow">
+                    <div className="card card-hover h-full p-6">
                       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                         <Icon name={w.icon} className="h-6 w-6" />
                       </div>
@@ -313,6 +317,10 @@ export default async function HomePage({ params }: { params: { locale: "ar" | "e
             </div>
           </div>
         </section>
+      )}
+
+      {reviewsSettings.enabled && reviews.length > 0 && (
+        <GoogleReviewsSection reviews={reviews.slice(0, Number(reviewsSettings.count || 6))} settings={reviewsSettings} locale={locale} />
       )}
 
       {isActive("achievements") && featuredAchievements.length > 0 && (
