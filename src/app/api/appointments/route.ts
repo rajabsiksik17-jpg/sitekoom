@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   const deviceId = request.headers.get("x-device-id");
   const rl = formRateLimit("appointment", ip, deviceId);
   if (!rl.ok) {
-    return NextResponse.json({ error: rl.blocked ? "تم تقييد الإرسال مؤقتًا." : "Too many requests" }, { status: 429, headers: { "Retry-After": String(rl.retryAfter) } });
+    return NextResponse.json({ error: rl.blocked ? "لقد استخدمت هذا النموذج أكثر من 5 مرات خلال أقل من ساعة. يرجى المحاولة لاحقًا." : "Too many requests" }, { status: 429, headers: { "Retry-After": String(rl.retryAfter) } });
   }
 
   let body: z.infer<typeof schema>;

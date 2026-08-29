@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, MapPin, Mail } from "lucide-react";
+import { Phone, MapPin, Mail, Clock } from "lucide-react";
 import { localizePath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { GeneralSettings } from "@/lib/settings";
@@ -14,11 +14,13 @@ export function CompanyInfoSection({
   settings,
   social,
   dict,
+  workingHours,
 }: {
   locale: Locale;
   settings: GeneralSettings;
   social: SocialLink[];
   dict: Dictionary;
+  workingHours?: string | null;
 }) {
   const p = (path: string) => localizePath(path, locale);
   const companyName = locale === "ar" ? settings.company_name_ar : settings.company_name_en;
@@ -69,6 +71,12 @@ export function CompanyInfoSection({
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><MapPin className="h-4 w-4" /></span>
                   <span>{localize(locale, settings.address_ar, settings.address_en)}</span>
                 </li>
+                {workingHours && (
+                  <li className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><Clock className="h-4 w-4" /></span>
+                    <span>{workingHours}</span>
+                  </li>
+                )}
               </ul>
 
               {social.length > 0 && (

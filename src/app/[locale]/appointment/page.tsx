@@ -6,9 +6,10 @@ import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { AppointmentForm } from "@/components/appointment-form";
 import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { getServices, getSocialLinks, getCompanyInfo } from "@/lib/queries";
+import { getServices, getSocialLinks, getCompanyInfo, getDynamicFormFields } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings } from "@/lib/appointments";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Book an Appointment" };
 
@@ -24,6 +25,17 @@ export default async function AppointmentPage({ params }: { params: { locale: "a
     getAppointmentSettings(),
   ]);
   const g = settings.general;
+
+  const supabase = createClient();
+  const { data: apptForm } = await supabase
+    .from("dynamic_forms")
+    .select("id, success_message_ar, success_message_en")
+    .eq("placement", "appointment")
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  const apptFields = apptForm ? await getDynamicFormFields(apptForm.id) : [];
+  const successMessage = apptForm ? localize(locale, apptForm.success_message_ar, apptForm.success_message_en) : "";
 
   const info = [
     g.phone && { icon: Phone, label: dict.contact.phone, value: g.phone, href: `tel:${g.phone}` },
@@ -76,7 +88,7 @@ export default async function AppointmentPage({ params }: { params: { locale: "a
             </div>
           </div>
 
-          <AppointmentForm services={services} settings={appointmentSettings} locale={locale} />
+          <AppointmentForm services={services} settings={appointmentSettings} locale={locale} formFields={apptFields} successMessage={successMessage} />
         </div>
 
         {company && company.video_url && (

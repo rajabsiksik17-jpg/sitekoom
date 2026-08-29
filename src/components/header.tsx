@@ -141,13 +141,18 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
             if (item.children?.length) {
               return (
                 <div key={item.key} className="group relative">
-                  <button
-                    type="button"
-                    className={cn(linkClass(active), "inline-flex items-center gap-1")}
-                  >
-                    {dict.nav[item.key as keyof typeof dict.nav]}
-                    <ChevronDown className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:rotate-180" />
-                  </button>
+                  <div className="flex items-center">
+                    <Link href={href(item.href)} className={linkClass(active)}>
+                      {dict.nav[item.key as keyof typeof dict.nav]}
+                    </Link>
+                    <button
+                      type="button"
+                      className={cn("rounded-lg p-1 transition-colors", lightText ? "text-white/70 hover:bg-white/10" : "text-brand-600 hover:bg-brand-50")}
+                      aria-label={locale === "ar" ? "فتح القائمة الفرعية" : "Open submenu"}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
+                    </button>
+                  </div>
                   <div className="invisible absolute start-0 top-full z-50 w-56 translate-y-2 rounded-2xl border border-brand-100 bg-white/95 p-2 opacity-0 shadow-card backdrop-blur-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
                     {item.children.map((c) => (
                       <Link

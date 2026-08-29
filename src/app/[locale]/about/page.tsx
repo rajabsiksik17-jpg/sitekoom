@@ -11,18 +11,22 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
+import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 
 export default async function AboutPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
 
-  const [company, team, stats, social, settings] = await Promise.all([
+  const [company, team, stats, social, settings, appointmentSettings] = await Promise.all([
     getCompanyInfo(),
     getTeamMembers(),
     getStatistics(),
     getSocialLinks(),
     getSettings(),
+    getAppointmentSettings(),
   ]);
+
+  const workingHours = formatWorkingHours(appointmentSettings, locale);
 
   const about = localize(locale, company?.about_ar, company?.about_en);
   const mission = localize(locale, company?.mission_ar, company?.mission_en);
@@ -144,7 +148,7 @@ export default async function AboutPage({ params }: { params: { locale: "ar" | "
           </section>
         )}
 
-        <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} />
+        <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} workingHours={workingHours} />
       </div>
     </>
   );

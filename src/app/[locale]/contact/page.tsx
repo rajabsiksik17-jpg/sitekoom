@@ -8,22 +8,24 @@ import { localize, buildWhatsAppUrl } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
+import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 
 export default async function ContactPage({ params }: { params: { locale: "ar" | "en" } }) {
   const locale = params.locale;
   const dict = locale === "ar" ? ar : en;
-  const [social, settings] = await Promise.all([getSocialLinks(), getSettings()]);
+  const [social, settings, appointmentSettings] = await Promise.all([getSocialLinks(), getSettings(), getAppointmentSettings()]);
   const g = settings.general;
+  const workingHours = formatWorkingHours(appointmentSettings, locale);
 
   const info = [
     g.phone && { icon: Phone, label: dict.contact.phone, value: g.phone, href: `tel:${g.phone}` },
     g.whatsapp && { icon: MessageCircle, label: dict.contact.whatsapp, value: g.whatsapp, href: buildWhatsAppUrl(g.whatsapp) },
     g.email && { icon: Mail, label: dict.contact.email, value: g.email, href: `mailto:${g.email}` },
     { icon: MapPin, label: dict.contact.address, value: localize(locale, g.address_ar, g.address_en), href: g.google_maps_url },
-    localize(locale, g.working_hours_ar, g.working_hours_en) && {
+    workingHours && {
       icon: Clock,
       label: dict.contact.workingHours,
-      value: localize(locale, g.working_hours_ar, g.working_hours_en),
+      value: workingHours,
       href: null,
     },
   ].filter(Boolean) as { icon: React.ComponentType<{ className?: string }>; label: string; value: string; href: string | null }[];

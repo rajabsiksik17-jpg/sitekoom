@@ -14,6 +14,7 @@ interface Badges {
   quotes: number;
   chat: number;
   renewals: number;
+  appointments: number;
 }
 
 export function Sidebar({
@@ -29,7 +30,7 @@ export function Sidebar({
   const router = useRouter();
   const { push } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0, renewals: 0 });
+  const [badges, setBadges] = useState<Badges>({ contacts: 0, quotes: 0, chat: 0, renewals: 0, appointments: 0 });
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const supabaseRef = useRef(createClient());
 
@@ -37,13 +38,14 @@ export function Sidebar({
 
   const refreshBadges = useCallback(async () => {
     const supabase = supabaseRef.current;
-    const [c, q, ch, rn] = await Promise.all([
+    const [c, q, ch, rn, ap] = await Promise.all([
       supabase.from("contact_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("project_requests").select("id", { count: "exact", head: true }).eq("status", "new").is("deleted_at", null),
       supabase.from("live_chat_conversations").select("id", { count: "exact", head: true }).eq("status", "waiting"),
       supabase.from("renewal_requests").select("id", { count: "exact", head: true }).in("status", ["new", "in_review"]),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "new"),
     ]);
-    setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0, renewals: rn.count ?? 0 });
+    setBadges({ contacts: c.count ?? 0, quotes: q.count ?? 0, chat: ch.count ?? 0, renewals: rn.count ?? 0, appointments: ap.count ?? 0 });
   }, []);
 
   useEffect(() => {
@@ -66,6 +68,10 @@ export function Sidebar({
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "renewal_requests" }, (payload) => {
         if (payload.eventType === "INSERT") push("success", "طلب تجديد جديد");
+        refreshBadges();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, (payload) => {
+        if (payload.eventType === "INSERT") push("success", "طلب حجز موعد جديد");
         refreshBadges();
       })
       .subscribe();
@@ -99,6 +105,7 @@ export function Sidebar({
     if (key === "quotes") return badges.quotes;
     if (key === "chat") return badges.chat;
     if (key === "renewals") return badges.renewals;
+    if (key === "appointments") return badges.appointments;
     return null;
   };
 

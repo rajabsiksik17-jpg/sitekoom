@@ -845,6 +845,7 @@ export interface OfferAddon {
   description_en: string | null;
   price: number;
   enabled: boolean;
+  is_default: boolean;
   sort: number;
 }
 

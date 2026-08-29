@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Send, CalendarDays, Clock } from "lucide-react";
 import { localize, cn } from "@/lib/utils";
 import { PhoneInput } from "@/components/phone-input";
-import type { Service } from "@/lib/types";
+import type { Service, DynamicFormField } from "@/lib/types";
 import type { AppointmentSettings } from "@/lib/appointments";
 
 function getDeviceId(): string {
@@ -23,9 +23,28 @@ function getDeviceId(): string {
 
 const INITIAL_SERVICES = 6;
 
-export function AppointmentForm({ services, settings, locale }: { services: Service[]; settings: AppointmentSettings; locale: "ar" | "en" }) {
+export function AppointmentForm({ services, settings, locale, formFields, successMessage }: {
+  services: Service[];
+  settings: AppointmentSettings;
+  locale: "ar" | "en";
+  formFields?: DynamicFormField[];
+  successMessage?: string;
+}) {
   const isAr = locale === "ar";
   const t = (ar: string, en: string) => (isAr ? ar : en);
+
+  const cfg = (key: string) => formFields?.find((f) => f.field_key === key);
+  const label = (key: string, ar: string, en: string) => {
+    const c = cfg(key);
+    return localize(locale, c?.label_ar || ar, c?.label_en || en);
+  };
+  const ph = (key: string, ar: string, en: string) => {
+    const c = cfg(key);
+    return localize(locale, c?.placeholder_ar || ar, c?.placeholder_en || en);
+  };
+  // Core fields (name/email/phone) stay required so the booking system never breaks.
+  const subjectRequired = cfg("subject") ? cfg("subject")!.required : true;
+  const notesRequired = cfg("notes") ? cfg("notes")!.required : false;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -85,7 +104,8 @@ export function AppointmentForm({ services, settings, locale }: { services: Serv
     e.preventDefault();
     if (!name.trim() || !email.trim() || !phone.trim()) return setError(t("يرجى تعبئة الاسم والبريد والهاتف", "Please fill name, email and phone"));
     if (!serviceIds.length) return setError(t("يرجى اختيار خدمة واحدة على الأقل", "Please select at least one service"));
-    if (!subject.trim()) return setError(t("يرجى كتابة الموضوع", "Please write a subject"));
+    if (subjectRequired && !subject.trim()) return setError(t("يرجى كتابة الموضوع", "Please write a subject"));
+    if (notesRequired && !notes.trim()) return setError(t("يرجى تعبئة الملاحظات", "Please fill the notes"));
     if (!date || !time) return setError(t("يرجى اختيار التاريخ والوقت", "Please pick a date and time"));
 
     setSending(true);
@@ -110,7 +130,7 @@ export function AppointmentForm({ services, settings, locale }: { services: Serv
     return (
       <div className="glass-premium rounded-3xl p-8 text-center shadow-card">
         <h3 className="text-xl font-extrabold text-ink-900">{t("تم استلام طلبك", "Your request has been received")}</h3>
-        <p className="mt-2 text-gray-600">{t("سنراجع طلبك ونؤكد موعدك عبر البريد الإلكتروني.", "We will review your request and confirm your appointment by email.")}</p>
+        <p className="mt-2 text-gray-600">{successMessage || t("سنراجع طلبك ونؤكد موعدك عبر البريد الإلكتروني.", "We will review your request and confirm your appointment by email.")}</p>
       </div>
     );
   }
@@ -119,18 +139,18 @@ export function AppointmentForm({ services, settings, locale }: { services: Serv
     <form onSubmit={submit} className="glass-premium space-y-5 rounded-3xl p-6 shadow-card sm:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label">{t("الاسم الكامل", "Full name")} *</label>
-          <input className="input" dir={isAr ? "rtl" : "ltr"} value={name} onChange={(e) => setName(e.target.value)} required />
+          <label className="label">{label("name", "الاسم الكامل", "Full name")} *</label>
+          <input className="input" dir={isAr ? "rtl" : "ltr"} placeholder={ph("name", "", "")} value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div>
-          <label className="label">{t("البريد الإلكتروني", "Email")} *</label>
-          <input className="input" dir="ltr" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label className="label">{label("email", "البريد الإلكتروني", "Email")} *</label>
+          <input className="input" dir="ltr" type="email" placeholder={ph("email", "", "")} value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
       </div>
 
       <div>
-        <label className="label">{t("رقم الهاتف", "Phone")} *</label>
-        <PhoneInput label={t("الهاتف", "Phone")} onChange={(r) => setPhone(r.value?.e164 ?? "")} />
+        <label className="label">{label("phone", "رقم الهاتف", "Phone")} *</label>
+        <PhoneInput label={label("phone", "الهاتف", "Phone")} onChange={(r) => setPhone(r.value?.e164 ?? "")} />
       </div>
 
       <div>
@@ -161,16 +181,16 @@ export function AppointmentForm({ services, settings, locale }: { services: Serv
       </div>
 
       <div>
-        <label className="label">{t("الموضوع", "Subject")} *</label>
-        <textarea className="input min-h-[90px] resize-y" dir={isAr ? "rtl" : "ltr"} value={subject} onChange={(e) => setSubject(e.target.value)} required />
+        <label className="label">{label("subject", "الموضوع", "Subject")}{subjectRequired && " *"}</label>
+        <textarea className="input min-h-[90px] resize-y" dir={isAr ? "rtl" : "ltr"} placeholder={ph("subject", "", "")} value={subject} onChange={(e) => setSubject(e.target.value)} required={subjectRequired} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <label className="label">{t("التاريخ المطلوب", "Requested date")} *</label>
-          <input className="input" dir="ltr" type="date" min={today} max={maxDate} value={date} onChange={(e) => setDate(e.target.value)} required />
+          <input className="input w-full min-w-0" dir="ltr" type="date" min={today} max={maxDate} value={date} onChange={(e) => setDate(e.target.value)} required />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="label">{t("الوقت المطلوب", "Requested time")} *</label>
           <div className="min-h-[46px]">
             {loadingSlots ? (
@@ -196,8 +216,8 @@ export function AppointmentForm({ services, settings, locale }: { services: Serv
       </div>
 
       <div>
-        <label className="label">{t("ملاحظات إضافية", "Additional notes")}</label>
-        <textarea className="input min-h-[80px] resize-y" dir={isAr ? "rtl" : "ltr"} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <label className="label">{label("notes", "ملاحظات إضافية", "Additional notes")}{notesRequired && " *"}</label>
+        <textarea className="input min-h-[80px] resize-y" dir={isAr ? "rtl" : "ltr"} placeholder={ph("notes", "", "")} value={notes} onChange={(e) => setNotes(e.target.value)} required={notesRequired} />
       </div>
 
       <div className="rounded-xl bg-brand-50/60 p-3 text-sm text-ink-700">

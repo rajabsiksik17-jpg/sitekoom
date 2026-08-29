@@ -12,6 +12,8 @@ export interface GoogleReviewsSettings {
   description_ar: string;
   description_en: string;
   maps_url: string;
+  google_maps_uri: string;
+  place_name: string;
   cache_hours: number;
   rating: number;
   total: number;
@@ -25,6 +27,8 @@ const defaults: GoogleReviewsSettings = {
   description_ar: "عملاؤنا هم أهم أعمالنا، وتجاربهم هي أفضل شهادة على جودة ما نقدمه.",
   description_en: "Our clients are at the heart of everything we do. Discover what they say about their experience with Sitekoom.",
   maps_url: "",
+  google_maps_uri: "",
+  place_name: "",
   cache_hours: 24,
   rating: 0,
   total: 0,

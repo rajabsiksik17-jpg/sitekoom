@@ -135,6 +135,7 @@ export function FormBuilder({ formId }: { formId?: string }) {
               <option value="contact">تواصل معنا</option>
               <option value="pricing_request">طلب التسعير</option>
               <option value="offer">العروض</option>
+              <option value="appointment">حجز موعد</option>
               <option value="live_chat">المحادثة المباشرة</option>
             </select>
           </Field>

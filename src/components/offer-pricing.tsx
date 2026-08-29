@@ -61,7 +61,7 @@ export function OfferPricing({
     }
     return defaults;
   });
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>(() => addons.filter((a) => a.is_default).map((a) => a.id));
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [selectedFormOptionIds, setSelectedFormOptionIds] = useState<string[]>([]);
@@ -80,11 +80,11 @@ export function OfferPricing({
     let sum = Number(offer.base_price) || 0;
     for (const id of Object.values(selectedValues).flat()) {
       const v = optionValues.find((x) => x.id === id);
-      if (v) sum += Number(v.price_delta) || 0;
+      if (v && !v.is_default) sum += Number(v.price_delta) || 0;
     }
     for (const id of selectedAddons) {
       const a = addons.find((x) => x.id === id);
-      if (a) sum += Number(a.price) || 0;
+      if (a && !a.is_default) sum += Number(a.price) || 0;
     }
     if (selectedPackage) {
       const pkg = packages.find((x) => x.id === selectedPackage);

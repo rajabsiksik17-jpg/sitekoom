@@ -18,7 +18,7 @@ import type { Offer, Service, DynamicForm } from "@/lib/types";
 type Stage = { title_ar: string; title_en: string; description_ar: string; description_en: string; duration: string; icon: string };
 type Included = { title_ar: string; title_en: string; description_ar: string; description_en: string; icon: string; enabled: boolean };
 type Group = { id?: string; title_ar: string; title_en: string; selection_type: "single" | "multiple"; required: boolean; allow_deselect: boolean; values: { id?: string; label_ar: string; label_en: string; price_delta: number; is_default: boolean }[] };
-type Addon = { title_ar: string; title_en: string; price: number };
+type Addon = { title_ar: string; title_en: string; price: number; is_default: boolean };
 type Pkg = { name_ar: string; name_en: string; price: number; duration: string; is_default: boolean; features: string };
 type Rule = { title_ar: string; title_en: string; field_key: string; operator: string; value: string; price_delta: number };
 
@@ -76,7 +76,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
       }
       setStages((st.data ?? []).map((x) => ({ title_ar: x.title_ar, title_en: x.title_en, description_ar: x.description_ar ?? "", description_en: x.description_en ?? "", duration: x.duration ?? "", icon: x.icon ?? "check-circle" })));
       setIncluded((inc.data ?? []).map((x) => ({ title_ar: x.title_ar, title_en: x.title_en, description_ar: x.description_ar ?? "", description_en: x.description_en ?? "", icon: x.icon ?? "check-circle", enabled: x.enabled })));
-      setAddons((ad.data ?? []).map((x) => ({ title_ar: x.title_ar, title_en: x.title_en, price: Number(x.price) })));
+      setAddons((ad.data ?? []).map((x) => ({ title_ar: x.title_ar, title_en: x.title_en, price: Number(x.price), is_default: x.is_default ?? false })));
       setPackages((pk.data ?? []).map((x) => ({ name_ar: x.name_ar, name_en: x.name_en, price: Number(x.price), duration: x.duration ?? "", is_default: x.is_default, features: (x.features ?? []).join(", ") })));
       setRules((rl.data ?? []).map((x) => ({ title_ar: x.title_ar, title_en: x.title_en, field_key: (x.condition as { field_key?: string })?.field_key ?? "", operator: (x.condition as { operator?: string })?.operator ?? "equals", value: String((x.condition as { value?: unknown })?.value ?? ""), price_delta: Number(x.price_delta) })));
 
@@ -236,12 +236,13 @@ export function OfferForm({ offerId }: { offerId?: string }) {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between"><p className="font-bold text-ink-900">الإضافات</p><button type="button" onClick={() => setAddons((a) => [...a, { title_ar: "", title_en: "", price: 0 }])} className="btn-secondary px-3 py-1.5 text-xs"><Plus className="h-4 w-4" /> إضافة</button></div>
+          <div className="mb-2 flex items-center justify-between"><p className="font-bold text-ink-900">الإضافات</p><button type="button" onClick={() => setAddons((a) => [...a, { title_ar: "", title_en: "", price: 0, is_default: false }])} className="btn-secondary px-3 py-1.5 text-xs"><Plus className="h-4 w-4" /> إضافة</button></div>
           {addons.map((a, i) => (
             <div key={i} className="mb-1 flex items-center gap-2">
               <input className="input" placeholder="العربية" value={a.title_ar} onChange={(e) => setAddons((x) => x.map((y, j) => j === i ? { ...y, title_ar: e.target.value } : y))} />
               <input className="input" dir="ltr" placeholder="English" value={a.title_en} onChange={(e) => setAddons((x) => x.map((y, j) => j === i ? { ...y, title_en: e.target.value } : y))} />
               <input className="input w-24" dir="ltr" type="number" value={a.price} onChange={(e) => setAddons((x) => x.map((y, j) => j === i ? { ...y, price: Number(e.target.value) } : y))} />
+              <label className="flex shrink-0 items-center gap-1 text-xs"><input type="checkbox" checked={a.is_default} onChange={(e) => setAddons((x) => x.map((y, j) => j === i ? { ...y, is_default: e.target.checked } : y))} /> افتراضي (مشمول في السعر)</label>
               <button type="button" onClick={() => setAddons((x) => x.filter((_, j) => j !== i))} className="text-red-500"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}

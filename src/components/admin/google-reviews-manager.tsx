@@ -16,9 +16,12 @@ type Settings = {
   description_en: string;
   maps_url: string;
   place_id: string;
+  place_name: string;
+  google_maps_uri: string;
   cache_hours: number;
   rating: number;
   total: number;
+  last_updated: string;
 };
 
 const DEFAULT_SETTINGS: Settings = {
@@ -30,9 +33,12 @@ const DEFAULT_SETTINGS: Settings = {
   description_en: "Our clients are at the heart of everything we do.",
   maps_url: "",
   place_id: "",
+  place_name: "",
+  google_maps_uri: "",
   cache_hours: 24,
   rating: 0,
   total: 0,
+  last_updated: "",
 };
 
 export function GoogleReviewsManager() {
@@ -72,10 +78,23 @@ export function GoogleReviewsManager() {
   async function fetchReviews() {
     setFetching(true);
     try {
-      const res = await fetch("/api/admin/google-reviews/fetch", { method: "POST" });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? "فشل الجلب");
-      push("success", `تم تحديث ${d.count} تقييم من Google`);
+      const res = await fetch("/api/admin/google-reviews/fetch", { method: "POST", redirect: "error", cache: "no-store" });
+      const contentType = res.headers.get("content-type") ?? "";
+      let d: { success?: boolean; data?: { reviewCount?: number; rating?: number; total?: number; placeName?: string }; error?: string; details?: string } | null = null;
+
+      if (contentType.includes("application/json")) {
+        d = await res.json();
+      } else {
+        const body = await res.text();
+        throw new Error(`استجابة غير متوقعة من الخادم (HTTP ${res.status}). تأكد أن الـroute يعيد JSON.`);
+      }
+
+      if (!res.ok || !d?.success) {
+        const detail = d?.details ? ` — ${d.details}` : "";
+        throw new Error(`${d?.error ?? `HTTP ${res.status}`}${detail}`);
+      }
+
+      push("success", `تم سحب ${d.data?.reviewCount ?? 0} تقييم — متوسط ${Number(d.data?.rating ?? 0).toFixed(1)} (${d.data?.total ?? 0} إجمالي)`);
       load();
     } catch (e) {
       push("error", e instanceof Error ? e.message : "فشل الجلب");
@@ -103,7 +122,7 @@ export function GoogleReviewsManager() {
 
   return (
     <div>
-      <PageTitle title="Google Reviews" description="إدارة تقييمات Google وعرضها في الصفحة الرئيسية." action={<button type="button" onClick={fetchReviews} className="btn-primary px-4 py-2.5" disabled={fetching}><RefreshCw className="h-4 w-4" /> {fetching ? "جارٍ التحديث..." : "تحديث التقييمات"}</button>} />
+      <PageTitle title="Google Reviews" description="إدارة تقييمات Google وعرضها في الصفحة الرئيسية." action={<button type="button" onClick={fetchReviews} className="btn-primary px-4 py-2.5" disabled={fetching}><RefreshCw className={fetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> {fetching ? "جارٍ السحب..." : "سحب تقييمات Google"}</button>} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card space-y-4 p-6">
@@ -135,6 +154,8 @@ export function GoogleReviewsManager() {
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             متوسط التقييم: <b>{Number(settings.rating || 0).toFixed(1)}</b> — إجمالي التقييمات: <b>{settings.total || reviews.length}</b>
           </div>
+          {settings.place_name && <p className="text-xs text-gray-500">النشاط: <b>{settings.place_name}</b></p>}
+          {settings.last_updated && <p className="text-xs text-gray-400">آخر تحديث: {new Date(settings.last_updated).toLocaleString("ar")}</p>}
           {reviews.length === 0 ? <EmptyState title="لا توجد تقييمات" description="أضف تقييمات يدويًا أو استخدم زر التحديث مع Google Places API." /> : (
             <div className="space-y-2">
               {reviews.map((r) => (

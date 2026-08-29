@@ -47,6 +47,14 @@ export async function middleware(request: NextRequest) {
       (p) => pathname === p || pathname === `${p}/`,
     );
     if (!user && !isPublicAuthPage) {
+      // API routes must never be redirected to an HTML login page — return JSON
+      // so the client can parse the error instead of receiving `<!DOCTYPE ...>`.
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized" },
+          { status: 401 },
+        );
+      }
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       url.search = "";

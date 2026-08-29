@@ -44,6 +44,17 @@ export function slotToDate(dateStr: string, timeStr: string): Date {
   return new Date(`${dateStr}T${timeStr}:00${TZ}`);
 }
 
+/** Parse a date + time (tolerates "HH:MM:SS" returned by Postgres `time`). */
+export function parseSlotDate(dateStr: string, timeStr: string): Date {
+  const t = (timeStr ?? "").slice(0, 5);
+  if (!/^\d{2}:\d{2}$/.test(t) || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr ?? "")) {
+    throw new Error("صيغة التاريخ/الوقت غير صالحة");
+  }
+  const d = slotToDate(dateStr, t);
+  if (Number.isNaN(d.getTime())) throw new Error("صيغة التاريخ/الوقت غير صالحة");
+  return d;
+}
+
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
 }
@@ -129,4 +140,23 @@ export function slotEnd(start: Date, durationMinutes: number): Date {
 
 export function parseTimeToDate(dateStr: string, timeStr: string): Date {
   return slotToDate(dateStr, timeStr);
+}
+
+const DAY_NAMES_AR = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const DAY_NAMES_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function fmtTime(t: string, locale: "ar" | "en"): string {
+  const [h, m] = t.split(":").map((n) => parseInt(n, 10));
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const suffix = locale === "ar" ? (h >= 12 ? "م" : "ص") : (h >= 12 ? "PM" : "AM");
+  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+/** Central working-hours string derived from appointment settings (single source). */
+export function formatWorkingHours(settings: AppointmentSettings, locale: "ar" | "en"): string {
+  const names = locale === "ar" ? DAY_NAMES_AR : DAY_NAMES_EN;
+  const days = settings.work_days.map((d) => names[d] ?? "");
+  const hours = `${fmtTime(settings.start_time, locale)} – ${fmtTime(settings.end_time, locale)}`;
+  if (locale === "ar") return `أيام العمل: ${days.join("، ")} | ${hours}`;
+  return `Working days: ${days.join(", ")} | ${hours}`;
 }

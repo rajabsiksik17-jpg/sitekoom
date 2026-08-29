@@ -53,6 +53,11 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
       .select("*")
       .in("id", body.selected_option_values);
     for (const v of values ?? []) {
+      // Default options are already included in the base price.
+      if (v.is_default) {
+        selectedOptions.push({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: 0, included: true });
+        continue;
+      }
       const delta = Number(v.price_delta) || 0;
       total += delta;
       selectedOptions.push({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: delta });
@@ -65,6 +70,11 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
       .select("*")
       .in("id", body.selected_addons);
     for (const a of addons ?? []) {
+      // Default addons are already included in the base price.
+      if (a.is_default) {
+        selectedAddons.push({ id: a.id, title_ar: a.title_ar, title_en: a.title_en, price: 0, included: true });
+        continue;
+      }
       const price = Number(a.price) || 0;
       total += price;
       selectedAddons.push({ id: a.id, title_ar: a.title_ar, title_en: a.title_en, price });
@@ -119,13 +129,6 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const deviceId = request.headers.get("x-device-id");
-  const rl = formRateLimit("general", ip, deviceId);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: rl.blocked ? "لقد استخدمت النماذج أكثر من المسموح مؤقتًا. تم تقييد الإرسال لمدة 24 ساعة." : "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
-  }
 
   let body: z.infer<typeof schema>;
   try {
@@ -137,6 +140,21 @@ export async function POST(request: NextRequest) {
   if (!body.form_id && !body.offer_id) {
     return NextResponse.json({ error: "Missing form" }, { status: 400 });
   }
+
+  // Per-form rate limiting (same protection on every dynamic form).
+  const formKey = body.form_id ?? body.offer_id ?? "general";
+  const rl = formRateLimit(formKey, ip, deviceId);
+  if (!rl.ok) {
+    return NextResponse.json(
+      {
+        error: rl.blocked
+          ? "لقد استخدمت هذا النموذج أكثر من 5 مرات خلال أقل من ساعة. يرجى المحاولة لاحقًا."
+          : "Too many requests. Please try again later.",
+      },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
 
   const admin = createAdminClient();
 

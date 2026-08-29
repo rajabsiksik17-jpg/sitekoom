@@ -71,6 +71,17 @@ export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: G
             <span className="text-sm font-bold text-ink-900">{Number(settings.rating || 0).toFixed(1)}</span>
             <span className="text-xs text-gray-500">({settings.total || reviews.length})</span>
           </div>
+          {(settings.google_maps_uri || settings.maps_url) && (
+            <a
+              href={settings.google_maps_uri || settings.maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary px-4 py-2.5 text-sm"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {isAr ? "رؤية موقعنا على Google" : "View Us on Google"}
+            </a>
+          )}
           <div className="flex gap-2">
             <button type="button" onClick={() => scrollBy(-1)} disabled={!canPrev} className="btn-secondary h-10 w-10 p-0 disabled:opacity-40" aria-label={isAr ? "السابق" : "Previous"}>
               {isAr ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
