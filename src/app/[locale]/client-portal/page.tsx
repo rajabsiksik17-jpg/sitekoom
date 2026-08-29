@@ -9,8 +9,8 @@ import { daysUntil } from "@/lib/client-utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientPortalDashboard({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientPortalDashboard({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
 
   const [websites, subscriptions, domains, hosting, notifications, renewals] = await Promise.all([

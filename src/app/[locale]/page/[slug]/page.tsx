@@ -5,10 +5,10 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getPageBySlug } from "@/lib/queries";
 
-export default async function CustomPage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
-  const locale = params.locale;
+export default async function CustomPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
-  const page = await getPageBySlug(params.slug);
+  const page = await getPageBySlug((await params).slug);
   if (!page) notFound();
 
   const title = localize(locale, page.title_ar, page.title_en);

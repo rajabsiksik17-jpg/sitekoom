@@ -11,25 +11,25 @@ import { localizePath } from "@/lib/i18n/config";
 import { getAchievementDetails, getServices } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const { achievement } = (await getAchievementDetails(params.slug)) ?? {};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { achievement } = (await getAchievementDetails((await params).slug)) ?? {};
   if (!achievement) return {};
-  const supabase = createClient();
-  const { data: seo } = await supabase.from("seo_metadata").select("*").eq("entity_type", "achievement").eq("entity_id", achievement.id).eq("locale", params.locale).maybeSingle();
-  const title = localize(params.locale, achievement.title_ar, achievement.title_en);
-  const canonical = params.locale === "ar" ? `/achievements/${achievement.slug}` : `/en/achievements/${achievement.slug}`;
+  const supabase = await createClient();
+  const { data: seo } = await supabase.from("seo_metadata").select("*").eq("entity_type", "achievement").eq("entity_id", achievement.id).eq("locale", (await params).locale).maybeSingle();
+  const title = localize((await params).locale, achievement.title_ar, achievement.title_en);
+  const canonical = (await params).locale === "ar" ? `/achievements/${achievement.slug}` : `/en/achievements/${achievement.slug}`;
   return {
     title: seo?.seo_title || title,
-    description: seo?.meta_description || localize(params.locale, achievement.short_desc_ar, achievement.short_desc_en) || undefined,
+    description: seo?.meta_description || localize((await params).locale, achievement.short_desc_ar, achievement.short_desc_en) || undefined,
     openGraph: { title: seo?.og_title || title, description: seo?.og_description || undefined, images: (seo?.og_image || achievement.main_image) ? [{ url: seo?.og_image || achievement.main_image! }] : undefined },
     alternates: { canonical, languages: { ar: `/achievements/${achievement.slug}`, en: `/en/achievements/${achievement.slug}` } },
   };
 }
 
-export default async function AchievementDetailPage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
-  const locale = params.locale;
+export default async function AchievementDetailPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const p = (path: string) => localizePath(path, locale);
-  const details = await getAchievementDetails(params.slug);
+  const details = await getAchievementDetails((await params).slug);
   if (!details) notFound();
   const { achievement, images, features } = details;
 

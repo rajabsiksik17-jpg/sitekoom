@@ -7,26 +7,26 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getServiceCategoryBySlug, getServices } from "@/lib/queries";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const category = await getServiceCategoryBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const category = await getServiceCategoryBySlug((await params).slug);
   if (!category) return {};
-  const title = params.locale === "ar" ? category.seo_title_ar || category.name_ar : category.seo_title_en || category.name_en;
+  const title = (await params).locale === "ar" ? category.seo_title_ar || category.name_ar : category.seo_title_en || category.name_en;
   return {
     title,
-    description: params.locale === "ar" ? category.meta_description_ar || category.description_ar || undefined : category.meta_description_en || category.description_en || undefined,
+    description: (await params).locale === "ar" ? category.meta_description_ar || category.description_ar || undefined : category.meta_description_en || category.description_en || undefined,
     openGraph: {
       title,
-      description: (params.locale === "ar" ? category.meta_description_ar : category.meta_description_en) || undefined,
+      description: ((await params).locale === "ar" ? category.meta_description_ar : category.meta_description_en) || undefined,
       images: category.og_image ? [{ url: category.og_image }] : undefined,
     },
     alternates: { canonical: `/services/category/${category.slug}` },
   };
 }
 
-export default async function ServiceCategoryPage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
-  const locale = params.locale;
+export default async function ServiceCategoryPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
-  const category = await getServiceCategoryBySlug(params.slug);
+  const category = await getServiceCategoryBySlug((await params).slug);
   if (!category) notFound();
 
   const services = (await getServices()).filter((s) => s.category_id === category.id);

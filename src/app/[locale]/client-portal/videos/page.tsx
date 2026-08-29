@@ -5,8 +5,8 @@ import { localize } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientVideosPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientVideosPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const websites = await getClientWebsites(client.id);
   const videos = await getEducationalVideos(client.id, websites.map((w) => w.id), client.website_type);

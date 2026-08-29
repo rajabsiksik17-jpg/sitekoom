@@ -111,7 +111,7 @@ export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: G
                 </div>
               </div>
             </div>
-            {r.text && <p className="line-clamp-4 text-sm leading-relaxed text-gray-600">{r.text}</p>}
+            {(r.text_ar || r.text_en || r.text) && <p className="line-clamp-4 text-sm leading-relaxed text-gray-600">{localize(locale, r.text_ar, r.text_en) || r.text}</p>}
             <div className="mt-auto flex items-center justify-between pt-4">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

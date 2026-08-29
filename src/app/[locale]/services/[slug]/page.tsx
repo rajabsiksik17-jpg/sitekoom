@@ -16,23 +16,23 @@ import { createClient } from "@/lib/supabase/server";
 import { faqSchema, serviceSchema, jsonLdToString } from "@/lib/seo";
 import type { ServiceFeature } from "@/lib/types";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const { service } = (await getServiceDetails(params.slug)) ?? {};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { service } = (await getServiceDetails((await params).slug)) ?? {};
   if (!service) return {};
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: seo } = await supabase
     .from("seo_metadata")
     .select("*")
     .eq("entity_type", "service")
     .eq("entity_id", service.id)
-    .eq("locale", params.locale)
+    .eq("locale", (await params).locale)
     .maybeSingle();
 
-  const title = params.locale === "ar" ? service.title_ar : service.title_en;
-  const canonical = params.locale === "ar" ? `/services/${service.slug}` : `/en/services/${service.slug}`;
+  const title = (await params).locale === "ar" ? service.title_ar : service.title_en;
+  const canonical = (await params).locale === "ar" ? `/services/${service.slug}` : `/en/services/${service.slug}`;
   return {
     title: seo?.seo_title || title,
-    description: seo?.meta_description || (params.locale === "ar" ? service.short_desc_ar : service.short_desc_en) || undefined,
+    description: seo?.meta_description || ((await params).locale === "ar" ? service.short_desc_ar : service.short_desc_en) || undefined,
     keywords: seo?.keywords,
     openGraph: {
       title: seo?.og_title || title,
@@ -52,13 +52,13 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
 export default async function ServiceDetailPage({
   params,
 }: {
-  params: { locale: "ar" | "en"; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const locale = params.locale;
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const details = await getServiceDetails(params.slug);
+  const details = await getServiceDetails((await params).slug);
   if (!details) notFound();
   const { service, images, features, faqs } = details;
 

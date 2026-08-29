@@ -9,9 +9,9 @@ export default async function ClientPortalLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: "ar" | "en" };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale = params.locale;
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const unread = await getUnreadCount(client.id);
 

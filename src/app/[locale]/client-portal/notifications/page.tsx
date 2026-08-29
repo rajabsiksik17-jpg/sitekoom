@@ -4,8 +4,8 @@ import { NotificationsList } from "@/components/client-portal/notifications-list
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientNotificationsPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientNotificationsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const notifications = await getClientNotifications(client.id);
   const t = (ar: string, en: string) => (locale === "ar" ? ar : en);

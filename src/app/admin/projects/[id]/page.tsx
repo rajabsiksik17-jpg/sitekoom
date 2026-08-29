@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/admin-guard";
 import { ProjectForm } from "@/components/admin/project-form";
 
-export default async function EditProjectPage({ params }: { params: { id: string } }) {
+export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("projects.manage");
-  return <ProjectForm projectId={params.id} />;
+  return <ProjectForm projectId={(await params).id} />;
 }

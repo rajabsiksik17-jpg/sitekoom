@@ -9,7 +9,7 @@ import { trustClientDevice } from "@/lib/trusted-devices";
 const schema = z.object({ code: z.string().min(6).max(6), trust: z.boolean().optional() });
 
 export async function POST(request: NextRequest) {
-  const clientId = getPendingClientId();
+  const clientId = await getPendingClientId();
   if (!clientId) {
     return NextResponse.json({ error: "انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجددًا." }, { status: 401 });
   }
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     await trustClientDevice(clientId, request.headers.get("user-agent"));
   }
 
-  clearPendingClientCookie();
-  setClientSessionCookie(createClientSession(clientId));
+  await clearPendingClientCookie();
+  await setClientSessionCookie(createClientSession(clientId));
 
   const admin = createAdminClient();
   await admin.from("client_login_logs").insert({ client_id: clientId, ip_address: ip, user_agent: request.headers.get("user-agent"), success: true });

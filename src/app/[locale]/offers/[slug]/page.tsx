@@ -10,31 +10,31 @@ import { ar, en } from "@/lib/i18n/dictionaries";
 import { getOfferDetails, getDynamicFormFields, getDynamicFormOptions, getDynamicFormRules } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const { offer } = (await getOfferDetails(params.slug)) ?? {};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { offer } = (await getOfferDetails((await params).slug)) ?? {};
   if (!offer) return {};
-  const supabase = createClient();
-  const { data: seo } = await supabase.from("seo_metadata").select("*").eq("entity_type", "offer").eq("entity_id", offer.id).eq("locale", params.locale).maybeSingle();
-  const title = localize(params.locale, offer.title_ar, offer.title_en);
-  const canonical = params.locale === "ar" ? `/offers/${offer.slug}` : `/en/offers/${offer.slug}`;
+  const supabase = await createClient();
+  const { data: seo } = await supabase.from("seo_metadata").select("*").eq("entity_type", "offer").eq("entity_id", offer.id).eq("locale", (await params).locale).maybeSingle();
+  const title = localize((await params).locale, offer.title_ar, offer.title_en);
+  const canonical = (await params).locale === "ar" ? `/offers/${offer.slug}` : `/en/offers/${offer.slug}`;
   return {
     title: seo?.seo_title || title,
-    description: seo?.meta_description || localize(params.locale, offer.short_desc_ar, offer.short_desc_en) || undefined,
+    description: seo?.meta_description || localize((await params).locale, offer.short_desc_ar, offer.short_desc_en) || undefined,
     keywords: seo?.keywords,
     openGraph: { title: seo?.og_title || title, description: seo?.og_description || undefined, images: (seo?.og_image || offer.main_image) ? [{ url: seo?.og_image || offer.main_image! }] : undefined },
     alternates: { canonical, languages: { ar: `/offers/${offer.slug}`, en: `/en/offers/${offer.slug}` } },
   };
 }
 
-export default async function OfferDetailPage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
-  const locale = params.locale;
+export default async function OfferDetailPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
-  const details = await getOfferDetails(params.slug);
+  const details = await getOfferDetails((await params).slug);
   if (!details) notFound();
   const { offer, images, stages, included, features, optionGroups, optionValues, addons, packages } = details;
 
   let formConfig: { fields: Awaited<ReturnType<typeof getDynamicFormFields>>; options: Awaited<ReturnType<typeof getDynamicFormOptions>>; rules: Awaited<ReturnType<typeof getDynamicFormRules>> } | null = null;
-  const supabase = createClient();
+  const supabase = await createClient();
   let formId = offer.form_id;
   if (!formId) {
     const { data: defaultForm } = await supabase.from("dynamic_forms").select("id").eq("placement", "offer").eq("is_active", true).order("sort").limit(1).maybeSingle();

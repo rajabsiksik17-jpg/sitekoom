@@ -11,22 +11,22 @@ import { getArticleBySlug, getArticles } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { articleSchema, jsonLdToString } from "@/lib/seo";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const article = await getArticleBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const article = await getArticleBySlug((await params).slug);
   if (!article) return {};
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: seo } = await supabase
     .from("seo_metadata")
     .select("*")
     .eq("entity_type", "article")
     .eq("entity_id", article.id)
-    .eq("locale", params.locale)
+    .eq("locale", (await params).locale)
     .maybeSingle();
-  const title = params.locale === "ar" ? article.title_ar : article.title_en;
-  const canonical = params.locale === "ar" ? `/blog/${article.slug}` : `/en/blog/${article.slug}`;
+  const title = (await params).locale === "ar" ? article.title_ar : article.title_en;
+  const canonical = (await params).locale === "ar" ? `/blog/${article.slug}` : `/en/blog/${article.slug}`;
   return {
     title: seo?.seo_title || title,
-    description: seo?.meta_description || (params.locale === "ar" ? article.excerpt_ar : article.excerpt_en) || undefined,
+    description: seo?.meta_description || ((await params).locale === "ar" ? article.excerpt_ar : article.excerpt_en) || undefined,
     keywords: seo?.keywords,
     openGraph: {
       type: "article",
@@ -45,12 +45,12 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
   };
 }
 
-export default async function ArticlePage({ params }: { params: { locale: "ar" | "en"; slug: string } }) {
-  const locale = params.locale;
+export default async function ArticlePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const article = await getArticleBySlug(params.slug);
+  const article = await getArticleBySlug((await params).slug);
   if (!article) notFound();
 
   const title = localize(locale, article.title_ar, article.title_en);

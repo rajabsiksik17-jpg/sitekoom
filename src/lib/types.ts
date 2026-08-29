@@ -830,7 +830,7 @@ export interface OfferOptionValue {
   option_id: string;
   label_ar: string;
   label_en: string;
-  price_delta: number;
+  price: number;
   is_default: boolean;
   enabled: boolean;
   sort: number;
@@ -1042,6 +1042,7 @@ export interface Appointment {
   reject_reason: string | null;
   reschedule_reason: string | null;
   confirm_token: string | null;
+  confirm_token_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1053,6 +1054,9 @@ export interface GoogleReview {
   author_photo: string | null;
   rating: number;
   text: string | null;
+  text_ar: string | null;
+  text_en: string | null;
+  language: string | null;
   review_date: string | null;
   review_url: string | null;
   sort: number;

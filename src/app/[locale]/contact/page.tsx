@@ -10,8 +10,8 @@ import { getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 
-export default async function ContactPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const [social, settings, appointmentSettings] = await Promise.all([getSocialLinks(), getSettings(), getAppointmentSettings()]);
   const g = settings.general;

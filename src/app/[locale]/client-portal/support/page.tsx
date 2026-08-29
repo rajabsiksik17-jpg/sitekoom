@@ -5,8 +5,8 @@ import { SectionTitle } from "@/components/client-portal/bits";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientSupportPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientSupportPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   await getCurrentClient(locale);
   const reasons = await getSupportReasons();
   const options = reasons.map((r) => ({ value: r.value, label: locale === "ar" ? r.ar : r.en }));

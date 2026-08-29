@@ -35,13 +35,13 @@ const defaults: GoogleReviewsSettings = {
 };
 
 export const getGoogleReviewsSettings = cache(async (): Promise<GoogleReviewsSettings> => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("value").eq("key", "google_reviews").single();
   return { ...defaults, ...((data?.value as Partial<GoogleReviewsSettings>) ?? {}) };
 });
 
 export const getGoogleReviews = cache(async (limit?: number): Promise<GoogleReview[]> => {
-  const supabase = createClient();
+  const supabase = await createClient();
   let q = supabase.from("google_reviews").select("*").eq("is_active", true).order("sort").order("created_at");
   if (limit) q = q.limit(limit);
   const { data } = await q;

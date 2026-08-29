@@ -4,8 +4,8 @@ import { SettingsForm } from "@/components/client-portal/settings-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientSettingsPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientSettingsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const t = (ar: string, en: string) => (locale === "ar" ? ar : en);
 

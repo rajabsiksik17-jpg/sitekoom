@@ -8,16 +8,16 @@ export default async function RequestProjectPage({
   params,
   searchParams,
 }: {
-  params: { locale: "ar" | "en" };
-  searchParams: { service?: string };
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ service?: string }>;
 }) {
-  const locale = params.locale;
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
-  const [services, categories] = await Promise.all([getServices(), getServiceCategories()]);
+  const [services, categories, sp] = await Promise.all([getServices(), getServiceCategories(), searchParams]);
   let initialServiceId: string | undefined;
-  if (searchParams.service) {
-    const svc = services.find((s) => s.slug === searchParams.service);
+  if (sp.service) {
+    const svc = services.find((s) => s.slug === sp.service);
     if (svc) initialServiceId = svc.id;
   }
 

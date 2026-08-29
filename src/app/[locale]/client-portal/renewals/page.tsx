@@ -5,8 +5,8 @@ import { formatDate, formatDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientRenewalsPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientRenewalsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const [requests, history, subscriptions, domains, hosting] = await Promise.all([
     getClientRenewalRequests(client.id),

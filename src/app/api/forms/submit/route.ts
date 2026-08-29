@@ -48,20 +48,23 @@ async function calculatePrice(admin: ReturnType<typeof createAdminClient>, body:
   const selectedAddons: Record<string, unknown>[] = [];
 
   if (body.selected_option_values.length) {
+    const { data: groups } = await admin.from("offer_option_groups").select("id, selection_type").eq("offer_id", body.offer_id);
+    const groupType = new Map((groups ?? []).map((g: { id: string; selection_type: string }) => [g.id, g.selection_type]));
+
     const { data: values } = await admin
       .from("offer_option_values")
       .select("*")
       .in("id", body.selected_option_values);
+
+    let primary: number | null = null;
+    let multiSum = 0;
     for (const v of values ?? []) {
-      // Default options are already included in the base price.
-      if (v.is_default) {
-        selectedOptions.push({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: 0, included: true });
-        continue;
-      }
-      const delta = Number(v.price_delta) || 0;
-      total += delta;
-      selectedOptions.push({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: delta });
+      const price = Number(v.price ?? v.price_delta) || 0;
+      if (groupType.get(v.option_id) === "single") primary = price;
+      else multiSum += price;
+      selectedOptions.push({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price });
     }
+    if (primary !== null) total = primary + multiSum;
   }
 
   if (body.selected_addons.length) {

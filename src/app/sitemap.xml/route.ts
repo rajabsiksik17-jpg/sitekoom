@@ -4,7 +4,7 @@ export const revalidate = 3600;
 
 export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sitekoom.com";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const [services, projects, articles, offers, achievements] = await Promise.all([
     supabase.from("services").select("slug,updated_at").eq("status", "published").is("deleted_at", null),

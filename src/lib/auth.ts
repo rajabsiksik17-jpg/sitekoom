@@ -10,7 +10,7 @@ export interface AuthProfile extends User {
 }
 
 async function loadProfile(userId: string): Promise<AuthProfile | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: user, error } = await supabase
     .from("users")
@@ -55,7 +55,7 @@ async function loadProfile(userId: string): Promise<AuthProfile | null> {
 }
 
 export const getCurrentUser = cache(async (): Promise<AuthProfile | null> => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -70,7 +70,7 @@ export function hasPermission(profile: AuthProfile | null, permission: string): 
 }
 
 export async function getPermissionsList(): Promise<Permission[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("permissions").select("*").order("sort");
   return (data ?? []) as Permission[];
 }

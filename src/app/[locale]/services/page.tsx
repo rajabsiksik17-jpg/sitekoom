@@ -4,8 +4,8 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getServices, getServiceCategories, getHomepageSections } from "@/lib/queries";
 
-export default async function ServicesPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ServicesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const [services, categories, sections] = await Promise.all([
     getServices(),

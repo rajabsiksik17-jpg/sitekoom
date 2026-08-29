@@ -12,21 +12,21 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const settings = await getSettings();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sitekoom.com";
   return {
     title: {
       default: settings.seo.site_title,
-      template: `%s | ${params.locale === "ar" ? settings.general.company_name_ar : settings.general.company_name_en}`,
+      template: `%s | ${(await params).locale === "ar" ? settings.general.company_name_ar : settings.general.company_name_en}`,
     },
     description: settings.seo.meta_description,
     keywords: settings.seo.keywords.split(",").map((k) => k.trim()),
     icons: settings.general.favicon ? { icon: settings.general.favicon } : undefined,
     openGraph: {
       type: "website",
-      locale: params.locale,
-      siteName: params.locale === "ar" ? settings.general.company_name_ar : settings.general.company_name_en,
+      locale: (await params).locale,
+      siteName: (await params).locale === "ar" ? settings.general.company_name_ar : settings.general.company_name_en,
       images: settings.seo.default_og_image ? [{ url: settings.seo.default_og_image }] : undefined,
     },
     alternates: {
@@ -50,9 +50,10 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: Locale };
+  params: Promise<{ locale: string }>;
 }) {
-  if (!locales.includes(params.locale)) notFound();
+  const locale = (await params).locale as "ar" | "en";
+  if (!locales.includes(locale)) notFound();
 
   const settings = await getSettings();
   const [social, services, offers, achievements] = await Promise.all([getSocialLinks(), getServices(), getOffers(), getAchievements()]);
@@ -63,15 +64,15 @@ export default async function LocaleLayout({
   const webSchema = websiteSchema(siteUrl, settings.seo.site_title);
 
   return (
-    <LocaleProvider locale={params.locale}>
+    <LocaleProvider locale={locale}>
       <SiteChrome
-        locale={params.locale}
+        locale={locale}
         settings={settings.general}
         social={social}
         services={services}
         hasOffers={offers.length > 0}
         hasAchievements={achievements.length > 0}
-        footer={<Footer locale={params.locale} settings={settings.general} services={services} social={social} />}
+        footer={<Footer locale={locale} settings={settings.general} services={services} social={social} />}
       >
         {children}
       </SiteChrome>

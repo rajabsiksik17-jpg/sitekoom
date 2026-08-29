@@ -147,7 +147,7 @@ const defaults = {
 };
 
 export const getSettings = cache(async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("key, value");
 
   const map: Record<string, unknown> = {};
@@ -174,7 +174,7 @@ export const getSettings = cache(async () => {
 });
 
 export async function getSettingKey<T>(key: string, fallback: T): Promise<T> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("value").eq("key", key).single();
   if (!data) return fallback;
   return (data.value as T) ?? fallback;

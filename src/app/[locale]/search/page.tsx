@@ -27,14 +27,15 @@ export default async function SearchPage({
   params,
   searchParams,
 }: {
-  params: { locale: "ar" | "en" };
-  searchParams: { q?: string };
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const locale = params.locale;
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
-  const query = (searchParams.q ?? "").trim();
-  const supabase = createClient();
+  const sp = await searchParams;
+  const query = (sp.q ?? "").trim();
+  const supabase = await createClient();
 
   let services: Service[] = [];
   let projects: Project[] = [];

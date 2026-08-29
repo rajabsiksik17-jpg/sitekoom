@@ -8,7 +8,7 @@ import { getAppointmentServices, formatRange, sendAppointmentCustomerEmail } fro
 
 const schema = z.object({ token: z.string().min(1) });
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let body: z.infer<typeof schema>;
   try {
     body = schema.parse(await request.json());
@@ -17,9 +17,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   const admin = createAdminClient();
-  const { data: appt } = await admin.from("appointments").select("*").eq("id", params.id).single();
+  const { data: appt } = await admin.from("appointments").select("*").eq("id", (await params).id).single();
   if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (appt.confirm_token !== body.token) return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+  if (appt.confirm_token_expires_at && new Date(appt.confirm_token_expires_at).getTime() < Date.now()) {
+    return NextResponse.json({ error: "انتهت صلاحية رابط الموافقة" }, { status: 410 });
+  }
   if (!appt.proposed_start_at || !appt.proposed_end_at) return NextResponse.json({ error: "No proposed time" }, { status: 400 });
 
   const start = new Date(appt.proposed_start_at);
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { data: booked } = await admin
     .from("appointments")
     .select("start_at, end_at")
-    .in("status", ["approved", "rescheduled", "completed"])
+    .in("status", ["approved", "rescheduled"])
     .not("start_at", "is", null)
     .neq("id", appt.id);
 
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const { error } = await admin
     .from("appointments")
-    .update({ status: "rescheduled", start_at: start.toISOString(), end_at: end.toISOString(), proposed_start_at: null, proposed_end_at: null, confirm_token: null })
+    .update({ status: "rescheduled", start_at: start.toISOString(), end_at: end.toISOString(), proposed_start_at: null, proposed_end_at: null, confirm_token: null, confirm_token_expires_at: null })
     .eq("id", appt.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

@@ -46,12 +46,13 @@ async function verifyTrustedDeviceRecord(userId: string, token: string): Promise
 
 // --- Admin trusted device ------------------------------------------------
 
-export function getAdminTrustToken(): string | null {
-  return cookies().get(ADMIN_TRUST_COOKIE)?.value ?? null;
+export async function getAdminTrustToken(): Promise<string | null> {
+  const c = await cookies();
+  return c.get(ADMIN_TRUST_COOKIE)?.value ?? null;
 }
 
 export async function isAdminDeviceTrusted(userId: string): Promise<boolean> {
-  const token = getAdminTrustToken();
+  const token = await getAdminTrustToken();
   if (!token) return false;
   return verifyTrustedDeviceRecord(userId, token);
 }
@@ -59,7 +60,8 @@ export async function isAdminDeviceTrusted(userId: string): Promise<boolean> {
 export async function trustAdminDevice(userId: string, userAgent: string | null | undefined): Promise<boolean> {
   const token = await createTrustedDeviceRecord(userId, deviceName(userAgent));
   if (!token) return false;
-  cookies().set(ADMIN_TRUST_COOKIE, token, {
+  const c = await cookies();
+  c.set(ADMIN_TRUST_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -71,12 +73,13 @@ export async function trustAdminDevice(userId: string, userAgent: string | null 
 
 // --- Client trusted device -----------------------------------------------
 
-export function getClientTrustToken(): string | null {
-  return cookies().get(CLIENT_TRUST_COOKIE)?.value ?? null;
+export async function getClientTrustToken(): Promise<string | null> {
+  const c = await cookies();
+  return c.get(CLIENT_TRUST_COOKIE)?.value ?? null;
 }
 
 export async function isClientDeviceTrusted(clientId: string): Promise<boolean> {
-  const token = getClientTrustToken();
+  const token = await getClientTrustToken();
   if (!token) return false;
   const admin = createAdminClient();
   const { data } = await admin
@@ -101,7 +104,8 @@ export async function trustClientDevice(clientId: string, userAgent: string | nu
       expires_at: new Date(Date.now() + TRUST_TTL_DAYS * 86_400_000).toISOString(),
     });
   if (error) return false;
-  cookies().set(CLIENT_TRUST_COOKIE, token, {
+  const c = await cookies();
+  c.set(CLIENT_TRUST_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

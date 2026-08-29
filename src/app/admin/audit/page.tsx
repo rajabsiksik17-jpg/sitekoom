@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminAuditPage() {
   await requirePermission("audit.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
   const logs = (data ?? []) as AuditLog[];
 

@@ -41,7 +41,7 @@ import type {
 const supabase = () => createClient();
 
 export const getServices = cache(async (): Promise<Service[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("services")
     .select("*, category:service_categories(*)")
     .eq("status", "published")
@@ -52,7 +52,7 @@ export const getServices = cache(async (): Promise<Service[]> => {
 });
 
 export const getServiceCategories = cache(async (): Promise<ServiceCategory[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("service_categories")
     .select("*")
     .eq("is_active", true)
@@ -61,7 +61,7 @@ export const getServiceCategories = cache(async (): Promise<ServiceCategory[]> =
 });
 
 export const getServiceCategoryBySlug = cache(async (slug: string): Promise<ServiceCategory | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("service_categories")
     .select("*")
     .eq("slug", slug)
@@ -71,7 +71,7 @@ export const getServiceCategoryBySlug = cache(async (slug: string): Promise<Serv
 });
 
 export const getServiceBySlug = cache(async (slug: string): Promise<Service | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("services")
     .select("*")
     .eq("slug", slug)
@@ -86,13 +86,13 @@ export const getServiceDetails = cache(
     const service = await getServiceBySlug(slug);
     if (!service) return null;
     const [{ data: images }, { data: features }, { data: faqs }] = await Promise.all([
-      supabase().from("service_images").select("*").eq("service_id", service.id).order("sort"),
-      supabase()
+      (await supabase()).from("service_images").select("*").eq("service_id", service.id).order("sort"),
+      (await supabase())
         .from("service_features")
         .select("*")
         .eq("service_id", service.id)
         .order("sort"),
-      supabase().from("service_faqs").select("*").eq("service_id", service.id).order("sort"),
+      (await supabase()).from("service_faqs").select("*").eq("service_id", service.id).order("sort"),
     ]);
     return {
       service,
@@ -104,7 +104,7 @@ export const getServiceDetails = cache(
 );
 
 export const getProjectCategories = cache(async (): Promise<ProjectCategory[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("project_categories")
     .select("*")
     .order("sort");
@@ -112,7 +112,7 @@ export const getProjectCategories = cache(async (): Promise<ProjectCategory[]> =
 });
 
 export const getProjects = cache(async (): Promise<Project[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("projects")
     .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*)")
     .eq("status_field", "published")
@@ -123,7 +123,7 @@ export const getProjects = cache(async (): Promise<Project[]> => {
 });
 
 export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("projects")
     .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*), images:project_images(*)")
     .eq("slug", slug)
@@ -134,7 +134,7 @@ export const getProjectBySlug = cache(async (slug: string): Promise<Project | nu
 });
 
 export const getProjectPortfolioItems = cache(async (projectId: string): Promise<PortfolioItem[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("project_portfolio_items")
     .select("*")
     .eq("project_id", projectId)
@@ -144,7 +144,7 @@ export const getProjectPortfolioItems = cache(async (projectId: string): Promise
 });
 
 export const getProjectFeatures = cache(async (projectId: string): Promise<ProjectFeature[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("project_features")
     .select("*")
     .eq("project_id", projectId)
@@ -153,7 +153,7 @@ export const getProjectFeatures = cache(async (projectId: string): Promise<Proje
 });
 
 export const getSliders = cache(async (): Promise<HomepageSlider[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("homepage_sliders")
     .select("*")
     .eq("is_active", true)
@@ -162,7 +162,7 @@ export const getSliders = cache(async (): Promise<HomepageSlider[]> => {
 });
 
 export const getHomepageSections = cache(async (): Promise<HomepageSection[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("homepage_sections")
     .select("*")
     .order("sort");
@@ -170,7 +170,7 @@ export const getHomepageSections = cache(async (): Promise<HomepageSection[]> =>
 });
 
 export const getMarqueeMessages = cache(async (): Promise<MarqueeMessage[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("marquee_messages")
     .select("*")
     .eq("is_active", true)
@@ -179,12 +179,12 @@ export const getMarqueeMessages = cache(async (): Promise<MarqueeMessage[]> => {
 });
 
 export const getCompanyInfo = cache(async (): Promise<CompanyInfo | null> => {
-  const { data } = await supabase().from("company_info").select("*").eq("id", 1).single();
+  const { data } = await (await supabase()).from("company_info").select("*").eq("id", 1).single();
   return (data as CompanyInfo) ?? null;
 });
 
 export const getTeamMembers = cache(async (): Promise<TeamMember[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("team_members")
     .select("*")
     .eq("is_active", true)
@@ -193,12 +193,12 @@ export const getTeamMembers = cache(async (): Promise<TeamMember[]> => {
 });
 
 export const getStatistics = cache(async (): Promise<Statistic[]> => {
-  const { data } = await supabase().from("statistics").select("*").order("sort");
+  const { data } = await (await supabase()).from("statistics").select("*").order("sort");
   return (data ?? []) as Statistic[];
 });
 
 export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("social_links")
     .select("*")
     .eq("is_active", true)
@@ -207,7 +207,7 @@ export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
 });
 
 export const getArticles = cache(async (): Promise<Article[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("articles")
     .select("*, author:users(*), category:article_categories(*), tags:article_tag_relations(article_tags(*))")
     .eq("status", "published")
@@ -218,7 +218,7 @@ export const getArticles = cache(async (): Promise<Article[]> => {
 });
 
 export const getArticleBySlug = cache(async (slug: string): Promise<Article | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("articles")
     .select("*, author:users(*), category:article_categories(*), tags:article_tag_relations(article_tags(*))")
     .eq("slug", slug)
@@ -229,7 +229,7 @@ export const getArticleBySlug = cache(async (slug: string): Promise<Article | nu
 });
 
 export const getArticleCategories = cache(async () => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("article_categories")
     .select("*")
     .order("sort");
@@ -239,7 +239,7 @@ export const getArticleCategories = cache(async () => {
 // Resolve the effective page-hero background: page custom → global → fallback.
 export const getPageHeroSettings = cache(async (pageKey: string): Promise<PageHeroSettings | null> => {
   try {
-    const { data: page } = await supabase()
+    const { data: page } = await (await supabase())
       .from("page_hero_settings")
       .select("*")
       .eq("page_key", pageKey)
@@ -249,7 +249,7 @@ export const getPageHeroSettings = cache(async (pageKey: string): Promise<PageHe
       return page as PageHeroSettings;
     }
 
-    const { data: global } = await supabase()
+    const { data: global } = await (await supabase())
       .from("page_hero_settings")
       .select("*")
       .eq("page_key", "global")
@@ -265,7 +265,7 @@ export const getPageHeroSettings = cache(async (pageKey: string): Promise<PageHe
 
 export const getPageBySlug = cache(async (slug: string): Promise<Page | null> => {
   try {
-    const { data } = await supabase()
+    const { data } = await (await supabase())
       .from("pages")
       .select("*")
       .eq("slug", slug)
@@ -279,7 +279,7 @@ export const getPageBySlug = cache(async (slug: string): Promise<Page | null> =>
 
 // ── Offers ────────────────────────────────────────────────────────────────
 export const getOffers = cache(async (): Promise<Offer[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("offers")
     .select("*")
     .eq("status", "published")
@@ -290,7 +290,7 @@ export const getOffers = cache(async (): Promise<Offer[]> => {
 });
 
 export const getOfferBySlug = cache(async (slug: string): Promise<Offer | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("offers")
     .select("*")
     .eq("slug", slug)
@@ -313,18 +313,18 @@ export const getOfferDetails = cache(
       { data: addons },
       { data: packages },
     ] = await Promise.all([
-      supabase().from("offer_images").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_stages").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_included_items").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_features").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_option_groups").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_addons").select("*").eq("offer_id", offer.id).order("sort"),
-      supabase().from("offer_packages").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_images").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_stages").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_included_items").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_features").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_option_groups").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_addons").select("*").eq("offer_id", offer.id).order("sort"),
+      (await supabase()).from("offer_packages").select("*").eq("offer_id", offer.id).order("sort"),
     ]);
 
     const groupIds = (groups ?? []).map((g: { id: string }) => g.id);
     const { data: values } = groupIds.length
-      ? await supabase().from("offer_option_values").select("*").in("option_id", groupIds).order("sort")
+      ? await (await supabase()).from("offer_option_values").select("*").in("option_id", groupIds).order("sort")
       : { data: [] };
 
     return {
@@ -343,7 +343,7 @@ export const getOfferDetails = cache(
 
 // ── Achievements ───────────────────────────────────────────────────────────
 export const getAchievements = cache(async (): Promise<Achievement[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("achievements")
     .select("*")
     .eq("status_field", "published")
@@ -354,7 +354,7 @@ export const getAchievements = cache(async (): Promise<Achievement[]> => {
 });
 
 export const getAchievementBySlug = cache(async (slug: string): Promise<Achievement | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("achievements")
     .select("*")
     .eq("slug", slug)
@@ -368,8 +368,8 @@ export const getAchievementDetails = cache(async (slug: string) => {
   const achievement = await getAchievementBySlug(slug);
   if (!achievement) return null;
   const [{ data: images }, { data: features }] = await Promise.all([
-    supabase().from("achievement_images").select("*").eq("achievement_id", achievement.id).order("sort"),
-    supabase().from("achievement_features").select("*").eq("achievement_id", achievement.id).order("sort"),
+    (await supabase()).from("achievement_images").select("*").eq("achievement_id", achievement.id).order("sort"),
+    (await supabase()).from("achievement_features").select("*").eq("achievement_id", achievement.id).order("sort"),
   ]);
   return {
     achievement,
@@ -380,7 +380,7 @@ export const getAchievementDetails = cache(async (slug: string) => {
 
 // ── Dynamic forms ─────────────────────────────────────────────────────────
 export const getDynamicFormById = cache(async (id: string): Promise<DynamicForm | null> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("dynamic_forms")
     .select("*")
     .eq("id", id)
@@ -390,7 +390,7 @@ export const getDynamicFormById = cache(async (id: string): Promise<DynamicForm 
 });
 
 export const getDynamicFormFields = cache(async (formId: string): Promise<DynamicFormField[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("dynamic_form_fields")
     .select("*")
     .eq("form_id", formId)
@@ -400,10 +400,10 @@ export const getDynamicFormFields = cache(async (formId: string): Promise<Dynami
 });
 
 export const getDynamicFormOptions = cache(async (formId: string): Promise<DynamicFormOption[]> => {
-  const { data: fields } = await supabase().from("dynamic_form_fields").select("id").eq("form_id", formId);
+  const { data: fields } = await (await supabase()).from("dynamic_form_fields").select("id").eq("form_id", formId);
   const fieldIds = (fields ?? []).map((f: { id: string }) => f.id);
   if (!fieldIds.length) return [];
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("dynamic_form_options")
     .select("*")
     .in("field_id", fieldIds)
@@ -413,7 +413,7 @@ export const getDynamicFormOptions = cache(async (formId: string): Promise<Dynam
 });
 
 export const getDynamicFormRules = cache(async (formId: string): Promise<DynamicFormRule[]> => {
-  const { data } = await supabase()
+  const { data } = await (await supabase())
     .from("dynamic_form_rules")
     .select("*")
     .eq("form_id", formId)

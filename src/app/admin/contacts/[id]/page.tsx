@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/admin-guard";
 import { ContactDetail } from "@/components/admin/contact-detail";
 
-export default async function AdminContactDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("contacts.view");
-  return <ContactDetail id={params.id} />;
+  return <ContactDetail id={(await params).id} />;
 }

@@ -13,8 +13,8 @@ const typeLabels: Record<string, { ar: string; en: string }> = {
   other: { ar: "أخرى", en: "Other" },
 };
 
-export default async function ClientWebsitesPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientWebsitesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const websites = await getClientWebsites(client.id);
   const t = (ar: string, en: string) => (locale === "ar" ? ar : en);

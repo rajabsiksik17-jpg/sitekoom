@@ -32,14 +32,14 @@ import {
   getAchievements,
 } from "@/lib/queries";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en" } }): Promise<Metadata> {
-  const supabase = createClient();
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const supabase = await createClient();
   const { data: seo } = await supabase
     .from("seo_metadata")
     .select("seo_title, meta_description, keywords, og_title, og_description, og_image")
     .eq("entity_type", "home")
     .is("entity_id", null)
-    .eq("locale", params.locale)
+    .eq("locale", (await params).locale)
     .maybeSingle();
 
   return {
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
       images: seo?.og_image ? [{ url: seo.og_image }] : undefined,
     },
     alternates: {
-      canonical: params.locale === "ar" ? "/" : "/en",
+      canonical: (await params).locale === "ar" ? "/" : "/en",
       languages: {
         ar: "/",
         en: "/en",
@@ -61,8 +61,8 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
   };
 }
 
-export default async function HomePage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 

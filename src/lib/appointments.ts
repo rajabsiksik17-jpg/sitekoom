@@ -26,7 +26,7 @@ export const appointmentDefaults: AppointmentSettings = {
 const TZ = "+03:00"; // Asia/Amman
 
 export const getAppointmentSettings = cache(async (): Promise<AppointmentSettings> => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("value").eq("key", "appointment").single();
   const raw = (data?.value ?? {}) as Partial<AppointmentSettings>;
   return {
@@ -64,7 +64,7 @@ export function formatTime(d: Date): string {
 }
 
 /** Read the currently confirmed (blocking) appointments from DB. */
-async function fetchBooked(supabase: ReturnType<typeof createClient>): Promise<{ start: string; end: string }[]> {
+async function fetchBooked(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ start: string; end: string }[]> {
   const { data } = await supabase
     .from("appointments")
     .select("start_at, end_at")
@@ -93,7 +93,7 @@ export interface SlotResult {
 
 export async function getAvailableSlots(dateStr: string): Promise<SlotResult> {
   const settings = await getAppointmentSettings();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
   const dayOff = !settings.work_days.includes(day) || settings.off_days.includes(dateStr);

@@ -23,7 +23,7 @@ function StatCard({ icon: Icon, label, value, href }: { icon: React.ComponentTyp
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const now = new Date();
   const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();

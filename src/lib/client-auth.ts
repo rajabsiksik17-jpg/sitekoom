@@ -29,8 +29,9 @@ export function verifyClientSession(token: string | undefined | null): string | 
   return clientId;
 }
 
-export function setClientSessionCookie(token: string) {
-  cookies().set(SESSION_COOKIE, token, {
+export async function setClientSessionCookie(token: string) {
+  const c = await cookies();
+  c.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -39,12 +40,14 @@ export function setClientSessionCookie(token: string) {
   });
 }
 
-export function clearClientSessionCookie() {
-  cookies().set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+export async function clearClientSessionCookie() {
+  const c = await cookies();
+  c.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
 }
 
-export function getClientSession(): string | null {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+export async function getClientSession(): Promise<string | null> {
+  const c = await cookies();
+  const token = c.get(SESSION_COOKIE)?.value;
   return verifyClientSession(token);
 }
 
@@ -53,10 +56,11 @@ export function getClientSession(): string | null {
 const PENDING_COOKIE = "sitekoom_client_pending";
 const PENDING_TTL_SECONDS = 10 * 60; // 10 minutes to complete OTP
 
-export function setPendingClientCookie(clientId: string) {
+export async function setPendingClientCookie(clientId: string) {
   const payload = `${clientId}.${Date.now()}`;
   const token = `${payload}.${sign(payload)}`;
-  cookies().set(PENDING_COOKIE, token, {
+  const c = await cookies();
+  c.set(PENDING_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -65,8 +69,9 @@ export function setPendingClientCookie(clientId: string) {
   });
 }
 
-export function getPendingClientId(): string | null {
-  const token = cookies().get(PENDING_COOKIE)?.value;
+export async function getPendingClientId(): Promise<string | null> {
+  const c = await cookies();
+  const token = c.get(PENDING_COOKIE)?.value;
   if (!token) return null;
   const parts = token.split(".");
   if (parts.length !== 3) return null;
@@ -79,8 +84,9 @@ export function getPendingClientId(): string | null {
   return clientId;
 }
 
-export function clearPendingClientCookie() {
-  cookies().set(PENDING_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+export async function clearPendingClientCookie() {
+  const c = await cookies();
+  c.set(PENDING_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
 }
 
 // One-time SSO token (single use, short-lived, signed, bound to client + url).

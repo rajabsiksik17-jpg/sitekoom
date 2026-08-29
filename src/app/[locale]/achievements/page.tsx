@@ -4,8 +4,8 @@ import { Reveal } from "@/components/reveal";
 import { AchievementCard } from "@/components/achievement-card";
 import { getAchievements } from "@/lib/queries";
 
-export default async function AchievementsPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function AchievementsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const achievements = await getAchievements();
 
   return (

@@ -13,8 +13,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Book an Appointment" };
 
-export default async function AppointmentPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function AppointmentPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
   const [services, social, company, settings, appointmentSettings] = await Promise.all([
@@ -26,7 +26,7 @@ export default async function AppointmentPage({ params }: { params: { locale: "a
   ]);
   const g = settings.general;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: apptForm } = await supabase
     .from("dynamic_forms")
     .select("id, success_message_ar, success_message_en")

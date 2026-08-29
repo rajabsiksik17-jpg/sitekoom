@@ -13,8 +13,8 @@ import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 
-export default async function AboutPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
   const [company, team, stats, social, settings, appointmentSettings] = await Promise.all([

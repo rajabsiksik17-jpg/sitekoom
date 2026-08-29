@@ -6,8 +6,8 @@ import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { getArticles, getArticleCategories } from "@/lib/queries";
 
-export default async function BlogPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
   const [articles, categories] = await Promise.all([getArticles(), getArticleCategories()]);

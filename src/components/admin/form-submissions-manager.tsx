@@ -124,8 +124,8 @@ export function FormSubmissionsManager() {
                 {(selected.selected_options as unknown[] ?? []).length > 0 && (
                   <div className="mt-2">
                     <p className="text-xs font-semibold text-gray-500">الخيارات المختارة:</p>
-                    {(selected.selected_options as { label_ar?: string; price_delta?: number }[]).map((o, i) => (
-                      <div key={i} className="text-sm">• {o.label_ar} <span className="text-gray-400">(+{o.price_delta})</span></div>
+                    {(selected.selected_options as { label_ar?: string; price?: number }[]).map((o, i) => (
+                      <div key={i} className="text-sm">• {o.label_ar} <span className="text-gray-400">{Number(o.price) > 0 ? `${o.price}` : ""}</span></div>
                     ))}
                   </div>
                 )}

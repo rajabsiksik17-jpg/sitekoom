@@ -78,10 +78,18 @@ export function OfferPricing({
 
   const total = useMemo(() => {
     let sum = Number(offer.base_price) || 0;
-    for (const id of Object.values(selectedValues).flat()) {
-      const v = optionValues.find((x) => x.id === id);
-      if (v && !v.is_default) sum += Number(v.price_delta) || 0;
+    let primary: number | null = null;
+    for (const g of optionGroups) {
+      const sel = (selectedValues[g.id] ?? [])
+        .map((id) => optionValues.find((x) => x.id === id))
+        .filter((x): x is OfferOptionValue => Boolean(x));
+      if (g.selection_type === "single") {
+        if (sel.length) primary = Number(sel[sel.length - 1].price) || 0;
+      } else {
+        for (const v of sel) sum += Number(v.price) || 0;
+      }
     }
+    if (primary !== null) sum = primary;
     for (const id of selectedAddons) {
       const a = addons.find((x) => x.id === id);
       if (a && !a.is_default) sum += Number(a.price) || 0;
@@ -104,7 +112,7 @@ export function OfferPricing({
       }
     }
     return sum;
-  }, [offer.base_price, selectedValues, selectedAddons, selectedPackage, selectedFormOptionIds, pricingRules, fieldValues, optionValues, addons, packages, formOptions]);
+  }, [offer.base_price, selectedValues, selectedAddons, selectedPackage, selectedFormOptionIds, pricingRules, fieldValues, optionValues, addons, packages, formOptions, optionGroups]);
 
   function toggleValue(group: OfferOptionGroup, valueId: string) {
     setSelectedValues((prev) => {
@@ -268,7 +276,7 @@ export function OfferPricing({
               return (
                 <button key={v.id} type="button" onClick={() => toggleValue(g, v.id)} className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-sm transition-colors ${active ? "border-brand-500 bg-brand-50 text-brand-700" : "border-brand-100 text-gray-600 hover:border-brand-300"}`}>
                   <span>{localize(locale, v.label_ar, v.label_en)}</span>
-                  <span className="font-semibold">{Number(v.price_delta) > 0 ? `+${v.price_delta} ${offer.currency}` : "+0"}</span>
+                  <span className="font-semibold">{Number(v.price) > 0 ? `${v.price} ${offer.currency}` : (isAr ? "مجانًا" : "Free")}</span>
                 </button>
               );
             })}
@@ -286,7 +294,7 @@ export function OfferPricing({
                   <input type="checkbox" checked={selectedAddons.includes(a.id)} onChange={() => setSelectedAddons((p) => (p.includes(a.id) ? p.filter((x) => x !== a.id) : [...p, a.id]))} className="rounded border-brand-200 text-brand-600" />
                   {localize(locale, a.title_ar, a.title_en)}
                 </span>
-                <span className="font-semibold">+{Number(a.price)} {offer.currency}</span>
+                <span className="font-semibold">{Number(a.price) > 0 ? `+${a.price} ${offer.currency}` : (isAr ? "مجانًا" : "Free")}</span>
               </label>
             ))}
           </div>

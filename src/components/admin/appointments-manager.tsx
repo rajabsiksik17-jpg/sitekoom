@@ -13,6 +13,7 @@ const statusMeta: Record<string, { label: string; color: "brand" | "green" | "re
   new: { label: "جديد", color: "brand" },
   rejected: { label: "مرفوض", color: "red" },
   rescheduled: { label: "تغيير موعد", color: "amber" },
+  awaiting_client: { label: "بانتظار موافقة العميل", color: "amber" },
   approved: { label: "موافق عليه", color: "green" },
 };
 
@@ -38,9 +39,6 @@ export function AppointmentsManager() {
 
   const [tab, setTab] = useState<"requests" | "calendar" | "history" | "settings">("requests");
   const [statusTab, setStatusTab] = useState<string>("new");
-  const [dateRange, setDateRange] = useState<"today" | "week" | "month" | "all" | "custom">("today");
-  const [customFrom, setCustomFrom] = useState("");
-  const [customTo, setCustomTo] = useState("");
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyStatus, setHistoryStatus] = useState<string>("all");
 
@@ -54,6 +52,7 @@ export function AppointmentsManager() {
 
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
@@ -87,7 +86,7 @@ export function AppointmentsManager() {
     return services.find((s) => s.id === id)?.title_ar ?? "";
   }
 
-  async function action(action: "approve" | "reject" | "reschedule", extra?: Record<string, unknown>) {
+  async function action(action: "approve" | "reject" | "reschedule" | "delete", extra?: Record<string, unknown>) {
     if (!selected) return;
     setActing(true);
     try {
@@ -98,13 +97,15 @@ export function AppointmentsManager() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "error");
-      push("success", "تم تنفيذ الإجراء");
+      push("success", action === "delete" ? "تم حذف الطلب" : "تم تنفيذ الإجراء");
       setRejectOpen(false);
       setReschedOpen(false);
+      setDeleteOpen(false);
       setRejectReason("");
       setReschedReason("");
       await load();
-      setSelected((s) => (s ? { ...s, status: d.status ?? s.status } : s));
+      if (action === "delete") setSelected(null);
+      else setSelected((s) => (s ? { ...s, status: d.status ?? s.status } : s));
     } catch (e) {
       push("error", e instanceof Error ? e.message : "فشل الإجراء");
     } finally {
@@ -123,30 +124,11 @@ export function AppointmentsManager() {
     load();
   }
 
-  function matchesDateRange(dateStr: string): boolean {
-    if (dateRange === "all") return true;
-    if (dateRange === "today") return dateStr === toISODate(new Date());
-    if (dateRange === "week") {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const end = new Date(start.getTime() + 7 * 86400000);
-      const d = new Date(`${dateStr}T00:00:00Z`);
-      return d >= start && d < end;
-    }
-    if (dateRange === "month") {
-      const now = new Date();
-      const d = new Date(`${dateStr}T00:00:00Z`);
-      return d.getUTCFullYear() === now.getFullYear() && d.getUTCMonth() === now.getMonth();
-    }
-    if (dateRange === "custom") {
-      return (!customFrom || dateStr >= customFrom) && (!customTo || dateStr <= customTo);
-    }
-    return true;
-  }
+  const countFor = (s: string) => items.filter((i) => (s === "rescheduled" ? i.status === "rescheduled" || i.status === "awaiting_client" : i.status === s)).length;
 
   const requestList = useMemo(() => {
-    return items.filter((i) => i.status === statusTab && matchesDateRange(i.requested_date));
-  }, [items, statusTab, dateRange, customFrom, customTo]);
+    return items.filter((i) => (statusTab === "rescheduled" ? i.status === "rescheduled" || i.status === "awaiting_client" : i.status === statusTab));
+  }, [items, statusTab]);
 
   const calendarCells = useMemo(() => {
     const first = new Date(calYear, calMonth, 1);
@@ -181,6 +163,7 @@ export function AppointmentsManager() {
           <button type="button" onClick={() => action("approve")} className="btn-primary px-4 py-2 text-sm" disabled={acting}>موافقة على الموعد</button>
           <button type="button" onClick={() => setRejectOpen(true)} className="btn-danger px-4 py-2 text-sm" disabled={acting}>رفض</button>
           <button type="button" onClick={() => setReschedOpen(true)} className="btn-secondary px-4 py-2 text-sm" disabled={acting}>تغيير موعد</button>
+          <button type="button" onClick={() => setDeleteOpen(true)} className="btn-ghost px-4 py-2 text-sm text-red-600" disabled={acting}>حذف</button>
         </div>
       );
     }
@@ -281,7 +264,7 @@ export function AppointmentsManager() {
 
         {selected && (
           <div className="mt-6">
-            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
+            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} deleteOpen={deleteOpen} setDeleteOpen={setDeleteOpen} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
           </div>
         )}
       </div>
@@ -300,6 +283,7 @@ export function AppointmentsManager() {
             <option value="all">كل الحالات</option>
             {STATUS.map((s) => <option key={s} value={s}>{statusMeta[s]?.label ?? s}</option>)}
             <option value="approved">موافق عليه</option>
+            <option value="awaiting_client">بانتظار موافقة العميل</option>
           </select>
         </div>
         <div className="card overflow-x-auto">
@@ -333,7 +317,7 @@ export function AppointmentsManager() {
 
         {selected && (
           <div className="mt-6">
-            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
+            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} deleteOpen={deleteOpen} setDeleteOpen={setDeleteOpen} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
           </div>
         )}
       </div>
@@ -349,23 +333,9 @@ export function AppointmentsManager() {
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS.map((s) => (
           <button key={s} type="button" onClick={() => setStatusTab(s)} className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold", statusTab === s ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700")}>
-            {statusMeta[s]?.label ?? s} ({items.filter((i) => i.status === s).length})
+            {statusMeta[s]?.label ?? s} ({countFor(s)})
           </button>
         ))}
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(["today", "week", "month", "all", "custom"] as const).map((r) => (
-          <button key={r} type="button" onClick={() => setDateRange(r)} className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", dateRange === r ? "bg-ink-900 text-white" : "bg-white text-ink-700 border border-brand-100")}>
-            {r === "today" ? "اليوم" : r === "week" ? "الأسبوع" : r === "month" ? "الشهر" : r === "all" ? "الكل" : "مخصص"}
-          </button>
-        ))}
-        {dateRange === "custom" && (
-          <>
-            <input className="input w-36" dir="ltr" type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-            <input className="input w-36" dir="ltr" type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
-          </>
-        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -384,7 +354,7 @@ export function AppointmentsManager() {
 
         <div className="lg:col-span-2">
           {!selected ? <EmptyState title="اختر طلبًا" /> : (
-            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
+            <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} deleteOpen={deleteOpen} setDeleteOpen={setDeleteOpen} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
           )}
         </div>
       </div>
@@ -410,7 +380,7 @@ function TabBar({ tab, setTab }: { tab: string; setTab: (t: "requests" | "calend
   );
 }
 
-function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClose, rejectOpen, setRejectOpen, rejectReason, setRejectReason, reschedOpen, setReschedOpen, newDate, setNewDate, newTime, setNewTime, reschedReason, setReschedReason, onAction }: {
+function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClose, rejectOpen, setRejectOpen, rejectReason, setRejectReason, deleteOpen, setDeleteOpen, reschedOpen, setReschedOpen, newDate, setNewDate, newTime, setNewTime, reschedReason, setReschedReason, onAction }: {
   a: Appointment;
   services: Service[];
   statusMeta: Record<string, { label: string; color: "brand" | "green" | "red" | "amber" | "gray" }>;
@@ -418,8 +388,9 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
   acting: boolean;
   onClose: () => void;
   rejectOpen: boolean; setRejectOpen: (v: boolean) => void; rejectReason: string; setRejectReason: (v: string) => void;
+  deleteOpen: boolean; setDeleteOpen: (v: boolean) => void;
   reschedOpen: boolean; setReschedOpen: (v: boolean) => void; newDate: string; setNewDate: (v: string) => void; newTime: string; setNewTime: (v: string) => void; reschedReason: string; setReschedReason: (v: string) => void;
-  onAction: (action: "approve" | "reject" | "reschedule", extra?: Record<string, unknown>) => void;
+  onAction: (action: "approve" | "reject" | "reschedule" | "delete", extra?: Record<string, unknown>) => void;
 }) {
   return (
     <div className="card space-y-4 p-6">
@@ -446,8 +417,22 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
       {a.notes && <p className="rounded-xl bg-brand-50/60 p-3 text-sm text-ink-800">{a.notes}</p>}
       {a.reject_reason && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700"><b>سبب الرفض:</b> {a.reject_reason}</p>}
       {a.reschedule_reason && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800"><b>سبب التأجيل:</b> {a.reschedule_reason}</p>}
+      {a.status === "awaiting_client" && a.proposed_start_at && (
+        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800"><b>بانتظار موافقة العميل على الموعد المقترح:</b> {new Date(a.proposed_start_at).toLocaleString("ar")}</p>
+      )}
 
       {actionsFor(a)}
+
+      {deleteOpen && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="mb-2 text-sm font-bold text-red-700">حذف الطلب</p>
+          <p className="mb-3 text-sm text-red-600">هل أنت متأكد من حذف هذا الطلب نهائيًا؟</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => onAction("delete")} className="btn-danger px-4 py-2 text-sm" disabled={acting}>تأكيد الحذف</button>
+            <button type="button" onClick={() => setDeleteOpen(false)} className="btn-ghost px-4 py-2 text-sm">إلغاء</button>
+          </div>
+        </div>
+      )}
 
       {rejectOpen && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4">

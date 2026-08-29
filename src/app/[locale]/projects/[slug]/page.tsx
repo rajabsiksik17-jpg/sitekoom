@@ -15,22 +15,22 @@ import { ProjectCta } from "@/components/project-cta";
 import { getSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
-export async function generateMetadata({ params }: { params: { locale: "ar" | "en"; slug: string } }): Promise<Metadata> {
-  const project = await getProjectBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const project = await getProjectBySlug((await params).slug);
   if (!project) return {};
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: seo } = await supabase
     .from("seo_metadata")
     .select("*")
     .eq("entity_type", "project")
     .eq("entity_id", project.id)
-    .eq("locale", params.locale)
+    .eq("locale", (await params).locale)
     .maybeSingle();
-  const title = params.locale === "ar" ? project.title_ar : project.title_en;
-  const canonical = params.locale === "ar" ? `/projects/${project.slug}` : `/en/projects/${project.slug}`;
+  const title = (await params).locale === "ar" ? project.title_ar : project.title_en;
+  const canonical = (await params).locale === "ar" ? `/projects/${project.slug}` : `/en/projects/${project.slug}`;
   return {
     title: seo?.seo_title || title,
-    description: seo?.meta_description || (params.locale === "ar" ? project.short_desc_ar : project.short_desc_en) || undefined,
+    description: seo?.meta_description || ((await params).locale === "ar" ? project.short_desc_ar : project.short_desc_en) || undefined,
     openGraph: {
       title: seo?.og_title || title,
       images: (seo?.og_image || project.cover_image || project.thumbnail)
@@ -50,12 +50,12 @@ export async function generateMetadata({ params }: { params: { locale: "ar" | "e
 export default async function ProjectDetailPage({
   params,
 }: {
-  params: { locale: "ar" | "en"; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const locale = params.locale;
+  const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
-  const project = await getProjectBySlug(params.slug);
+  const project = await getProjectBySlug((await params).slug);
   if (!project) notFound();
 
   const settings = await getSettings();

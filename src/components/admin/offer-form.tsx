@@ -17,7 +17,7 @@ import type { Offer, Service, DynamicForm } from "@/lib/types";
 
 type Stage = { title_ar: string; title_en: string; description_ar: string; description_en: string; duration: string; icon: string };
 type Included = { title_ar: string; title_en: string; description_ar: string; description_en: string; icon: string; enabled: boolean };
-type Group = { id?: string; title_ar: string; title_en: string; selection_type: "single" | "multiple"; required: boolean; allow_deselect: boolean; values: { id?: string; label_ar: string; label_en: string; price_delta: number; is_default: boolean }[] };
+type Group = { id?: string; title_ar: string; title_en: string; selection_type: "single" | "multiple"; required: boolean; allow_deselect: boolean; values: { id?: string; label_ar: string; label_en: string; price: number; is_default: boolean }[] };
 type Addon = { title_ar: string; title_en: string; price: number; is_default: boolean };
 type Pkg = { name_ar: string; name_en: string; price: number; duration: string; is_default: boolean; features: string };
 type Rule = { title_ar: string; title_en: string; field_key: string; operator: string; value: string; price_delta: number };
@@ -85,7 +85,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
         const { data: values } = await supabase.from("offer_option_values").select("*").in("option_id", groupsData.map((g) => g.id));
         setGroups(groupsData.map((g) => ({
           id: g.id, title_ar: g.title_ar, title_en: g.title_en, selection_type: g.selection_type, required: g.required, allow_deselect: g.allow_deselect,
-          values: (values ?? []).filter((v) => v.option_id === g.id).map((v) => ({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: Number(v.price_delta), is_default: v.is_default })),
+          values: (values ?? []).filter((v) => v.option_id === g.id).map((v) => ({ id: v.id, label_ar: v.label_ar, label_en: v.label_en, price: Number(v.price ?? v.price_delta), is_default: v.is_default })),
         })));
       }
       setLoading(false);
@@ -137,7 +137,7 @@ export function OfferForm({ offerId }: { offerId?: string }) {
     await supabase.from("offer_option_groups").delete().eq("offer_id", id);
     for (const g of groups) {
       const { data: grp } = await supabase.from("offer_option_groups").insert({ offer_id: id, title_ar: g.title_ar, title_en: g.title_en, selection_type: g.selection_type, required: g.required, allow_deselect: g.allow_deselect, sort: groups.indexOf(g) }).select().single();
-      if (grp && g.values.length) await supabase.from("offer_option_values").insert(g.values.map((v, i) => ({ option_id: grp.id, label_ar: v.label_ar, label_en: v.label_en, price_delta: v.price_delta, is_default: v.is_default, sort: i })));
+      if (grp && g.values.length) await supabase.from("offer_option_values").insert(g.values.map((v, i) => ({ option_id: grp.id, label_ar: v.label_ar, label_en: v.label_en, price: v.price, is_default: v.is_default, sort: i })));
     }
 
     setSaving(false);
@@ -225,12 +225,12 @@ export function OfferForm({ offerId }: { offerId?: string }) {
                 <div key={vi} className="mb-1 flex items-center gap-2">
                   <input className="input" placeholder="العربية" value={v.label_ar} onChange={(e) => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.map((z, j) => j === vi ? { ...z, label_ar: e.target.value } : z) } : y))} />
                   <input className="input" dir="ltr" placeholder="English" value={v.label_en} onChange={(e) => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.map((z, j) => j === vi ? { ...z, label_en: e.target.value } : z) } : y))} />
-                  <input className="input w-24" dir="ltr" type="number" placeholder="+سعر" value={v.price_delta} onChange={(e) => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.map((z, j) => j === vi ? { ...z, price_delta: Number(e.target.value) } : z) } : y))} />
+                  <input className="input w-24" dir="ltr" type="number" placeholder="السعر الكامل" value={v.price} onChange={(e) => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.map((z, j) => j === vi ? { ...z, price: Number(e.target.value) } : z) } : y))} />
                   <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={v.is_default} onChange={(e) => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.map((z, j) => j === vi ? { ...z, is_default: e.target.checked } : z) } : y))} /> افتراضي</label>
                   <button type="button" onClick={() => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: y.values.filter((_, j) => j !== vi) } : y))} className="text-red-500"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
-              <button type="button" onClick={() => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: [...y.values, { label_ar: "", label_en: "", price_delta: 0, is_default: false }] } : y))} className="mt-1 text-xs font-semibold text-brand-600">+ إضافة قيمة</button>
+              <button type="button" onClick={() => setGroups((x) => x.map((y, i) => i === gi ? { ...y, values: [...y.values, { label_ar: "", label_en: "", price: 0, is_default: false }] } : y))} className="mt-1 text-xs font-semibold text-brand-600">+ إضافة قيمة</button>
             </div>
           ))}
         </div>

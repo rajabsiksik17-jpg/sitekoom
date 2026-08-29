@@ -18,8 +18,8 @@ const typeLabels: Record<string, { ar: string; en: string }> = {
   other: { ar: "أخرى", en: "Other" },
 };
 
-export default async function ClientChatHistoryPage({ params }: { params: { locale: "ar" | "en" } }) {
-  const locale = params.locale;
+export default async function ClientChatHistoryPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale as "ar" | "en";
   const client = await getCurrentClient(locale);
   const [conversations, messages, reasons] = await Promise.all([
     getClientConversations(client.id),
