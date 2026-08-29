@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, Search, Trash2, Check } from "lucide-react";
+import { Download, Search, Trash2, Check, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState, ConfirmDialog } from "@/components/admin/ui";
+import { EmailComposer } from "@/components/admin/email-composer";
 import { statusLabels, priorityLabels } from "@/components/admin/nav";
 import { formatDateTime } from "@/lib/utils";
 import type { ContactRequest } from "@/lib/types";
@@ -21,6 +22,7 @@ export function ContactsManager() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [deleting, setDeleting] = useState<ContactRequest | null>(null);
+  const [emailTarget, setEmailTarget] = useState<ContactRequest | null>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -138,6 +140,11 @@ export function ContactsManager() {
                   <td className="px-4 py-3 text-gray-500">{formatDateTime(c.created_at, "ar")}</td>
                   <td className="px-4 py-3 text-end">
                     <div className="flex items-center justify-end gap-1">
+                      {c.email && (
+                        <button type="button" onClick={() => setEmailTarget(c)} className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
+                          <Mail className="h-3.5 w-3.5" /> إرسال إيميل
+                        </button>
+                      )}
                       {c.status === "new" && (
                         <button type="button" onClick={() => markRead(c)} className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
                           <Check className="h-3.5 w-3.5" /> تعيين كمقروء
@@ -154,6 +161,19 @@ export function ContactsManager() {
       )}
 
       <ConfirmDialog open={!!deleting} title="حذف الطلب" message="هل أنت متأكد من الحذف؟" onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />
+
+      {emailTarget && (
+        <EmailComposer
+          open={!!emailTarget}
+          onClose={() => setEmailTarget(null)}
+          recipientEmail={emailTarget.email ?? ""}
+          recipientName={emailTarget.name}
+          defaultSubject={emailTarget.service_name ? `بخصوص خدمة: ${emailTarget.service_name}` : "بخصوص طلبك"}
+          entityType="contact"
+          entityId={emailTarget.id}
+          onSent={load}
+        />
+      )}
     </div>
   );
 }

@@ -947,6 +947,8 @@ export interface FormSubmission {
   custom_admin_price: number | null;
   final_admin_price: number | null;
   price_note: string | null;
+  replied_at: string | null;
+  replied_by: string | null;
   created_at: string;
   updated_at: string;
 }

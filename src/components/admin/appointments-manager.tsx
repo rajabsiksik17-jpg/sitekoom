@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, CalendarDays, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Settings, Mail } from "lucide-react";
+import { EmailComposer } from "@/components/admin/email-composer";
 import type { Appointment, Service } from "@/lib/types";
 
 const STATUS = ["new", "rejected", "rescheduled"];
@@ -53,6 +54,7 @@ export function AppointmentsManager() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [emailTarget, setEmailTarget] = useState<Appointment | null>(null);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
@@ -392,6 +394,7 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
   reschedOpen: boolean; setReschedOpen: (v: boolean) => void; newDate: string; setNewDate: (v: string) => void; newTime: string; setNewTime: (v: string) => void; reschedReason: string; setReschedReason: (v: string) => void;
   onAction: (action: "approve" | "reject" | "reschedule" | "delete", extra?: Record<string, unknown>) => void;
 }) {
+  const [emailOpen, setEmailOpen] = useState(false);
   return (
     <div className="card space-y-4 p-6">
       <div className="flex items-start justify-between">
@@ -401,6 +404,11 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
         </div>
         <div className="flex items-center gap-2">
           <Badge color={statusMeta[a.status]?.color ?? "gray"}>{statusMeta[a.status]?.label ?? a.status}</Badge>
+          {a.customer_email && (
+            <button type="button" onClick={() => setEmailOpen(true)} className="btn-secondary px-3 py-2 text-sm">
+              <Mail className="h-4 w-4" /> إرسال إيميل
+            </button>
+          )}
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-ink-900">✕</button>
         </div>
       </div>
@@ -459,6 +467,17 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
           </div>
         </div>
       )}
+
+      <EmailComposer
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipientEmail={a.customer_email ?? ""}
+        recipientName={a.customer_name}
+        defaultSubject={a.subject ? `بخصوص: ${a.subject}` : "بخصوص موعدك"}
+        entityType="appointment"
+        entityId={a.id}
+        locale={(a.language as "ar" | "en") || "ar"}
+      />
     </div>
   );
 }

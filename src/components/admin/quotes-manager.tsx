@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, Search, Trash2 } from "lucide-react";
+import { Download, Search, Trash2, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Spinner, EmptyState, ConfirmDialog } from "@/components/admin/ui";
+import { EmailComposer } from "@/components/admin/email-composer";
 import { pricingStatusLabels } from "@/components/admin/nav";
 import { formatDateTime } from "@/lib/utils";
 import type { ProjectRequest } from "@/lib/types";
@@ -20,6 +21,7 @@ export function QuotesManager() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [deleting, setDeleting] = useState<ProjectRequest | null>(null);
+  const [emailTarget, setEmailTarget] = useState<ProjectRequest | null>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -116,7 +118,14 @@ export function QuotesManager() {
                   </td>
                   <td className="px-4 py-3 text-gray-500">{formatDateTime(c.created_at, "ar")}</td>
                   <td className="px-4 py-3 text-end">
-                    <button type="button" onClick={() => setDeleting(c)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    <div className="flex items-center justify-end gap-1">
+                      {c.email && (
+                        <button type="button" onClick={() => setEmailTarget(c)} className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
+                          <Mail className="h-3.5 w-3.5" /> إرسال إيميل
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setDeleting(c)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -126,6 +135,19 @@ export function QuotesManager() {
       )}
 
       <ConfirmDialog open={!!deleting} title="حذف الطلب" message="هل أنت متأكد من الحذف؟" onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />
+
+      {emailTarget && (
+        <EmailComposer
+          open={!!emailTarget}
+          onClose={() => setEmailTarget(null)}
+          recipientEmail={emailTarget.email ?? ""}
+          recipientName={emailTarget.name}
+          defaultSubject={emailTarget.service_name ?? emailTarget.other_service ? `بخصوص: ${emailTarget.service_name ?? emailTarget.other_service}` : "بخصوص طلبك"}
+          entityType="quote"
+          entityId={emailTarget.id}
+          onSent={load}
+        />
+      )}
     </div>
   );
 }

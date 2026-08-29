@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Send, X } from "lucide-react";
+import { Check, Send, X, ArrowRight, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState, Modal } from "@/components/admin/ui";
@@ -42,11 +42,12 @@ export function ChatConsole() {
   const [sending, setSending] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closing, setClosing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const loadConversations = useCallback(async () => {
     const supabase = supabaseRef.current;
     const { data } = await supabase.from("live_chat_conversations").select("*").order("created_at", { ascending: false });
-    // Registered clients float to the top within the list (higher priority).
     const sorted = [...(data ?? [])].sort((a, b) => {
       const reg = Number(b.is_registered) - Number(a.is_registered);
       if (reg !== 0) return reg;
@@ -56,7 +57,6 @@ export function ChatConsole() {
     setLoading(false);
   }, []);
 
-  // Single subscription for the conversation list (no message handling here).
   useEffect(() => {
     loadConversations();
     supabaseRef.current.rpc("list_agents").then(({ data }) => setAgents((data ?? []) as Agent[]));
@@ -64,18 +64,13 @@ export function ChatConsole() {
     const supabase = supabaseRef.current;
     const channel = supabase
       .channel("admin-chat")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_chat_conversations" },
-        () => loadConversations(),
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_conversations" }, () => loadConversations())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [loadConversations]);
 
-  // Single subscription for the selected conversation messages.
   useEffect(() => {
     if (!selected) return;
     const supabase = supabaseRef.current;
@@ -96,11 +91,7 @@ export function ChatConsole() {
           const msg = payload.new as LiveChatMessage;
           setMessages((prev) => appendMessage(prev, msg));
           if (msg.sender_type === "visitor") {
-            supabase
-              .from("live_chat_messages")
-              .update({ read_at: new Date().toISOString(), status: "read" })
-              .eq("id", msg.id)
-              .then();
+            supabase.from("live_chat_messages").update({ read_at: new Date().toISOString(), status: "read" }).eq("id", msg.id).then();
           }
         },
       )
@@ -116,6 +107,11 @@ export function ChatConsole() {
       supabase.removeChannel(channel);
     };
   }, [selected?.id]);
+
+  // Scroll to the latest message.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
 
   async function accept(conv: LiveChatConversation) {
     if (accepting) return;
@@ -151,7 +147,6 @@ export function ChatConsole() {
       const supabase = supabaseRef.current;
       const { error } = await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "agent", body: input.trim() });
       if (error) {
-        // The conversation was closed (DB trigger rejects the insert).
         setSelected((prev) => (prev ? { ...prev, status: "closed", closed_by: "customer" } : prev));
         setInput("");
         push("error", "تم إنهاء هذه المحادثة ولا يمكن إرسال رسائل جديدة.");
@@ -159,9 +154,17 @@ export function ChatConsole() {
       }
       await supabase.from("live_chat_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", selected.id);
       setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
     } finally {
       setSending(false);
     }
+  }
+
+  function autoGrow(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   }
 
   function closeConversation() {
@@ -173,7 +176,6 @@ export function ChatConsole() {
     if (!selected || closing) return;
     setClosing(true);
     const supabase = supabaseRef.current;
-    // Idempotent: only close if still active/waiting.
     await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "admin" }).eq("id", selected.id).neq("status", "closed");
     await supabase.from("live_chat_messages").insert({ conversation_id: selected.id, sender_type: "system", body: "تم إنهاء المحادثة" });
     setClosing(false);
@@ -204,62 +206,64 @@ export function ChatConsole() {
   return (
     <div>
       <PageTitle title="الاتصال المباشر" description="إدارة محادثات العملاء المباشرة." />
-      <div className="mb-4 flex gap-2">
+
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {(["waiting", "active", "closed"] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", tab === t ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700")}>
-            {t === "waiting" ? "بالانتظار" : t === "active" ? "نشطة" : "مغلقة"}
-            ({conversations.filter((c) => c.status === t).length})
+          <button key={t} type="button" onClick={() => { setTab(t); setSelected(null); }} className={cn("shrink-0 rounded-lg px-4 py-2 text-sm font-semibold", tab === t ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700")}>
+            {t === "waiting" ? "بالانتظار" : t === "active" ? "نشطة" : "مغلقة"} ({conversations.filter((c) => c.status === t).length})
           </button>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-3">
+      <div className="lg:grid lg:grid-cols-3 lg:gap-6">
+        {/* Conversation list */}
+        <div className={cn("space-y-3", selected && "hidden lg:block")}>
           {list.length === 0 ? (
             <EmptyState title="لا توجد محادثات" />
           ) : (
             list.map((c) => (
               <button key={c.id} type="button" onClick={() => { setSelected(c); setMessages([]); }} className={cn("card block w-full p-4 text-start transition-all", selected?.id === c.id ? "border-brand-400 ring-2 ring-brand-200" : "")}>
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-ink-900">{c.visitor_name ?? "زائر"}</p>
-                  <span className="text-xs text-gray-400">{timeAgo(c.created_at, "ar")}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="min-w-0 truncate font-semibold text-ink-900">{c.visitor_name ?? "زائر"}</p>
+                  <span className="shrink-0 text-xs text-gray-400">{timeAgo(c.created_at, "ar")}</span>
                 </div>
                 {c.is_registered && (
-                  <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
-                    عميل مسجل
-                  </span>
+                  <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">عميل مسجل</span>
                 )}
                 {c.conversation_type && (
-                  <span className="mt-1.5 ms-1.5 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                    {typeLabels[c.conversation_type] ?? c.conversation_type}
-                  </span>
+                  <span className="mt-1.5 ms-1.5 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">{typeLabels[c.conversation_type] ?? c.conversation_type}</span>
                 )}
                 <p className="mt-1 truncate text-sm text-gray-500">{c.first_message}</p>
-                {c.visitor_email && <p className="mt-1 text-xs text-gray-400" dir="ltr">{c.visitor_email}</p>}
+                {c.visitor_email && <p className="mt-1 truncate text-xs text-gray-400" dir="ltr">{c.visitor_email}</p>}
               </button>
             ))
           )}
         </div>
 
-        <div className="lg:col-span-2">
+        {/* Chat panel */}
+        <div className={cn("lg:col-span-2", !selected && "hidden lg:block")}>
           {!selected ? (
             <EmptyState title="اختر محادثة" description="اختر محادثة من القائمة لعرضها." />
           ) : (
-            <div className="card flex h-[600px] flex-col overflow-hidden">
-              <div className="flex items-center justify-between border-b border-brand-100 px-4 py-3">
-                <div>
-                  <p className="font-bold text-ink-900">{selected.visitor_name ?? "زائر"}</p>
-                  <p className="text-xs text-gray-400" dir="ltr">{selected.visitor_email} {selected.visitor_phone}</p>
-                  {selected.offer_title && (
-                    <p className="mt-1 text-xs font-semibold text-brand-700">{selected.offer_title}</p>
-                  )}
-                  {(selected.conversation_type || selected.support_reason) && (
-                    <p className="mt-1 text-xs font-semibold text-brand-700">
-                      {selected.support_reason ? `${typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type ?? ""} — ${selected.support_reason}` : typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type}
-                    </p>
-                  )}
+            <div className="card flex h-[calc(100dvh-220px)] min-h-[420px] flex-col overflow-hidden lg:h-[600px]">
+              {/* Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-brand-100 px-3 py-2.5 lg:px-4 lg:py-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <button type="button" onClick={() => { setSelected(null); setMessages([]); }} className="rounded-lg p-2 text-brand-700 hover:bg-brand-50 lg:hidden" aria-label="العودة للقائمة">
+                    <ArrowRight className="h-5 w-5 rtl:rotate-180" />
+                  </button>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-ink-900">{selected.visitor_name ?? "زائر"}</p>
+                    <p className="truncate text-xs text-gray-400" dir="ltr">{selected.visitor_email} {selected.visitor_phone}</p>
+                    {selected.offer_title && <p className="mt-0.5 truncate text-xs font-semibold text-brand-700">{selected.offer_title}</p>}
+                    {(selected.conversation_type || selected.support_reason) && (
+                      <p className="mt-0.5 truncate text-xs font-semibold text-brand-700">
+                        {selected.support_reason ? `${typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type ?? ""} — ${selected.support_reason}` : typeLabels[selected.conversation_type ?? ""] ?? selected.conversation_type}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {selected.status === "waiting" && (
                     <button type="button" onClick={() => accept(selected)} disabled={accepting} className="btn-primary px-3 py-2 text-sm disabled:opacity-60">
                       {accepting ? <Spinner className="h-4 w-4" /> : <Check className="h-4 w-4" />} قبول المحادثة
@@ -267,7 +271,7 @@ export function ChatConsole() {
                   )}
                   {selected.status === "active" && (
                     <>
-                      <select className="input w-40 py-2 text-sm" value={selected.assigned_to ?? ""} onChange={(e) => transfer(e.target.value)}>
+                      <select className="input w-36 py-2 text-sm" value={selected.assigned_to ?? ""} onChange={(e) => transfer(e.target.value)}>
                         <option value="">نقل إلى...</option>
                         {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                       </select>
@@ -275,27 +279,38 @@ export function ChatConsole() {
                     </>
                   )}
                   {selected.status === "closed" && (
-                    <Badge color="gray">
-                      {selected.closed_by === "customer" ? "مغلقة من قبل العميل" : "مغلقة من قبل الأدمن"}
-                    </Badge>
+                    <Badge color="gray">{selected.closed_by === "customer" ? "مغلقة من قبل العميل" : "مغلقة من قبل الأدمن"}</Badge>
                   )}
                 </div>
               </div>
 
+              {/* Messages */}
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
                 {messages.map((m) => (
                   <div key={m.id} className={cn("flex", m.sender_type === "agent" ? "justify-end" : "justify-start")}>
-                    <div className={cn("max-w-[80%] rounded-2xl px-3 py-2 text-sm", m.sender_type === "agent" ? "rounded-br-sm bg-brand-gradient text-white" : m.sender_type === "system" ? "bg-gray-100 text-gray-500" : "rounded-bl-sm bg-gray-100 text-ink-900")}>
+                    <div className={cn("max-w-[85%] break-words rounded-2xl px-3 py-2 text-sm", m.sender_type === "agent" ? "rounded-br-sm bg-brand-gradient text-white" : m.sender_type === "system" ? "bg-gray-100 text-gray-500" : "rounded-bl-sm bg-gray-100 text-ink-900")}>
                       {m.body}
                     </div>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
 
+              {/* Input */}
               {selected.status === "active" && (
-                <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 border-t border-brand-100 p-3">
-                  <input className="input flex-1" placeholder="اكتب رسالتك..." value={input} onChange={(e) => setInput(e.target.value)} />
-                  <button type="submit" className="btn-primary px-3" disabled={sending} aria-label="إرسال"><Send className="h-4 w-4" /></button>
+                <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex items-end gap-2 border-t border-brand-100 p-2 lg:p-3">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    className="input max-h-[140px] min-h-[44px] flex-1 resize-none"
+                    placeholder="اكتب رسالتك..."
+                    value={input}
+                    onChange={autoGrow}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  />
+                  <button type="submit" className="btn-primary h-11 w-11 shrink-0 p-0" disabled={sending} aria-label="إرسال">
+                    <Send className="h-4 w-4" />
+                  </button>
                 </form>
               )}
 
