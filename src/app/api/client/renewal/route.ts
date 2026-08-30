@@ -16,7 +16,7 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -10,7 +10,7 @@ const schema = z.object({
 
 // POST: save the GA4 property id for a website owned by the client.
 export async function POST(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: z.infer<typeof schema>;
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE: disconnect GA (clear the property id).
 export async function DELETE(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { website_id } = await request.json().catch(() => ({ website_id: null }));

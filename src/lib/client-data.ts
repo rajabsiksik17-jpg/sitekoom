@@ -24,7 +24,7 @@ import type {
  * request so the layout and pages share one lookup.
  */
 export const getCurrentClient = cache(async (locale: Locale): Promise<Client> => {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) redirect(localizePath("/client-login", locale));
 
   const admin = createAdminClient();

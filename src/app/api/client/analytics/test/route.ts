@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 // Test the GA4 connection for a website owned by the client.
 export async function POST(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { website_id } = await request.json().catch(() => ({ website_id: null }));

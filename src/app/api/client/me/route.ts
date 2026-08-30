@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) {
     return NextResponse.json({ authenticated: false });
   }

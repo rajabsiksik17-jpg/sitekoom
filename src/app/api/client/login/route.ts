@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
 
   // Trusted device → login without OTP within the trust window.
   if (await isClientDeviceTrusted(client.id)) {
-    setClientSessionCookie(createClientSession(client.id));
+    await setClientSessionCookie(createClientSession(client.id));
     await admin.from("client_login_logs").insert({ client_id: client.id, ip_address: ip, user_agent: ua, success: true });
     return NextResponse.json({ ok: true, needsOtp: false, client: clientSummary });
   }
 
   // No email on file → cannot send OTP, allow direct login.
   if (!client.email) {
-    setClientSessionCookie(createClientSession(client.id));
+    await setClientSessionCookie(createClientSession(client.id));
     await admin.from("client_login_logs").insert({ client_id: client.id, ip_address: ip, user_agent: ua, success: true });
     return NextResponse.json({ ok: true, needsOtp: false, client: clientSummary });
   }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   // New/untrusted device → send a one-time code.
   const code = await createClientOtp(client.id);
   if (code) {
-    setPendingClientCookie(client.id);
+    await setPendingClientCookie(client.id);
     const locale = client.preferred_language === "en" ? "en" : "ar";
     const isAr = locale === "ar";
     await sendSiteEmail({

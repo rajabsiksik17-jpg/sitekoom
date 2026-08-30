@@ -20,7 +20,7 @@ function rangeToDates(range: string, customStart?: string, customEnd?: string): 
 }
 
 export async function GET(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

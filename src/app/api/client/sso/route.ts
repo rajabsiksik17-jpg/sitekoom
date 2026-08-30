@@ -8,7 +8,7 @@ import { getClientSession, createSsoToken } from "@/lib/client-auth";
 // validates the token server-to-server and creates the session — credentials are
 // never placed in the URL.
 export async function GET(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) {
     return NextResponse.redirect(new URL("/client-login", request.url));
   }

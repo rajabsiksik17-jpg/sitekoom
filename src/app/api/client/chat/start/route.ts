@@ -30,7 +30,7 @@ const REASON_TO_TYPE: Record<string, string> = {
 // the client record (never from the client) so it cannot be spoofed, and the
 // conversation is flagged as registered for higher priority in the admin view.
 export async function POST(request: NextRequest) {
-  const clientId = getClientSession();
+  const clientId = await getClientSession();
   if (!clientId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
