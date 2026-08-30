@@ -1030,6 +1030,7 @@ export interface Appointment {
   subject: string;
   notes: string | null;
   language: string;
+  source: string;
   requested_date: string;
   requested_time: string;
   duration_minutes: number;

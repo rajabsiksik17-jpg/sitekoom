@@ -16,7 +16,7 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: GoogleReview[]; settings: GoogleReviewsSettings; locale: "ar" | "en" }) {
+export function GoogleReviewsSection({ reviews, settings, locale, total, average }: { reviews: GoogleReview[]; settings: GoogleReviewsSettings; locale: "ar" | "en"; total?: number; average?: number }) {
   const isAr = locale === "ar";
   const N = reviews.length;
   const [perView, setPerView] = useState(3);
@@ -28,6 +28,10 @@ export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: G
   const title = localize(locale, settings.title_ar, settings.title_en);
   const desc = localize(locale, settings.description_ar, settings.description_en);
   const mapsHref = settings.google_maps_uri || settings.maps_url;
+
+  // Stats are computed dynamically from active reviews (manual + Google), never from Google API alone.
+  const avg = average ?? (N ? Math.round((reviews.reduce((s, r) => s + Number(r.rating), 0) / N) * 10) / 10 : 0);
+  const tot = total ?? N;
 
   // Responsive cards-per-view.
   useEffect(() => {
@@ -110,9 +114,9 @@ export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: G
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 rounded-2xl border border-brand-100 bg-white/70 px-4 py-2 shadow-soft backdrop-blur-sm">
-            <Stars rating={settings.rating || 5} />
-            <span className="text-sm font-bold text-ink-900">{Number(settings.rating || 0).toFixed(1)}</span>
-            <span className="text-xs text-gray-500">({settings.total || N})</span>
+            <Stars rating={avg || 5} />
+            <span className="text-sm font-bold text-ink-900">{avg.toFixed(1)}</span>
+            <span className="text-xs text-gray-500">({tot})</span>
           </div>
           {mapsHref && (
             <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary whitespace-nowrap px-4 py-2.5 text-sm">
@@ -144,7 +148,7 @@ export function GoogleReviewsSection({ reviews, settings, locale }: { reviews: G
         >
           {duplicated.map((r, i) => (
             <div key={`${r.id}-${i}`} className="shrink-0 px-3" style={{ flexBasis: `${step}%`, maxWidth: `${step}%` }}>
-              <div className="card card-hover flex h-full flex-col p-6">
+              <div className="card card-hover flex h-full flex-col p-6" dir={isAr ? "rtl" : "ltr"}>
                 <div className="mb-3 flex items-center gap-3">
                   {r.author_photo ? (
                     // eslint-disable-next-line @next/next/no-img-element

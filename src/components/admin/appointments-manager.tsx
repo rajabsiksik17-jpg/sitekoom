@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { PageTitle, Badge, Spinner, EmptyState } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, CalendarDays, Settings, Mail } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Settings, Mail, Plus } from "lucide-react";
 import { EmailComposer } from "@/components/admin/email-composer";
 import type { Appointment, Service } from "@/lib/types";
 
@@ -60,6 +60,19 @@ export function AppointmentsManager() {
   const [newTime, setNewTime] = useState("");
   const [reschedReason, setReschedReason] = useState("");
   const [acting, setActing] = useState(false);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addServiceIds, setAddServiceIds] = useState<string[]>([]);
+  const [addDate, setAddDate] = useState("");
+  const [addTime, setAddTime] = useState("");
+  const [addDuration, setAddDuration] = useState<number>(120);
+  const [addSubject, setAddSubject] = useState("");
+  const [addNotes, setAddNotes] = useState("");
+  const [addOverride, setAddOverride] = useState(false);
+  const [addSaving, setAddSaving] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -126,6 +139,34 @@ export function AppointmentsManager() {
     load();
   }
 
+  async function createAppointment() {
+    if (!addName.trim() || !addPhone.trim()) return push("error", "أدخل اسم العميل ورقم الهاتف");
+    if (!addDate || !addTime) return push("error", "اختر التاريخ والوقت");
+    setAddSaving(true);
+    try {
+      const res = await fetch("/api/appointments/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: addName.trim(), phone: addPhone.trim(), email: addEmail.trim(),
+          service_ids: addServiceIds, subject: addSubject.trim(), notes: addNotes.trim(),
+          date: addDate, time: addTime, duration_minutes: addDuration, override_hours: addOverride,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "فشل الإنشاء");
+      push("success", "تم إنشاء الموعد وتأكيده");
+      setAddOpen(false);
+      setAddName(""); setAddPhone(""); setAddEmail(""); setAddServiceIds([]);
+      setAddDate(""); setAddTime(""); setAddDuration(120); setAddSubject(""); setAddNotes(""); setAddOverride(false);
+      await load();
+    } catch (e) {
+      push("error", e instanceof Error ? e.message : "فشل الإنشاء");
+    } finally {
+      setAddSaving(false);
+    }
+  }
+
   const countFor = (s: string) => items.filter((i) => (s === "rescheduled" ? i.status === "rescheduled" || i.status === "awaiting_client" : i.status === s)).length;
 
   const requestList = useMemo(() => {
@@ -179,12 +220,69 @@ export function AppointmentsManager() {
     return null;
   };
 
+  const addModal = addOpen && (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-ink-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-card sm:max-w-lg sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-brand-100 px-6 py-4">
+          <h3 className="text-lg font-bold text-ink-900">إضافة حجز موعد</h3>
+          <button type="button" onClick={() => setAddOpen(false)} className="rounded-lg p-1 text-gray-400 hover:bg-brand-50">✕</button>
+        </div>
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><label className="label">اسم العميل *</label><input className="input" value={addName} onChange={(e) => setAddName(e.target.value)} /></div>
+            <div><label className="label">رقم الهاتف *</label><input className="input" dir="ltr" value={addPhone} onChange={(e) => setAddPhone(e.target.value)} /></div>
+          </div>
+          <div><label className="label">البريد الإلكتروني (اختياري)</label><input className="input" dir="ltr" type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} /></div>
+
+          <div>
+            <label className="label">الخدمات</label>
+            <div className="flex flex-wrap gap-2">
+              {services.map((s) => {
+                const active = addServiceIds.includes(s.id);
+                return (
+                  <button key={s.id} type="button" onClick={() => setAddServiceIds((p) => (p.includes(s.id) ? p.filter((x) => x !== s.id) : [...p, s.id]))} className={cn("rounded-full border px-3 py-1.5 text-xs font-semibold", active ? "border-brand-500 bg-brand-gradient text-white" : "border-brand-100 bg-white text-ink-800 hover:border-brand-300")}>
+                    {s.title_ar}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><label className="label">التاريخ *</label><input className="input" dir="ltr" type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} /></div>
+            <div><label className="label">وقت البداية *</label><input className="input" dir="ltr" type="time" value={addTime} onChange={(e) => setAddTime(e.target.value)} /></div>
+          </div>
+
+          <div>
+            <label className="label">مدة الزيارة</label>
+            <div className="flex flex-wrap gap-2">
+              {DURATIONS.map((d) => (
+                <button key={d} type="button" onClick={() => setAddDuration(d)} className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold", addDuration === d ? "bg-brand-gradient text-white" : "bg-brand-50 text-brand-700")}>{d} دقيقة</button>
+              ))}
+            </div>
+          </div>
+
+          <div><label className="label">تفاصيل / موضوع الموعد</label><input className="input" value={addSubject} onChange={(e) => setAddSubject(e.target.value)} /></div>
+          <div><label className="label">ملاحظات إضافية</label><textarea className="input min-h-[70px] resize-y" value={addNotes} onChange={(e) => setAddNotes(e.target.value)} /></div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={addOverride} onChange={(e) => setAddOverride(e.target.checked)} className="rounded border-brand-200 text-brand-600" /> تجاوز ساعات الدوام
+          </label>
+        </div>
+        <div className="flex justify-end gap-3 border-t border-brand-100 px-6 py-4">
+          <button type="button" onClick={() => setAddOpen(false)} className="btn-secondary px-4 py-2 text-sm">إلغاء</button>
+          <button type="button" onClick={createAppointment} className="btn-primary px-6 py-2 text-sm" disabled={addSaving}>{addSaving ? "جارٍ الإنشاء..." : "إنشاء الموعد"}</button>
+        </div>
+      </div>
+    </div>
+  );
+
   // ── Settings tab ────────────────────────────────────────────────────────
   if (tab === "settings") {
     return (
       <div>
         <PageTitle title="طلبات حجز موعد" description="إدارة طلبات المواعيد وإعدادات أوقات العمل." />
-        <TabBar tab={tab} setTab={setTab} />
+        <TabBar tab={tab} setTab={setTab} onAdd={() => setAddOpen(true)} />
         <div className="card max-w-2xl space-y-5 p-6">
           <div>
             <p className="mb-2 font-bold text-ink-900">أيام العمل</p>
@@ -212,6 +310,7 @@ export function AppointmentsManager() {
           </div>
           <button type="button" onClick={saveSettings} className="btn-primary px-6 py-2.5" disabled={savingSettings}>{savingSettings ? "جارٍ الحفظ..." : "حفظ الإعدادات"}</button>
         </div>
+        {addModal}
       </div>
     );
   }
@@ -221,7 +320,7 @@ export function AppointmentsManager() {
     return (
       <div>
         <PageTitle title="تقويم المواعيد" description="عرض المواعيد حسب الشهر." />
-        <TabBar tab={tab} setTab={setTab} />
+        <TabBar tab={tab} setTab={setTab} onAdd={() => setAddOpen(true)} />
         <div className="card p-6">
           <div className="mb-4 flex items-center justify-between">
             <button type="button" onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear((y) => y - 1); } else setCalMonth((m) => m - 1); }} className="btn-secondary h-9 w-9 p-0"><ChevronRight className="h-4 w-4" /></button>
@@ -269,6 +368,7 @@ export function AppointmentsManager() {
             <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} deleteOpen={deleteOpen} setDeleteOpen={setDeleteOpen} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
           </div>
         )}
+        {addModal}
       </div>
     );
   }
@@ -278,7 +378,7 @@ export function AppointmentsManager() {
     return (
       <div>
         <PageTitle title="جميع المواعيد" description="سجل كامل لجميع طلبات المواعيد." />
-        <TabBar tab={tab} setTab={setTab} />
+        <TabBar tab={tab} setTab={setTab} onAdd={() => setAddOpen(true)} />
         <div className="mb-4 flex flex-wrap gap-3">
           <input className="input max-w-xs" placeholder="بحث بالاسم / الهاتف / البريد" value={historyQuery} onChange={(e) => setHistoryQuery(e.target.value)} />
           <select className="input w-40" value={historyStatus} onChange={(e) => setHistoryStatus(e.target.value)}>
@@ -322,6 +422,7 @@ export function AppointmentsManager() {
             <AppointmentDetail a={selected} services={services} statusMeta={statusMeta} actionsFor={actionsFor} acting={acting} onClose={() => setSelected(null)} rejectOpen={rejectOpen} setRejectOpen={setRejectOpen} rejectReason={rejectReason} setRejectReason={setRejectReason} deleteOpen={deleteOpen} setDeleteOpen={setDeleteOpen} reschedOpen={reschedOpen} setReschedOpen={setReschedOpen} newDate={newDate} setNewDate={setNewDate} newTime={newTime} setNewTime={setNewTime} reschedReason={reschedReason} setReschedReason={setReschedReason} onAction={action} />
           </div>
         )}
+        {addModal}
       </div>
     );
   }
@@ -330,7 +431,7 @@ export function AppointmentsManager() {
   return (
     <div>
       <PageTitle title="طلبات حجز موعد" description="طلبات المواعيد المرسلة من العملاء." />
-      <TabBar tab={tab} setTab={setTab} />
+      <TabBar tab={tab} setTab={setTab} onAdd={() => setAddOpen(true)} />
 
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS.map((s) => (
@@ -360,11 +461,12 @@ export function AppointmentsManager() {
           )}
         </div>
       </div>
+      {addModal}
     </div>
   );
 }
 
-function TabBar({ tab, setTab }: { tab: string; setTab: (t: "requests" | "calendar" | "history" | "settings") => void }) {
+function TabBar({ tab, setTab, onAdd }: { tab: string; setTab: (t: "requests" | "calendar" | "history" | "settings") => void; onAdd: () => void }) {
   const tabs: { key: "requests" | "calendar" | "history" | "settings"; label: string; icon?: React.ReactNode }[] = [
     { key: "requests", label: "الطلبات" },
     { key: "calendar", label: "التقويم", icon: <CalendarDays className="h-4 w-4" /> },
@@ -378,6 +480,9 @@ function TabBar({ tab, setTab }: { tab: string; setTab: (t: "requests" | "calend
           {t.icon}{t.label}
         </button>
       ))}
+      <button type="button" onClick={onAdd} className="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-gradient px-4 py-2 text-sm font-semibold text-white">
+        <Plus className="h-4 w-4" /> إضافة حجز موعد
+      </button>
     </div>
   );
 }
@@ -420,6 +525,7 @@ function AppointmentDetail({ a, services, statusMeta, actionsFor, acting, onClos
         <div><span className="text-gray-500">الوقت المطلوب:</span> <b dir="ltr">{String(a.requested_time).slice(0, 5)}</b></div>
         <div><span className="text-gray-500">المدة:</span> <b>{a.duration_minutes} دقيقة</b></div>
         <div><span className="text-gray-500">أُرسل في:</span> <b>{new Date(a.created_at).toLocaleString("ar")}</b></div>
+        <div><span className="text-gray-500">مصدر الحجز:</span> <b>{a.source === "admin" ? "حجز أدمن" : "طلب عميل"}</b></div>
       </div>
 
       {a.notes && <p className="rounded-xl bg-brand-50/60 p-3 text-sm text-ink-800">{a.notes}</p>}

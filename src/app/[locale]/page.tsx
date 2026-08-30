@@ -91,6 +91,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const featuredOffers = offers.slice(0, Number(sectionMap.offers?.data?.limit ?? 3));
   const featuredAchievements = achievements.slice(0, Number(sectionMap.achievements?.data?.limit ?? 6));
 
+  const reviewsTotal = reviews.length;
+  const reviewsAverage = reviews.length ? Math.round((reviews.reduce((s, r) => s + Number(r.rating), 0) / reviews.length) * 10) / 10 : 0;
+
   const offersData = sectionMap.offers?.data ?? {};
   const offersBgType = String(offersData.bg_type ?? "gradient");
   let offersBgStyle: React.CSSProperties = {};
@@ -320,7 +323,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {reviewsSettings.enabled && reviews.length > 0 && (
-        <GoogleReviewsSection reviews={reviews.slice(0, Number(reviewsSettings.count || 6))} settings={reviewsSettings} locale={locale} />
+        <GoogleReviewsSection reviews={reviews.slice(0, Number(reviewsSettings.count || 6))} total={reviewsTotal} average={reviewsAverage} settings={reviewsSettings} locale={locale} />
       )}
 
       {isActive("achievements") && featuredAchievements.length > 0 && (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Clock } from "lucide-react";
 import { PageHero } from "@/components/page-hero";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Reveal } from "@/components/reveal";
@@ -98,6 +99,17 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ lo
           </div>
 
           <div>
+            {offer.duration && (
+              <div className="glass-premium mb-5 flex items-center gap-3 rounded-2xl p-5 shadow-card">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white">
+                  <Clock className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold text-gray-400">{locale === "ar" ? "مدة تنفيذ المشروع" : "Project duration"}</p>
+                  <p className="mt-0.5 font-bold text-ink-900">{offer.duration}</p>
+                </div>
+              </div>
+            )}
             <OfferPricing offer={offer} optionGroups={optionGroups} optionValues={optionValues} addons={addons} packages={packages} pricingRules={(pricingRules ?? []) as { id: string; title_ar: string; title_en: string; condition: Record<string, unknown>; price_delta: number }[]} formConfig={formConfig} locale={locale} />
           </div>
         </div>
