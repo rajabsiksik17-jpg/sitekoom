@@ -20,23 +20,7 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
           <p className="mt-4 text-lg font-bold text-brand-700">{highlight}</p>
           <p className="mt-4 leading-relaxed text-gray-600">{desc}</p>
 
-          {/* Mobile: stacked cards */}
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:hidden">
-            {items.map((it, i) => {
-              const t = localize(locale, it.ar.title, it.en.title);
-              const d = localize(locale, it.ar.desc, it.en.desc);
-              return (
-                <div key={i} className="card card-hover p-4">
-                  <span className="block text-sm font-extrabold text-brand-600">{String(i + 1).padStart(2, "0")}</span>
-                  <h3 className="mt-1.5 font-bold text-ink-900">{t}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-gray-600">{d}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop: number + title + desc list beside text */}
-          <ul className="mt-8 hidden space-y-4 lg:block">
+          <ul className="mt-8 space-y-5">
             {items.map((it, i) => {
               const t = localize(locale, it.ar.title, it.en.title);
               const d = localize(locale, it.ar.desc, it.en.desc);
@@ -55,9 +39,9 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
           </ul>
         </Reveal>
 
-        {/* Orbital visual (desktop only) */}
-        <Reveal className="hidden lg:block">
-          <div className="relative mx-auto aspect-square w-full max-w-[30rem]">
+        {/* Orbital visual (all breakpoints; scales down on mobile) */}
+        <Reveal delay={100}>
+          <div className="relative mx-auto aspect-square w-full max-w-[22rem] sm:max-w-[26rem] lg:max-w-[30rem]">
             {/* radial glow */}
             <div className="pointer-events-none absolute inset-0 rounded-full bg-brand-gradient opacity-[0.08] blur-3xl" aria-hidden="true" />
             {/* rings */}
@@ -66,10 +50,10 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
 
             {/* central node */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative flex h-40 w-40 flex-col items-center justify-center rounded-full border border-brand-200/60 bg-white/90 text-center shadow-glow backdrop-blur-sm">
+              <div className="relative flex h-32 w-32 flex-col items-center justify-center rounded-full border border-brand-200/60 bg-white/90 text-center shadow-glow backdrop-blur-sm sm:h-40 sm:w-40">
                 <span className="absolute inset-[-8px] rounded-full border border-brand-100/40" aria-hidden="true" />
-                <span className="text-xl font-extrabold tracking-tight text-brand-700" dir="ltr">SITEKOOM</span>
-                <span className="mt-1 text-xs text-gray-500">{isAr ? "مشروعك" : "Your Business"}</span>
+                <span className="text-lg font-extrabold tracking-tight text-brand-700 sm:text-xl" dir="ltr">SITEKOOM</span>
+                <span className="mt-1 text-[11px] text-gray-500 sm:text-xs">{isAr ? "مشروعك" : "Your Business"}</span>
               </div>
             </div>
 
@@ -80,29 +64,21 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
               return (
                 <div
                   key={i}
-                  className="absolute left-1/2 top-1/2"
-                  style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-47%)` }}
+                  className="pointer-events-none absolute inset-0"
+                  style={{ transform: `rotate(${angle}deg)` }}
                 >
-                  <div
-                    className="w-36 rounded-2xl border border-white/60 bg-white/85 px-4 py-3 text-center shadow-soft backdrop-blur-md"
-                    style={{ transform: `rotate(${-angle}deg)` }}
-                  >
-                    <span className="block text-xs font-extrabold text-brand-600">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="mt-1 block text-sm font-semibold leading-snug text-ink-900">{t}</span>
+                  <div className="absolute left-1/2 top-[6%] -translate-x-1/2 -translate-y-1/2">
+                    <div
+                      className="pointer-events-auto w-28 max-w-[46%] rounded-2xl border border-white/60 bg-white/85 px-2.5 py-2 text-center shadow-soft backdrop-blur-md transition-all duration-300 hover:border-brand-300 hover:shadow-glow sm:w-32 sm:px-3 sm:py-2.5 lg:w-36 lg:px-4 lg:py-3"
+                      style={{ transform: `rotate(${-angle}deg)` }}
+                    >
+                      <span className="block text-[11px] font-extrabold text-brand-600 sm:text-xs">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="mt-1 block text-xs font-semibold leading-snug text-ink-900 sm:text-sm">{t}</span>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
-        </Reveal>
-
-        {/* Mobile central brand */}
-        <Reveal className="lg:hidden">
-          <div className="mb-6 flex flex-col items-center text-center">
-            <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full border border-brand-200/60 bg-white/80 shadow-soft backdrop-blur-sm">
-              <span className="text-lg font-extrabold text-brand-700" dir="ltr">SITEKOOM</span>
-              <span className="text-xs text-gray-500">{isAr ? "مشروعك" : "Your Business"}</span>
-            </div>
           </div>
         </Reveal>
       </div>

@@ -51,8 +51,8 @@ export function AboutProcessSectionView({ data, locale }: { data: AboutProcessSe
 
                     {/* Middle: node + connector */}
                     <div className="relative col-start-2 row-start-1 flex h-full items-center justify-center">
-                      <span className={cn("absolute top-1/2 h-px w-2 -translate-y-1/2 bg-gradient-to-r from-brand-300/60 to-brand-300/10", left ? "end-0" : "start-0")} aria-hidden="true" />
-                      <span className="relative z-10 h-9 w-9 rounded-full border border-brand-300/40 bg-white shadow-soft transition-all duration-300 group-hover:border-brand-400 group-hover:shadow-glow" />
+                      <span className={cn("absolute top-1/2 h-px w-2.5 -translate-y-1/2 bg-gradient-to-r from-brand-400/70 to-brand-300/20", left ? "end-0" : "start-0")} aria-hidden="true" />
+                      <span className="relative z-10 block h-3.5 w-3.5 rounded-full bg-brand-500 shadow-[0_0_0_4px_rgba(122,26,255,0.15),0_0_12px_rgba(122,26,255,0.5)] transition-shadow duration-300 group-hover:shadow-[0_0_0_5px_rgba(122,26,255,0.22),0_0_16px_rgba(122,26,255,0.65)]" />
                     </div>
                   </div>
                 </Reveal>
@@ -63,16 +63,14 @@ export function AboutProcessSectionView({ data, locale }: { data: AboutProcessSe
 
         {/* Mobile: vertical rail layout */}
         <div className="relative mt-2 space-y-6 sm:hidden">
-          <div className="pointer-events-none absolute inset-y-0 start-4 w-px bg-gradient-to-b from-transparent via-brand-300/50 to-transparent" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-y-0 start-[7px] w-px bg-gradient-to-b from-transparent via-brand-400/50 to-transparent" aria-hidden="true" />
           {steps.map((s, i) => {
             const t = localize(locale, s.ar.title, s.en.title);
             const d = localize(locale, s.ar.desc, s.en.desc);
             return (
               <Reveal key={i} delay={i * 40}>
                 <div className="relative flex items-start gap-4">
-                  <span className="relative z-10 mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-brand-300/40 bg-white shadow-soft">
-                    <span className="h-2.5 w-2.5 rounded-full bg-brand-500" />
-                  </span>
+                  <span className="relative z-10 mt-1.5 block h-3.5 w-3.5 shrink-0 rounded-full bg-brand-500 shadow-[0_0_0_4px_rgba(122,26,255,0.15),0_0_12px_rgba(122,26,255,0.5)]" />
                   <div className="card card-hover flex-1 p-5">
                     <div className="flex items-center gap-3">
                       <span className="select-none text-4xl font-extrabold leading-none text-brand-100">{String(i + 1).padStart(2, "0")}</span>

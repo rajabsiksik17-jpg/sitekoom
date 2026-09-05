@@ -141,31 +141,21 @@ export function HomepageIntroSection({ data, locale }: { data: IntroSection; loc
               </div>
             </div>
 
-            {/* Floating pills around the editor */}
-            <div className="relative mt-6 flex flex-wrap justify-center gap-2.5 sm:absolute sm:inset-x-0 sm:mt-0">
-              <div className="flex flex-wrap justify-center gap-2.5 sm:absolute sm:inset-0">
-                {pills.map((p, i) => {
-                  const Icon = PILL_ICONS[i];
-                  return (
-                    <span
-                      key={p}
-                      className={`${PILL_ANIM[i]} pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-brand-200/70 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-ink-900 shadow-soft backdrop-blur-md transition-all duration-300 hover:scale-[1.04] hover:border-brand-400 hover:shadow-glow sm:absolute sm:z-10 ${
-                        i === 0
-                          ? "sm:-start-4 sm:top-8"
-                          : i === 1
-                            ? "sm:-end-4 sm:top-24"
-                            : i === 2
-                              ? "sm:-start-3 sm:bottom-16"
-                              : "sm:-end-3 sm:bottom-6"
-                      }`}
-                      style={{ animationDuration: `${4.8 + i * 1.1}s`, animationDelay: `${i * 0.8}s` }}
-                    >
-                      <Icon className="h-3.5 w-3.5 text-brand-600" />
-                      {p}
-                    </span>
-                  );
-                })}
-              </div>
+            {/* Floating feature pills BELOW the editor */}
+            <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:gap-3">
+              {pills.map((p, i) => {
+                const Icon = PILL_ICONS[i];
+                return (
+                  <span
+                    key={p}
+                    className={`${PILL_ANIM[i]} inline-flex items-center gap-1.5 rounded-full border border-brand-200/80 bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-ink-900 shadow-soft backdrop-blur-md transition-all duration-300 hover:scale-[1.04] hover:border-brand-400 hover:shadow-glow`}
+                    style={{ animationDuration: `${5.5 + i * 0.8}s`, animationDelay: `${i * 0.6}s` }}
+                  >
+                    <Icon className="h-3.5 w-3.5 text-brand-600" />
+                    {p}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </Reveal>

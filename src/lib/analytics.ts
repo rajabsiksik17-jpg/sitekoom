@@ -1,7 +1,5 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-
 let sessionId: string | null = null;
 
 function getSessionId(): string {
@@ -69,11 +67,20 @@ function getDeviceType(): string {
 
 export async function trackEvent(payload: TrackPayload) {
   try {
-    const supabase = createClient();
-    await supabase.from("analytics_events").insert({
-      ...payload,
-      device_type: getDeviceType(),
-      session_id: getSessionId(),
+    const body = {
+      event: {
+        ...payload,
+        device_type: getDeviceType(),
+        session_id: getSessionId(),
+      },
+    };
+    await fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      // Analytics must never block or error the page; still let failures be
+      // silently ignored (best-effort telemetry).
+      keepalive: true,
     });
   } catch {
     /* analytics must never break the UI */

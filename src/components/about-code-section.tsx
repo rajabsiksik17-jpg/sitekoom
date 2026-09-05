@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Reveal } from "@/components/reveal";
 import { localize } from "@/lib/utils";
-import { FolderGit2, TerminalSquare } from "lucide-react";
+import { FolderGit2, TerminalSquare, ArrowRight, ArrowLeft } from "lucide-react";
 import { useCodeReveal, CodeLine } from "@/components/code-reveal";
+import { localizePath } from "@/lib/i18n/config";
 import type { AboutCodeSection } from "@/lib/content-sections";
 
 type Token = readonly [text: string, cls: string];
@@ -57,6 +59,7 @@ export function AboutCodeSection({ data, locale }: { data: AboutCodeSection; loc
   const desc = localize(locale, data.desc_ar, data.desc_en);
   const tabs = data.tabs ?? ["architecture.ts", "database.sql", "api.ts"];
   const [activeTab, setActiveTab] = useState(0);
+  const Arrow = isAr ? ArrowLeft : ArrowRight;
 
   const { ref, visibleLines, done } = useCodeReveal(CODE.length, 55);
 
@@ -116,6 +119,19 @@ export function AboutCodeSection({ data, locale }: { data: AboutCodeSection; loc
           </div>
         </Reveal>
       </div>
+
+      {/* CTA */}
+      <Reveal delay={60}>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link href={localizePath("/request-project", locale)} className="btn-primary px-8 py-3 text-sm sm:text-base">
+            {isAr ? "ابدأ مشروعك" : "Start Your Project"}
+            <Arrow className="h-4 w-4" />
+          </Link>
+          <Link href={localizePath("/contact", locale)} className="btn-secondary px-8 py-3 text-sm sm:text-base">
+            {isAr ? "اتصل بنا" : "Contact Us"}
+          </Link>
+        </div>
+      </Reveal>
     </section>
   );
 }
