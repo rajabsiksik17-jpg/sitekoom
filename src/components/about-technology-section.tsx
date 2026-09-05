@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { Reveal } from "@/components/reveal";
 import { localize } from "@/lib/utils";
@@ -19,36 +19,6 @@ export function AboutTechnologySection({
 
   return (
     <section className="container-site overflow-hidden py-16 sm:py-20 lg:py-24">
-      <style jsx>{`
-        @keyframes sitekoom-number-pulse {
-          0%,
-          100% {
-            transform: scale(1);
-            opacity: 0.82;
-            text-shadow: 0 0 0 rgba(108, 99, 255, 0);
-          }
-
-          50% {
-            transform: scale(1.18);
-            opacity: 1;
-            text-shadow: 0 0 14px rgba(108, 99, 255, 0.35);
-          }
-        }
-
-        .sitekoom-number-pulse {
-          display: block;
-          transform-origin: center center;
-          animation: sitekoom-number-pulse 2.4s ease-in-out infinite;
-          will-change: transform, opacity, text-shadow;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .sitekoom-number-pulse {
-            animation: none;
-          }
-        }
-      `}</style>
-
       <div
         dir={isAr ? "rtl" : "ltr"}
         className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16 xl:gap-20"
@@ -94,7 +64,6 @@ export function AboutTechnologySection({
                         <p className="font-semibold leading-6 text-ink-900">
                           {t}
                         </p>
-
                         {d ? (
                           <p className="mt-0.5 text-sm leading-6 text-gray-600 sm:text-[15px]">
                             {d}
@@ -113,11 +82,7 @@ export function AboutTechnologySection({
         <Reveal delay={100} className="min-w-0">
           <div
             className="relative mx-auto aspect-square w-full max-w-[20rem] sm:max-w-[25rem] lg:max-w-[29rem] xl:max-w-[32rem]"
-            aria-label={
-              isAr
-                ? "منظومة سايتكم التقنية"
-                : "Sitekoom technology ecosystem"
-            }
+            aria-label={isAr ? "منظومة سايتكم التقنية" : "Sitekoom technology ecosystem"}
           >
             {/* Ambient glow */}
             <div
@@ -125,14 +90,12 @@ export function AboutTechnologySection({
               aria-hidden="true"
             />
 
-            {/* Outer orbit ring */}
+            {/* Static orbit rings - animation is intentionally applied only to rings */}
             <div
               className="orbit-spin pointer-events-none absolute inset-[12%] rounded-full border border-dashed border-brand-200/45"
               style={{ animationDuration: "70s" }}
               aria-hidden="true"
             />
-
-            {/* Inner orbit ring */}
             <div
               className="orbit-spin-rev pointer-events-none absolute inset-[29%] rounded-full border border-brand-100/60"
               style={{ animationDuration: "50s" }}
@@ -152,7 +115,6 @@ export function AboutTechnologySection({
                   className="pointer-events-none absolute inset-[-7px] rounded-full border border-brand-100/45"
                   aria-hidden="true"
                 />
-
                 <span
                   className="pointer-events-none absolute inset-[-14px] rounded-full border border-brand-50/70"
                   aria-hidden="true"
@@ -164,7 +126,6 @@ export function AboutTechnologySection({
                 >
                   SITEKOOM
                 </span>
-
                 <span className="mt-1 text-[10px] font-medium text-gray-500 sm:text-xs">
                   {isAr ? "مشروعك" : "Your Business"}
                 </span>
@@ -187,21 +148,11 @@ export function AboutTechnologySection({
                   <div className="absolute left-1/2 top-[5%] -translate-x-1/2 -translate-y-1/2">
                     <div
                       className="pointer-events-auto w-[6.9rem] max-w-[30vw] rounded-2xl border border-white/70 bg-white/90 px-2.5 py-2 text-center shadow-soft backdrop-blur-md transition duration-300 hover:border-brand-300 hover:shadow-glow sm:w-32 sm:px-3 sm:py-2.5 lg:w-36 lg:px-4 lg:py-3"
-                      style={{
-                        transform: `rotate(${-angle}deg)`,
-                      }}
+                      style={{ transform: `rotate(${-angle}deg)` }}
                     >
-                      {/* Animated number */}
-                      <span
-                        className="sitekoom-number-pulse block text-[14px] font-black leading-none text-brand-600 sm:text-[16px]"
-                        style={{
-                          animationDelay: `${i * 180}ms`,
-                        }}
-                      >
+                      <span className="block text-[10px] font-extrabold text-brand-600 sm:text-xs">
                         {String(i + 1).padStart(2, "0")}
                       </span>
-
-                      {/* Node title */}
                       <span className="mt-1 block break-words text-[11px] font-semibold leading-[1.35] text-ink-900 sm:text-sm">
                         {t}
                       </span>
