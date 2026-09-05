@@ -15,8 +15,8 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
     <section className="container-site py-16 sm:py-20">
       <div dir={isAr ? "rtl" : "ltr"} className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
         {/* Text side */}
-        <Reveal>
-          <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl lg:whitespace-nowrap">{title}</h2>
+        <Reveal className="min-w-0">
+          <h2 className="text-3xl font-extrabold text-ink-900 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">{title}</h2>
           <p className="mt-4 text-lg font-bold text-brand-700">{highlight}</p>
           <p className="mt-4 leading-relaxed text-gray-600">{desc}</p>
 
@@ -29,7 +29,7 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-ink-900">{t}</p>
                     <p className="text-sm leading-relaxed text-gray-600">{d}</p>
                   </div>
@@ -40,7 +40,7 @@ export function AboutTechnologySection({ data, locale }: { data: AboutPhilosophy
         </Reveal>
 
         {/* Orbital visual (all breakpoints; scales down on mobile) */}
-        <Reveal delay={100}>
+        <Reveal delay={100} className="min-w-0">
           <div className="relative mx-auto aspect-square w-full max-w-[22rem] sm:max-w-[26rem] lg:max-w-[30rem]">
             {/* radial glow */}
             <div className="pointer-events-none absolute inset-0 rounded-full bg-brand-gradient opacity-[0.08] blur-3xl" aria-hidden="true" />
