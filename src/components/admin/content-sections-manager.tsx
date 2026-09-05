@@ -8,7 +8,7 @@ import { PageTitle, Spinner, Badge } from "@/components/admin/ui";
 import { Field } from "@/components/admin/fields";
 import { cn } from "@/lib/utils";
 import type {
-  IntroSection, ContactIntroSection, ContactProcessSection, AboutProcessSection, AboutPhilosophySection,
+  IntroSection, ContactIntroSection, ContactProcessSection, AboutProcessSection, AboutPhilosophySection, AboutCodeSection,
 } from "@/lib/content-sections";
 
 type Sections = {
@@ -16,6 +16,7 @@ type Sections = {
   contact_intro: ContactIntroSection;
   contact_process: ContactProcessSection;
   about_process: AboutProcessSection;
+  about_code: AboutCodeSection;
   about_technology: AboutPhilosophySection;
 };
 
@@ -24,6 +25,7 @@ const TABS = [
   { key: "contact_intro", label: "تواصل — قسم 1" },
   { key: "contact_process", label: "تواصل — قسم 2" },
   { key: "about_process", label: "من نحن — كيف نبني" },
+  { key: "about_code", label: "من نحن — كود" },
   { key: "about_technology", label: "من نحن — الفلسفة" },
 ] as const;
 
@@ -45,6 +47,7 @@ export function ContentSectionsManager() {
       contact_intro: raw.contact_intro ?? ({} as ContactIntroSection),
       contact_process: raw.contact_process ?? ({} as ContactProcessSection),
       about_process: raw.about_process ?? ({} as AboutProcessSection),
+      about_code: raw.about_code ?? ({} as AboutCodeSection),
       about_technology: raw.about_technology ?? ({} as AboutPhilosophySection),
     });
     setLoading(false);
@@ -139,6 +142,20 @@ export function ContentSectionsManager() {
             steps={(sections.about_process.steps ?? []).map((s) => ({ title_ar: s.ar.title, title_en: s.en.title, desc_ar: s.ar.desc, desc_en: s.en.desc, icon: s.icon }))}
             onChange={(v) => patch("about_process", { steps: v.map((s) => ({ ar: { title: s.title_ar, desc: s.desc_ar }, en: { title: s.title_en, desc: s.desc_en }, icon: s.icon })) })}
           />
+        </SectionShell>
+      )}
+
+      {/* ─── about_code ─── */}
+      {activeTab === "about_code" && (
+        <SectionShell enabled={sections.about_code.enabled ?? true} onToggle={(v) => patch("about_code", { enabled: v })}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="العنوان (عربي)"><input className="input" value={sections.about_code.title_ar ?? ""} onChange={(e) => patch("about_code", { title_ar: e.target.value })} /></Field>
+            <Field label="Title (EN)"><input className="input" dir="ltr" value={sections.about_code.title_en ?? ""} onChange={(e) => patch("about_code", { title_en: e.target.value })} /></Field>
+            <div className="sm:col-span-2"><Field label="النص (عربي)"><textarea className="input min-h-[100px]" value={sections.about_code.desc_ar ?? ""} onChange={(e) => patch("about_code", { desc_ar: e.target.value })} /></Field></div>
+            <div className="sm:col-span-2"><Field label="Description (EN)"><textarea className="input min-h-[100px]" dir="ltr" value={sections.about_code.desc_en ?? ""} onChange={(e) => patch("about_code", { desc_en: e.target.value })} /></Field></div>
+            <Field label="اسم الملف"><input className="input" dir="ltr" value={sections.about_code.filename ?? ""} onChange={(e) => patch("about_code", { filename: e.target.value })} /></Field>
+            <Field label="الأكواد (Tabs)" hint="افصل بينها بفاصلة"><input className="input" dir="ltr" value={(sections.about_code.tabs ?? []).join(", ")} onChange={(e) => patch("about_code", { tabs: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} /></Field>
+          </div>
         </SectionShell>
       )}
 

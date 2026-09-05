@@ -71,11 +71,22 @@ export interface AboutPhilosophySection {
   items: AboutPhilosophyItem[];
 }
 
+export interface AboutCodeSection {
+  enabled: boolean;
+  title_ar: string;
+  title_en: string;
+  desc_ar: string;
+  desc_en: string;
+  filename: string;
+  tabs: string[];
+}
+
 export interface ContentSections {
   homepage_intro: IntroSection;
   contact_intro: ContactIntroSection;
   contact_process: ContactProcessSection;
   about_process: AboutProcessSection;
+  about_code: AboutCodeSection;
   about_technology: AboutPhilosophySection;
 }
 
@@ -123,6 +134,15 @@ const defaults: ContentSections = {
       { ar: { title: "تطوير مستمر", desc: "نبقى معك بعد الإطلاق للتحسين والنمو." }, en: { title: "Continuous Growth", desc: "We stay with you after launch to improve and grow the product." } },
     ],
   },
+  about_code: {
+    enabled: true,
+    title_ar: "نحوّل التعقيد إلى تجربة بسيطة.",
+    title_en: "We Turn Complexity Into Simplicity.",
+    desc_ar: "خلف كل تجربة رقمية ناجحة، هناك بنية مدروسة وكود مكتوب ليعمل بكفاءة، لا ليبدو جيدًا فقط. في سايتكم نبني الحل من الداخل إلى الخارج، من منطق النظام والبيانات إلى الواجهة التي يتعامل معها المستخدم كل يوم.",
+    desc_en: "Behind every successful digital experience is thoughtful architecture and code built to perform, not simply to look good. At Sitekoom, we build from the inside out — from system logic and data to the interface users interact with every day.",
+    filename: "SITEKOOM_CORE/architecture.ts",
+    tabs: ["architecture.ts", "database.sql", "api.ts"],
+  },
 };
 
 export const getContentSections = cache(async (): Promise<ContentSections> => {
@@ -134,6 +154,7 @@ export const getContentSections = cache(async (): Promise<ContentSections> => {
     contact_intro: { ...defaults.contact_intro, ...(raw.contact_intro ?? {}) },
     contact_process: { ...defaults.contact_process, ...(raw.contact_process ?? {}) },
     about_process: { ...defaults.about_process, ...(raw.about_process ?? {}) },
+    about_code: { ...defaults.about_code, ...(raw.about_code ?? {}) },
     about_technology: { ...defaults.about_technology, ...(raw.about_technology ?? {}) },
   };
 });

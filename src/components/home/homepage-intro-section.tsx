@@ -1,13 +1,14 @@
 "use client";
 
+import { useRef } from "react";
 import { Reveal } from "@/components/reveal";
 import { localize } from "@/lib/utils";
 import { CheckCircle2, Braces, Layers, Zap, Boxes } from "lucide-react";
+import { useCodeReveal, CodeLine } from "@/components/code-reveal";
 import type { IntroSection } from "@/lib/content-sections";
 
 type Token = readonly [text: string, cls: string];
 
-// A full, realistic-looking Sitekoom "engine" source file with syntax highlighting.
 const CODE: Token[][] = [
   [["//", "tok-comment"], [" SITEKOOM_ENGINE", "tok-comment"], [" — digital solution blueprint", "tok-comment"]],
   [["const", "tok-keyword"], [" sitekoom", "tok-var"], [" = {", "tok-punct"]],
@@ -34,19 +35,19 @@ const CODE: Token[][] = [
 ];
 
 const TOKEN_CLASS: Record<string, string> = {
-  "tok-comment": "text-white/30 italic",
+  "tok-comment": "text-white/35 italic",
   "tok-keyword": "text-purple-300",
   "tok-var": "text-brand-300",
   "tok-fn": "text-cyan-300",
   "tok-prop": "text-sky-300",
   "tok-string": "text-green-300",
-  "tok-punct": "text-white/45",
+  "tok-punct": "text-white/50",
 };
 
 const PILLS_AR = ["مصمم من الصفر", "أداء عالٍ", "تقنيات حديثة", "بنية قابلة للتوسع"];
 const PILLS_EN = ["Built From Scratch", "High Performance", "Modern Technology", "Scalable Architecture"];
-// floating animation classes + staggered delays
 const PILL_ANIM = ["pill-float-a", "pill-float-b", "pill-float-c", "pill-float-a"];
+const PILL_ICONS = [Boxes, Zap, Braces, Layers];
 
 export function HomepageIntroSection({ data, locale }: { data: IntroSection; locale: "ar" | "en" }) {
   const isAr = locale === "ar";
@@ -56,7 +57,6 @@ export function HomepageIntroSection({ data, locale }: { data: IntroSection; loc
   const points = (isAr ? data.points_ar : data.points_en) ?? [];
   const pills = isAr ? PILLS_AR : PILLS_EN;
 
-  // Fallback descriptions if the DB value is still empty (graceful).
   const resolvedDesc =
     desc ||
     (isAr
@@ -69,6 +69,18 @@ export function HomepageIntroSection({ data, locale }: { data: IntroSection; loc
       : isAr
         ? ["حلول مصممة من الصفر", "أداء وسرعة وتجربة مستخدم محسّنة", "تقنيات حديثة وقابلة للتوسع", "دعم وتطوير مستمر بعد الإطلاق"]
         : ["Solutions built from scratch", "Performance, speed and a refined experience", "Modern, scalable technology", "Continuous support after launch"];
+
+  const { ref, visibleLines, done } = useCodeReveal(CODE.length, 80);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // subtle mouse-follow glow via CSS variables (only while pointer moves)
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const el = editorRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  }
 
   return (
     <section className="container-site py-16 sm:py-24">
@@ -94,61 +106,67 @@ export function HomepageIntroSection({ data, locale }: { data: IntroSection; loc
 
         {/* VS Code visual */}
         <Reveal delay={120}>
-          <div className="relative">
+          <div className="relative py-6 sm:py-10">
             {/* soft purple glow behind the editor */}
-            <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-brand-gradient opacity-15 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-brand-gradient opacity-15 blur-3xl" aria-hidden="true" />
 
-            {/* Floating pills */}
-            <div className="relative z-10">
-              {/* Code editor */}
-              <div className="relative overflow-hidden rounded-2xl border border-white/12 bg-ink-900/90 shadow-glow backdrop-blur-sm">
-                {/* title bar */}
-                <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-                  <span className="h-3 w-3 rounded-full bg-red-400/90" />
-                  <span className="h-3 w-3 rounded-full bg-amber-400/90" />
-                  <span className="h-3 w-3 rounded-full bg-green-400/90" />
-                  <span className="ms-2 truncate text-xs font-semibold tracking-wide text-white/60" dir="ltr">
-                    SITEKOOM_ENGINE/digital_solution.ts
-                  </span>
-                </div>
+            {/* editor with hover glow following the pointer */}
+            <div
+              ref={editorRef}
+              onPointerMove={onPointerMove}
+              className="relative overflow-hidden rounded-2xl border border-white/12 bg-ink-900/90 shadow-glow backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-400/30 hover:shadow-[0_0_50px_rgba(122,26,255,0.25)]"
+            >
+              {/* mouse-follow glow */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 hover:opacity-100"
+                style={{ background: "radial-gradient(360px circle at var(--mx, 50%) var(--my, 40%), rgba(122,26,255,0.10), transparent 65%)" }}
+                aria-hidden="true"
+              />
 
-                {/* code body */}
-                <div className="h-[440px] overflow-hidden p-5 font-mono text-[13px] leading-[1.75] sm:h-[520px] lg:h-[560px]" dir="ltr" aria-label="Sitekoom engine code preview">
-                  {CODE.map((line, i) => (
-                    <div key={i} className="flex min-h-[1.75rem]">
-                      <span className="w-8 shrink-0 select-none text-right text-white/20 pe-3">{i + 1}</span>
-                      <span className="flex flex-1 flex-wrap gap-x-1 text-left">
-                        {line.map(([text, cls], j) =>
-                          text ? (
-                            <span key={j} className={TOKEN_CLASS[cls] ?? "text-white/80"}>
-                              {text}
-                            </span>
-                          ) : null,
-                        )}
-                        {i === 13 && <span className="caret ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-brand-300" aria-hidden="true" />}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              {/* title bar */}
+              <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-red-400/90" />
+                <span className="h-3 w-3 rounded-full bg-amber-400/90" />
+                <span className="h-3 w-3 rounded-full bg-green-400/90" />
+                <span className="ms-2 truncate text-xs font-semibold tracking-wide text-white/60" dir="ltr">
+                  SITEKOOM_ENGINE/digital_solution.ts
+                </span>
               </div>
 
-              {/* Floating feature pills overlapping the bottom edge */}
-              <div className="pointer-events-none absolute inset-x-4 -bottom-5 flex flex-wrap justify-center gap-2.5 sm:absolute sm:inset-x-6 sm:-bottom-5">
-                {pills.map((p, i) => (
-                  <span
-                    key={p}
-                    className={`${PILL_ANIM[i]} pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-ink-800/90 px-3 py-1.5 text-[11px] font-semibold text-white shadow-soft backdrop-blur-md transition-shadow duration-300 hover:border-brand-400/70 hover:shadow-glow`}
-                    style={{ animationDuration: `${4.5 + i * 1.2}s`, animationDelay: `${i * 0.7}s` }}
-                  >
-                    {i === 0 ? <Boxes className="h-3 w-3 text-brand-300" /> : i === 1 ? <Zap className="h-3 w-3 text-brand-300" /> : i === 2 ? <Braces className="h-3 w-3 text-brand-300" /> : <Layers className="h-3 w-3 text-brand-300" />}
-                    {p}
-                  </span>
+              {/* code body */}
+              <div ref={ref} className="h-[440px] overflow-hidden p-5 font-mono text-[13px] leading-[1.75] sm:h-[520px] lg:h-[560px]" dir="ltr" aria-label="Sitekoom engine code preview">
+                {CODE.map((line, i) => (
+                  <CodeLine key={i} index={i} tokens={line} visible={visibleLines > i} caret={done && i === CODE.length - 1} tokenClass={TOKEN_CLASS} />
                 ))}
               </div>
             </div>
 
-            {/* bottom spacer so pills don't clip into next section */}
-            <div className="h-8" aria-hidden="true" />
+            {/* Floating pills around the editor */}
+            <div className="relative mt-6 flex flex-wrap justify-center gap-2.5 sm:absolute sm:inset-x-0 sm:mt-0">
+              <div className="flex flex-wrap justify-center gap-2.5 sm:absolute sm:inset-0">
+                {pills.map((p, i) => {
+                  const Icon = PILL_ICONS[i];
+                  return (
+                    <span
+                      key={p}
+                      className={`${PILL_ANIM[i]} pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-brand-200/70 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-ink-900 shadow-soft backdrop-blur-md transition-all duration-300 hover:scale-[1.04] hover:border-brand-400 hover:shadow-glow sm:absolute sm:z-10 ${
+                        i === 0
+                          ? "sm:-start-4 sm:top-8"
+                          : i === 1
+                            ? "sm:-end-4 sm:top-24"
+                            : i === 2
+                              ? "sm:-start-3 sm:bottom-16"
+                              : "sm:-end-3 sm:bottom-6"
+                      }`}
+                      style={{ animationDuration: `${4.8 + i * 1.1}s`, animationDelay: `${i * 0.8}s` }}
+                    >
+                      <Icon className="h-3.5 w-3.5 text-brand-600" />
+                      {p}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </Reveal>
       </div>

@@ -14,6 +14,7 @@ import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 import { getContentSections } from "@/lib/content-sections";
 import { AboutProcessSectionView } from "@/components/about-process-section";
+import { AboutCodeSection } from "@/components/about-code-section";
 import { AboutTechnologySection } from "@/components/about-technology-section";
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -46,6 +47,14 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
 
         {contentSections.about_process.enabled && (
           <AboutProcessSectionView data={contentSections.about_process} locale={locale} />
+        )}
+
+        {contentSections.about_code.enabled && (
+          <AboutCodeSection data={contentSections.about_code} locale={locale} />
+        )}
+
+        {contentSections.about_technology.enabled && (
+          <AboutTechnologySection data={contentSections.about_technology} locale={locale} />
         )}
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -154,10 +163,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               ))}
             </div>
           </section>
-        )}
-
-        {contentSections.about_technology.enabled && (
-          <AboutTechnologySection data={contentSections.about_technology} locale={locale} />
         )}
 
         <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} workingHours={workingHours} />
