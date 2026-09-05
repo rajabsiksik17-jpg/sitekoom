@@ -12,18 +12,22 @@ import { ar, en } from "@/lib/i18n/dictionaries";
 import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
+import { getContentSections } from "@/lib/content-sections";
+import { AboutProcessSectionView } from "@/components/about-process-section";
+import { AboutTechnologySection } from "@/components/about-technology-section";
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
-  const [company, team, stats, social, settings, appointmentSettings] = await Promise.all([
+  const [company, team, stats, social, settings, appointmentSettings, contentSections] = await Promise.all([
     getCompanyInfo(),
     getTeamMembers(),
     getStatistics(),
     getSocialLinks(),
     getSettings(),
     getAppointmentSettings(),
+    getContentSections(),
   ]);
 
   const workingHours = formatWorkingHours(appointmentSettings, locale);
@@ -39,6 +43,10 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       <PageHero title={dict.nav.about} subtitle={about} pageKey="about" />
       <div className="container-site py-12">
         <Breadcrumbs locale={locale} items={[{ name: dict.nav.about, path: "/about" }]} />
+
+        {contentSections.about_process.enabled && (
+          <AboutProcessSectionView data={contentSections.about_process} locale={locale} />
+        )}
 
         <div className="grid gap-6 md:grid-cols-2">
           {(mission || vision) && (
@@ -146,6 +154,10 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               ))}
             </div>
           </section>
+        )}
+
+        {contentSections.about_technology.enabled && (
+          <AboutTechnologySection data={contentSections.about_technology} locale={locale} />
         )}
 
         <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} workingHours={workingHours} />

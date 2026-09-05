@@ -19,6 +19,43 @@
   }
 }
 
+/* Subtle floating motion for feature pills (transform/opacity only) */
+@keyframes pill-float-a {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes pill-float-b {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(5px) translateX(3px); }
+}
+@keyframes pill-float-c {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px) translateX(-3px); }
+}
+
+/* Slow orbital rotation for the about "orbital system" */
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes orbit-spin-rev {
+  to { transform: rotate(-360deg); }
+}
+
+/* Tiny light particle travelling along the timeline */
+@keyframes node-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-float-a, .pill-float-b, .pill-float-c {
+    animation: none !important;
+  }
+  .orbit-spin, .orbit-spin-rev {
+    animation: none !important;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;

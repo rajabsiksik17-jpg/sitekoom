@@ -95,6 +95,7 @@ export const adminNavGroups: NavGroup[] = [
     children: [
       { key: "slider", label: "سلايدر الرئيسية", href: "/admin/slider", permission: "homepage.view" },
       { key: "homepage", label: "محتوى الرئيسية", href: "/admin/homepage", permission: "homepage.view" },
+      { key: "contentSections", label: "الأقسام التعريفية", href: "/admin/content-sections", permission: "homepage.view" },
       { key: "pageHero", label: "خلفيات رأس الصفحة", href: "/admin/page-hero", permission: "homepage.view" },
       { key: "company", label: "الشركة", href: "/admin/company", permission: "company.view" },
       { key: "team", label: "فريق العمل", href: "/admin/team", permission: "company.view" },
