@@ -74,6 +74,17 @@ export function AboutCodeSection({ data, locale }: { data: AboutCodeSection; loc
           </span>
           <h2 className="mt-5 text-3xl font-extrabold leading-tight text-ink-900 sm:text-4xl">{title}</h2>
           <p className="mt-4 leading-relaxed text-gray-600">{desc}</p>
+
+          {/* CTA below the text (in-flow) */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href={localizePath("/request-project", locale)} className="btn-primary px-6 py-3">
+              {isAr ? "ابدأ مشروعك" : "Start Your Project"}
+              <Arrow className="h-4 w-4" />
+            </Link>
+            <Link href={localizePath("/contact", locale)} className="btn-secondary px-6 py-3">
+              {isAr ? "اتصل بنا" : "Contact Us"}
+            </Link>
+          </div>
         </Reveal>
 
         {/* Architecture code editor */}
@@ -119,19 +130,6 @@ export function AboutCodeSection({ data, locale }: { data: AboutCodeSection; loc
           </div>
         </Reveal>
       </div>
-
-      {/* CTA */}
-      <Reveal delay={60}>
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link href={localizePath("/request-project", locale)} className="btn-primary px-8 py-3 text-sm sm:text-base">
-            {isAr ? "ابدأ مشروعك" : "Start Your Project"}
-            <Arrow className="h-4 w-4" />
-          </Link>
-          <Link href={localizePath("/contact", locale)} className="btn-secondary px-8 py-3 text-sm sm:text-base">
-            {isAr ? "اتصل بنا" : "Contact Us"}
-          </Link>
-        </div>
-      </Reveal>
     </section>
   );
 }

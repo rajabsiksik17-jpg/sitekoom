@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { Reveal } from "@/components/reveal";
 import { localize } from "@/lib/utils";
-import { CheckCircle2, Braces, Layers, Zap, Boxes } from "lucide-react";
+import { CheckCircle2, Braces, Layers, Zap, Boxes, ArrowRight, ArrowLeft } from "lucide-react";
 import { useCodeReveal, CodeLine } from "@/components/code-reveal";
+import { localizePath } from "@/lib/i18n/config";
 import type { IntroSection } from "@/lib/content-sections";
 
 type Token = readonly [text: string, cls: string];
@@ -51,6 +53,7 @@ const PILL_ICONS = [Boxes, Zap, Braces, Layers];
 
 export function HomepageIntroSection({ data, locale }: { data: IntroSection; locale: "ar" | "en" }) {
   const isAr = locale === "ar";
+  const Arrow = isAr ? ArrowLeft : ArrowRight;
   const title = localize(locale, data.title_ar, data.title_en);
   const highlight = localize(locale, data.highlight_ar, data.highlight_en);
   const desc = localize(locale, data.desc_ar, data.desc_en);
@@ -102,6 +105,16 @@ export function HomepageIntroSection({ data, locale }: { data: IntroSection; loc
               </li>
             ))}
           </ul>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href={localizePath("/request-project", locale)} className="btn-primary px-6 py-3">
+              {isAr ? "ابدأ مشروعك" : "Start Your Project"}
+              <Arrow className="h-4 w-4" />
+            </Link>
+            <Link href={localizePath("/contact", locale)} className="btn-secondary px-6 py-3">
+              {isAr ? "اتصل بنا" : "Contact Us"}
+            </Link>
+          </div>
         </Reveal>
 
         {/* VS Code visual */}

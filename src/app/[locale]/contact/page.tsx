@@ -9,13 +9,11 @@ import { ar, en } from "@/lib/i18n/dictionaries";
 import { getSocialLinks } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
-import { getContentSections } from "@/lib/content-sections";
-import { ContactIntro, ContactProcess } from "@/components/contact-sections";
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
-  const [social, settings, appointmentSettings, contentSections] = await Promise.all([getSocialLinks(), getSettings(), getAppointmentSettings(), getContentSections()]);
+  const [social, settings, appointmentSettings] = await Promise.all([getSocialLinks(), getSettings(), getAppointmentSettings()]);
   const g = settings.general;
   const workingHours = formatWorkingHours(appointmentSettings, locale);
 
@@ -111,9 +109,6 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
           </div>
         ) : null}
       </div>
-
-      {contentSections.contact_intro.enabled && <ContactIntro data={contentSections.contact_intro} locale={locale} />}
-      {contentSections.contact_process.enabled && <ContactProcess data={contentSections.contact_process} locale={locale} />}
     </>
   );
 }
