@@ -13,11 +13,13 @@ import { CompanyVideoSection } from "@/components/home/company-video-section";
 import { StatisticsSection } from "@/components/home/statistics-section";
 import { CtaSection } from "@/components/home/cta-section";
 import { GoogleReviewsSection } from "@/components/home/google-reviews-section";
+import { HomepageIntroSection } from "@/components/home/homepage-intro-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import { getGoogleReviews, getGoogleReviewsSettings } from "@/lib/reviews";
+import { getContentSections } from "@/lib/content-sections";
 import {
   getSliders,
   getMarqueeMessages,
@@ -66,7 +68,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements, reviews, reviewsSettings] = await Promise.all([
+  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements, reviews, reviewsSettings, contentSections] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
@@ -80,6 +82,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getAchievements(),
     getGoogleReviews(),
     getGoogleReviewsSettings(),
+    getContentSections(),
   ]);
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.key, s]));
@@ -116,6 +119,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {isActive("hero") && <HeroSlider slides={sliders} />}
 
       {isActive("marquee") && <Marquee messages={marquee} />}
+
+      {contentSections.homepage_intro.enabled && (
+        <HomepageIntroSection data={contentSections.homepage_intro} locale={locale} />
+      )}
 
       {isActive("services") && (
         <section className="container-site py-20">

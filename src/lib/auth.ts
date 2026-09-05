@@ -23,10 +23,10 @@ async function loadProfile(userId: string): Promise<AuthProfile | null> {
 
   let permissions: string[] = [];
   if (user.role?.is_super) {
-    const { data: all } = await supabase.from("permissions").select("key");
+    const { data: all } = await supabase.from("permissions").select("key").eq("is_active", true);
     permissions = (all ?? []).map((p) => p.key);
   } else {
-    const [{ data: rolePerms }, { data: userPerms }] = await Promise.all([
+    const [{ data: rolePerms }, { data: userPerms }, { data: activePerms }] = await Promise.all([
       supabase
         .from("role_permissions")
         .select("permission_key")
@@ -35,7 +35,10 @@ async function loadProfile(userId: string): Promise<AuthProfile | null> {
         .from("user_permissions")
         .select("permission_key, allowed")
         .eq("user_id", userId),
+      supabase.from("permissions").select("key").eq("is_active", true),
     ]);
+
+    const active = new Set((activePerms ?? []).map((p: { key: string }) => p.key));
 
     const denied = new Set(
       (userPerms ?? []).filter((u) => u.allowed === false).map((u) => u.permission_key),
@@ -48,7 +51,7 @@ async function loadProfile(userId: string): Promise<AuthProfile | null> {
     (rolePerms ?? []).forEach((r) => set.add(r.permission_key));
     granted.forEach((g) => set.add(g));
     denied.forEach((d) => set.delete(d));
-    permissions = Array.from(set);
+    permissions = Array.from(set).filter((k) => active.has(k));
   }
 
   return { ...(user as User), role: user.role as Role | null, permissions };

@@ -1,15 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createAdminOtp } from "@/lib/otp";
 import { isAdminDeviceTrusted } from "@/lib/trusted-devices";
+import { recordAdminLogin } from "@/lib/admin-login";
 import { sendSiteEmail } from "@/lib/email/send";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Record successful login (last_login_at + login history).
+  await recordAdminLogin(
+    user.id,
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    request.headers.get("user-agent"),
+  );
 
   const settings = await getEmailSettings();
   if (!settings.otp_enabled) {

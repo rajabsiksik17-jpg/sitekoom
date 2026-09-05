@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/toast";
 import { PageTitle, Spinner } from "@/components/admin/ui";
 import { Field } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { FileUpload } from "@/components/admin/file-upload";
 
 type SettingsMap = Record<string, Record<string, unknown>>;
 
@@ -98,6 +99,14 @@ export function SettingsManager() {
               </label>
             </Field>
             <Field label="مدة الاحتفاظ بمحادثات الزوار (ساعة)"><input className="input" dir="ltr" type="number" value={Number(g.chat_retention_hours ?? 24)} onChange={(e) => update("general", "chat_retention_hours", Number(e.target.value))} /></Field>
+            <Field label="ملف Company Profile (PDF)"><FileUpload value={String(g.company_profile_url ?? "")} onChange={(url) => update("general", "company_profile_url", url)} folder="company" accept="application/pdf" /></Field>
+            <Field label="مكان ظهور Company Profile">
+              <select className="input" value={String(g.company_profile_display ?? "none")} onChange={(e) => update("general", "company_profile_display", e.target.value)}>
+                <option value="none">لا يظهر في الموقع</option>
+                <option value="floating">زر عائم (Homepage + About)</option>
+                <option value="header">في الهيدر</option>
+              </select>
+            </Field>
           </div>
         )}
 
@@ -116,6 +125,8 @@ export function SettingsManager() {
         {tab === "contact" && (
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="بريد استقبال الطلبات"><input className="input" dir="ltr" value={String(contact.destination_email ?? "")} onChange={(e) => update("contact", "destination_email", e.target.value)} /></Field>
+            <Field label="بريد الاستفسارات"><input className="input" dir="ltr" value={String(contact.inquiry_email ?? "")} onChange={(e) => update("contact", "inquiry_email", e.target.value)} /></Field>
+            <Field label="بريد عروض الأسعار"><input className="input" dir="ltr" value={String(contact.quote_email ?? "")} onChange={(e) => update("contact", "quote_email", e.target.value)} /></Field>
             <Field label="رد تلقائي">
               <label className="flex items-center gap-2 pt-3 text-sm text-gray-700">
                 <input type="checkbox" checked={Boolean(contact.auto_reply)} onChange={(e) => update("contact", "auto_reply", e.target.checked)} className="rounded border-brand-200 text-brand-600" /> تفعيل الرد التلقائي

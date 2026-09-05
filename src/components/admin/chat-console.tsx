@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Send, X, ArrowRight, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
-import { PageTitle, Badge, Spinner, EmptyState, Modal } from "@/components/admin/ui";
+import { PageTitle, Badge, Spinner, EmptyState, Modal, ConfirmDialog } from "@/components/admin/ui";
 import { cn, timeAgo } from "@/lib/utils";
 import type { LiveChatConversation, LiveChatMessage } from "@/lib/types";
 
@@ -42,6 +42,7 @@ export function ChatConsole() {
   const [sending, setSending] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<LiveChatConversation | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -199,6 +200,15 @@ export function ChatConsole() {
     loadConversations();
   }
 
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    const supabase = supabaseRef.current;
+    await supabase.from("live_chat_conversations").update({ status: "closed", closed_at: new Date().toISOString(), closed_by: "admin" }).eq("id", cancelTarget.id).neq("status", "closed");
+    await supabase.from("live_chat_messages").insert({ conversation_id: cancelTarget.id, sender_type: "system", body: "تم إلغاء المحادثة" });
+    setCancelTarget(null);
+    loadConversations();
+  }
+
   const list = conversations.filter((c) => c.status === tab);
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
@@ -222,10 +232,15 @@ export function ChatConsole() {
             <EmptyState title="لا توجد محادثات" />
           ) : (
             list.map((c) => (
-              <button key={c.id} type="button" onClick={() => { setSelected(c); setMessages([]); }} className={cn("card block w-full p-4 text-start transition-all", selected?.id === c.id ? "border-brand-400 ring-2 ring-brand-200" : "")}>
+              <div key={c.id} role="button" tabIndex={0} onClick={() => { setSelected(c); setMessages([]); }} className={cn("card block w-full cursor-pointer p-4 text-start transition-all", selected?.id === c.id ? "border-brand-400 ring-2 ring-brand-200" : "")}>
                 <div className="flex items-center justify-between gap-2">
                   <p className="min-w-0 truncate font-semibold text-ink-900">{c.visitor_name ?? "زائر"}</p>
-                  <span className="shrink-0 text-xs text-gray-400">{timeAgo(c.created_at, "ar")}</span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="text-xs text-gray-400">{timeAgo(c.created_at, "ar")}</span>
+                    {c.status === "waiting" && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setCancelTarget(c); }} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" title="إلغاء المحادثة"><X className="h-4 w-4" /></button>
+                    )}
+                  </div>
                 </div>
                 {c.is_registered && (
                   <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">عميل مسجل</span>
@@ -235,7 +250,7 @@ export function ChatConsole() {
                 )}
                 <p className="mt-1 truncate text-sm text-gray-500">{c.first_message}</p>
                 {c.visitor_email && <p className="mt-1 truncate text-xs text-gray-400" dir="ltr">{c.visitor_email}</p>}
-              </button>
+              </div>
             ))
           )}
         </div>
@@ -328,6 +343,8 @@ export function ChatConsole() {
         footer={<><button type="button" onClick={() => setConfirmClose(false)} className="btn-secondary px-4 py-2 text-sm">إلغاء</button><button type="button" onClick={confirmCloseConversation} disabled={closing} className="btn-danger px-4 py-2 text-sm">{closing ? <Spinner className="h-4 w-4" /> : "نعم، إنهاء المحادثة"}</button></>}>
         <p className="text-sm text-gray-600">هل أنت متأكد من إنهاء هذه المحادثة؟ بعد إنهائها لن تتمكن من إرسال رسائل جديدة إليها، ويمكن للعميل بدء محادثة جديدة لاحقًا.</p>
       </Modal>
+
+      <ConfirmDialog open={!!cancelTarget} title="إلغاء المحادثة" message="هل أنت متأكد من إلغاء هذه المحادثة؟ لن تبقى كمحادثة جديدة وسيتم تسجيل الإلغاء." onCancel={() => setCancelTarget(null)} onConfirm={confirmCancel} />
     </div>
   );
 }

@@ -152,11 +152,38 @@ function fmtTime(t: string, locale: "ar" | "en"): string {
   return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
 }
 
+/** Compress consecutive day numbers into a readable range (e.g. 0,1,2,3,4 → "0–4"). */
+export function compressWorkingDays(workDays: number[]): (number | [number, number])[] {
+  const sorted = [...new Set(workDays)].sort((a, b) => a - b);
+  const out: (number | [number, number])[] = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+  for (let i = 1; i <= sorted.length; i++) {
+    const cur = sorted[i];
+    if (cur === prev + 1) {
+      prev = cur;
+      continue;
+    }
+    out.push(start === prev ? start : [start, prev]);
+    start = cur;
+    prev = cur;
+  }
+  return out.filter((x) => x !== undefined);
+}
+
+function dayLabel(d: number, locale: "ar" | "en"): string {
+  const names = locale === "ar" ? DAY_NAMES_AR : DAY_NAMES_EN;
+  return names[d] ?? "";
+}
+
 /** Central working-hours string derived from appointment settings (single source). */
 export function formatWorkingHours(settings: AppointmentSettings, locale: "ar" | "en"): string {
-  const names = locale === "ar" ? DAY_NAMES_AR : DAY_NAMES_EN;
-  const days = settings.work_days.map((d) => names[d] ?? "");
+  const sep = locale === "ar" ? "، " : ", ";
+  const rangeSep = locale === "ar" ? " – " : " – ";
+  const days = compressWorkingDays(settings.work_days)
+    .map((d) => (Array.isArray(d) ? `${dayLabel(d[0], locale)}${rangeSep}${dayLabel(d[1], locale)}` : dayLabel(d, locale)))
+    .join(sep);
   const hours = `${fmtTime(settings.start_time, locale)} – ${fmtTime(settings.end_time, locale)}`;
-  if (locale === "ar") return `أيام العمل: ${days.join("، ")} | ${hours}`;
-  return `Working days: ${days.join(", ")} | ${hours}`;
+  if (locale === "ar") return `أيام العمل: ${days} | ${hours}`;
+  return `Working days: ${days} | ${hours}`;
 }

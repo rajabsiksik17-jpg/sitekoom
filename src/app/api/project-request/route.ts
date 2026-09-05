@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
+import { notifyAdminsByPermission } from "@/lib/notify-admins";
 import type { ProjectRequest } from "@/lib/types";
 
 const schema = z.object({
@@ -125,7 +126,9 @@ export async function POST(request: NextRequest) {
   });
 
   // Email to admin (dynamic notification inbox)
-  const destination = await getAdminNotificationEmail();
+  const { data: settingsRow } = await admin.from("site_settings").select("value").eq("key", "contact").single();
+  const contactSettings = (settingsRow?.value ?? {}) as { quote_email?: string };
+  const destination = contactSettings.quote_email || (await getAdminNotificationEmail());
 
   if (destination) {
     const rows = [
@@ -151,6 +154,14 @@ export async function POST(request: NextRequest) {
       title: locale === "en" ? "New project request" : "طلب تسعير جديد",
       body,
     }).catch(() => null);
+
+    await notifyAdminsByPermission("contacts.view", {
+      subject: `New project request — ${saved.service_name ?? saved.other_service ?? ""}`,
+      locale: locale === "en" ? "en" : "ar",
+      type: "pricing_request",
+      title: locale === "en" ? "New project request" : "طلب تسعير جديد",
+      body,
+    });
   }
 
   return NextResponse.json({ ok: true, id: saved.id });

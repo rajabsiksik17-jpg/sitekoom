@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -10,6 +11,7 @@ function LoginForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -95,7 +97,12 @@ function LoginForm() {
           </div>
           <div>
             <label htmlFor="password" className="label">كلمة المرور</label>
-            <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+            <div className="relative">
+              <input id="password" type={show ? "text" : "password"} className="input pe-11" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+              <button type="button" onClick={() => setShow((v) => !v)} className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}>
+                {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 text-gray-600">

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
+import { notifyAdminsByPermission } from "@/lib/notify-admins";
 import { contactRequestBody, autoReplyBody } from "@/lib/email/templates";
 import type { ContactRequest } from "@/lib/types";
 
@@ -131,9 +132,10 @@ export async function POST(request: NextRequest) {
   const { data: settingsRow } = await admin.from("site_settings").select("value").eq("key", "contact").single();
   const contactSettings = (settingsRow?.value ?? {}) as {
     destination_email?: string;
+    inquiry_email?: string;
     auto_reply?: boolean;
   };
-  const destination = await getAdminNotificationEmail();
+  const destination = contactSettings.inquiry_email || (await getAdminNotificationEmail());
   const email = contactRequestBody(saved, locale);
 
   if (destination) {
@@ -141,6 +143,15 @@ export async function POST(request: NextRequest) {
       () => null,
     );
   }
+
+  // Permission-based email notifications for admins handling contacts.
+  await notifyAdminsByPermission("contacts.view", {
+    subject: email.subject,
+    title: locale === "ar" ? "طلب تواصل جديد" : "New contact request",
+    body: email.body,
+    locale,
+    type: "contact_request",
+  });
   if (saved.email && contactSettings.auto_reply !== false) {
     const reply = autoReplyBody(saved, locale);
     await sendSiteEmail({ to: saved.email, subject: reply.subject, locale, type: "contact_autoreply", title: locale === "ar" ? "تم استلام طلبك" : "Request received", body: reply.body }).catch(() => null);

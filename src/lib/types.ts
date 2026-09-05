@@ -17,6 +17,8 @@ export interface Permission {
   name_ar: string;
   name_en: string;
   group_key: string;
+  description: string | null;
+  is_active: boolean;
   sort: number;
 }
 
@@ -30,11 +32,21 @@ export interface User {
   position_en: string | null;
   role_id: string | null;
   status: "active" | "disabled";
+  notify_email: boolean;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
   role?: Role | null;
+}
+
+export interface AdminLoginLog {
+  id: string;
+  user_id: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  success: boolean;
+  created_at: string;
 }
 
 export interface Service {

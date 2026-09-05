@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formRateLimit } from "@/lib/rate-limit";
 import { getAppointmentSettings } from "@/lib/appointments";
 import { sendAppointmentAdminNotification, sendAppointmentCustomerEmail, getAppointmentServices } from "@/lib/appointment-emails";
+import { notifyAdminsByPermission } from "@/lib/notify-admins";
 
 const schema = z.object({
   name: z.string().min(1).max(120),
@@ -66,6 +67,14 @@ export async function POST(request: NextRequest) {
   const services = await getAppointmentServices(body.service_ids);
 
   await sendAppointmentAdminNotification(appointment, services, body.language === "en" ? "en" : "ar");
+
+  await notifyAdminsByPermission("appointments.view", {
+    subject: body.language === "en" ? "New appointment request" : "طلب حجز موعد جديد",
+    locale: body.language === "en" ? "en" : "ar",
+    type: "appointment",
+    title: body.language === "en" ? "New appointment request" : "طلب حجز موعد جديد",
+    body: `<p style="margin:0 0 12px;color:#4b5563;">${body.name} — ${body.date} ${body.time}</p><p style="margin:0;color:#1f2937;font-weight:600;">${body.subject}</p>`,
+  });
 
   // Customer acknowledgement email.
   const rows = [

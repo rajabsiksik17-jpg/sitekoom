@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formRateLimit } from "@/lib/rate-limit";
 import { sendSiteEmail } from "@/lib/email/send";
 import { getAdminNotificationEmail } from "@/lib/admin-notify";
+import { notifyAdminsByPermission } from "@/lib/notify-admins";
 
 const valueSchema = z.object({
   field_key: z.string().max(200),
@@ -277,6 +278,14 @@ export async function POST(request: NextRequest) {
       title: body.language === "en" ? "New offer request" : "طلب عرض جديد",
       body: html,
     }).catch(() => null);
+
+    await notifyAdminsByPermission("submissions.view", {
+      subject: `New offer request — ${offerTitle ?? ""}`,
+      locale: body.language === "en" ? "en" : "ar",
+      type: "offer_request",
+      title: body.language === "en" ? "New offer request" : "طلب عرض جديد",
+      body: html,
+    });
   }
 
   return NextResponse.json({

@@ -6,6 +6,7 @@ import { FloatingContact } from "@/components/live-chat";
 import { FloatingSocial } from "@/components/floating-social";
 import { CookieConsent } from "@/components/cookie-consent";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { CompanyProfileButton } from "@/components/company-profile-button";
 import type { GeneralSettings } from "@/lib/settings";
 import type { Service, SocialLink } from "@/lib/types";
 
@@ -51,6 +52,11 @@ export function SiteChrome({
       {footer}
       <FloatingContact settings={settings} />
       <FloatingSocial social={social} />
+      {settings.company_profile_display === "floating" && settings.company_profile_url && (
+        <div className="fixed bottom-24 end-5 z-40">
+          <CompanyProfileButton settings={settings} locale={locale} />
+        </div>
+      )}
       <CookieConsent />
       <PageViewTracker />
     </>

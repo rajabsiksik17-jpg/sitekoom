@@ -33,6 +33,7 @@ export function ClientEmail() {
   const [logOpen, setLogOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const loadClients = useCallback(async () => {
     const supabase = createClient();
@@ -89,7 +90,12 @@ export function ClientEmail() {
     loadCampaigns();
   }
 
-  const withEmail = useMemo(() => clients.filter((c) => c.email), [clients]);
+  const withEmail = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = clients.filter((c) => c.email);
+    if (!q) return list;
+    return list.filter((c) => (c.name ?? "").toLowerCase().includes(q) || (c.company ?? "").toLowerCase().includes(q));
+  }, [clients, query]);
 
   return (
     <div className="space-y-6">
@@ -113,6 +119,7 @@ export function ClientEmail() {
               <p className="font-semibold text-ink-900">المستلمون</p>
               <span className="text-sm text-gray-500">تم تحديد {selected.size} عميلًا</span>
             </div>
+            <input className="input mb-2" placeholder="ابحث عن العميل بالاسم..." value={query} onChange={(e) => setQuery(e.target.value)} />
             <label className="mb-2 flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded border-brand-200 text-brand-600" /> تحديد الكل
             </label>

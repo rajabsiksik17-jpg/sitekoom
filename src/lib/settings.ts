@@ -33,6 +33,8 @@ export interface GeneralSettings {
   about_logo_width_mobile: number;
   show_project_cta: boolean;
   chat_retention_hours: number;
+  company_profile_url: string;
+  company_profile_display: string; // none | floating | header
 }
 
 export interface SeoSettings {
@@ -48,6 +50,8 @@ export interface SeoSettings {
 
 export interface ContactSettings {
   destination_email: string;
+  inquiry_email: string;
+  quote_email: string;
   smtp_host: string;
   smtp_port: number;
   smtp_user: string;
@@ -107,6 +111,8 @@ const defaults = {
     about_logo_width_mobile: 64,
     show_project_cta: true,
     chat_retention_hours: 24,
+    company_profile_url: "",
+    company_profile_display: "none",
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",
@@ -120,6 +126,8 @@ const defaults = {
   } as SeoSettings,
   contact: {
     destination_email: "",
+    inquiry_email: "",
+    quote_email: "",
     smtp_host: "",
     smtp_port: 587,
     smtp_user: "",

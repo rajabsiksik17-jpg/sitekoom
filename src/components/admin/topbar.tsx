@@ -109,7 +109,7 @@ export function Topbar() {
           </button>
 
           {open && (
-            <div className="absolute end-0 top-12 w-80 overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-card">
+            <div className="absolute end-0 top-12 z-[100] w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-card">
               <div className="flex items-center justify-between border-b border-brand-100 px-4 py-3">
                 <p className="font-bold text-ink-900">الإشعارات</p>
                 {unread > 0 && (

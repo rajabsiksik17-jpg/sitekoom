@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useLocale } from "@/components/providers";
 import { localizePath } from "@/lib/i18n/config";
 import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
+import { CompanyProfileButton } from "@/components/company-profile-button";
 import type { GeneralSettings } from "@/lib/settings";
 
 type NavChild = { key: string; href: string; label: string };
@@ -193,6 +194,11 @@ export function Header({ settings, hasOffers, hasAchievements }: { settings: Gen
           <Link href={href("/appointment")} className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
             {dict.nav.appointment}
           </Link>
+          {settings.company_profile_display === "header" && (
+            <span className="hidden sm:inline-flex">
+              <CompanyProfileButton settings={settings} locale={locale} />
+            </span>
+          )}
           <Link
             href={href(clientAuthed ? "/client-portal" : "/client-login")}
             className={cn(
