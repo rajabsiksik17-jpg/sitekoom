@@ -22,7 +22,7 @@ import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import { getGoogleReviews, getGoogleReviewsSettings } from "@/lib/reviews";
 import { getContentSections } from "@/lib/content-sections";
-import { getSettings } from "@/lib/settings";
+import { getSettings, projectPreviewSettings } from "@/lib/settings";
 import {
   getSliders,
   getMarqueeMessages,
@@ -303,7 +303,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredProjects.map((p, i) => (
                 <Reveal key={p.id} delay={i * 60}>
-                  <ProjectCard project={p} defaultImage={settings.general.project_default_image || undefined} />
+                  <ProjectCard project={p} defaultImage={settings.general.project_default_image || undefined} preview={projectPreviewSettings(settings.general)} />
                 </Reveal>
               ))}
             </div>

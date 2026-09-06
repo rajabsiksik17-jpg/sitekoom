@@ -41,6 +41,12 @@
   to { transform: rotate(-360deg); }
 }
 
+/* Website screenshot preview auto-scroll (object-position animation — no layout shift) */
+@keyframes preview-scroll {
+  0% { object-position: center 0%; }
+  100% { object-position: center 100%; }
+}
+
 /* Tiny light particle travelling along the timeline */
 @keyframes node-pulse {
   0%, 100% { opacity: 0.4; }

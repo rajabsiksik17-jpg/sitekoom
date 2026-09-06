@@ -149,6 +149,7 @@ export interface Project {
   thumbnail: string | null;
   cover_image: string | null;
   logo: string | null;
+  website_screenshot: string | null;
   project_url: string | null;
   technologies: string[];
   status_field: PublishStatus;

@@ -36,6 +36,10 @@ export interface GeneralSettings {
   company_profile_url: string;
   company_profile_display: string; // none | floating | header
   project_default_image: string;
+  website_preview_enabled: boolean;
+  website_preview_mode: string; // hover | button
+  website_preview_hover_delay: number; // seconds
+  website_preview_scroll_speed: number; // px per second
 }
 
 export interface SeoSettings {
@@ -115,6 +119,10 @@ const defaults = {
     company_profile_url: "",
     company_profile_display: "none",
     project_default_image: "",
+    website_preview_enabled: true,
+    website_preview_mode: "hover",
+    website_preview_hover_delay: 3,
+    website_preview_scroll_speed: 240,
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",
@@ -188,4 +196,19 @@ export async function getSettingKey<T>(key: string, fallback: T): Promise<T> {
   const { data } = await supabase.from("site_settings").select("value").eq("key", key).single();
   if (!data) return fallback;
   return (data.value as T) ?? fallback;
+}
+
+/** Derive project preview settings from general site settings. */
+export function projectPreviewSettings(g: GeneralSettings): {
+  enabled: boolean;
+  mode: "hover" | "button";
+  hoverDelay: number;
+  scrollSpeed: number;
+} {
+  return {
+    enabled: g.website_preview_enabled !== false,
+    mode: g.website_preview_mode === "button" ? "button" : "hover",
+    hoverDelay: Number(g.website_preview_hover_delay ?? 3) || 3,
+    scrollSpeed: Number(g.website_preview_scroll_speed ?? 240) || 240,
+  };
 }

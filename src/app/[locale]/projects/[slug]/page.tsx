@@ -12,7 +12,7 @@ import { getProjectBySlug, getProjects, getProjectPortfolioItems, getProjectFeat
 import { ProjectPortfolio } from "@/components/project-portfolio";
 import { ProjectFeatures } from "@/components/project-features";
 import { ProjectCta } from "@/components/project-cta";
-import { getSettings } from "@/lib/settings";
+import { getSettings, projectPreviewSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
@@ -165,7 +165,7 @@ export default async function ProjectDetailPage({
             <h2 className="mb-8 text-2xl font-extrabold text-ink-900">{dict.service.relatedProjects}</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {fallbackRelated.map((p) => (
-                <ProjectCard key={p.id} project={p} />
+                <ProjectCard key={p.id} project={p} preview={projectPreviewSettings(settings.general)} />
               ))}
             </div>
           </div>

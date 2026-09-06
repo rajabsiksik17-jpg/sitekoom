@@ -69,6 +69,7 @@ export function SettingsManager() {
 
       <div className="card p-6">
         {tab === "general" && (
+          <>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="اسم الشركة (عربي)"><input className="input" value={String(g.company_name_ar ?? "")} onChange={(e) => update("general", "company_name_ar", e.target.value)} /></Field>
             <Field label="Company Name (EN)"><input className="input" dir="ltr" value={String(g.company_name_en ?? "")} onChange={(e) => update("general", "company_name_en", e.target.value)} /></Field>
@@ -109,6 +110,30 @@ export function SettingsManager() {
             </Field>
             <Field label="الصورة الافتراضية للأعمال (1:1)" hint="تظهر لكافة الأعمال بدون صورة مخصصة"><ImageUpload value={String(g.project_default_image ?? "")} onChange={(url) => update("general", "project_default_image", url)} folder="projects" /></Field>
           </div>
+
+          <div className="mt-6 rounded-xl border border-brand-100 p-5">
+            <p className="mb-4 font-bold text-ink-900">معاينة مواقع الأعمال</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="تفعيل المعاينة">
+                <label className="flex items-center gap-2 pt-3 text-sm text-gray-700">
+                  <input type="checkbox" checked={Boolean(g.website_preview_enabled ?? true)} onChange={(e) => update("general", "website_preview_enabled", e.target.checked)} className="rounded border-brand-200 text-brand-600" /> تفعيل معاينة موقع العمل
+                </label>
+              </Field>
+              <Field label="طريقة المعاينة">
+                <select className="input" disabled={!(g.website_preview_enabled ?? true)} value={String(g.website_preview_mode ?? "hover")} onChange={(e) => update("general", "website_preview_mode", e.target.value)}>
+                  <option value="hover">عند تمرير الماوس</option>
+                  <option value="button">باستخدام زر المعاينة</option>
+                </select>
+              </Field>
+              <Field label="مدة التأشير (ثوانٍ)">
+                <input className="input" dir="ltr" type="number" min={1} max={10} disabled={!(g.website_preview_enabled ?? true)} value={Number(g.website_preview_hover_delay ?? 3)} onChange={(e) => update("general", "website_preview_hover_delay", Number(e.target.value))} />
+              </Field>
+              <Field label="سرعة تمرير اللقطة (px/ثانية)">
+                <input className="input" dir="ltr" type="number" min={50} max={2000} disabled={!(g.website_preview_enabled ?? true)} value={Number(g.website_preview_scroll_speed ?? 240)} onChange={(e) => update("general", "website_preview_scroll_speed", Number(e.target.value))} />
+              </Field>
+            </div>
+          </div>
+          </>
         )}
 
         {tab === "seo" && (

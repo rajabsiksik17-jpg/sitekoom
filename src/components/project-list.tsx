@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn, localize } from "@/lib/utils";
-import { ProjectCard } from "@/components/project-card";
+import { ProjectCard, type ProjectPreviewSettings } from "@/components/project-card";
 import { useLocale } from "@/components/providers";
 import type { Project, Service, ServiceCategory } from "@/lib/types";
 
@@ -11,11 +11,13 @@ export function ProjectList({
   categories,
   services,
   defaultImage,
+  preview,
 }: {
   projects: Project[];
   categories: ServiceCategory[];
   services: Service[];
   defaultImage?: string;
+  preview?: ProjectPreviewSettings;
 }) {
   const { dict, locale } = useLocale();
   const [categoryId, setCategoryId] = useState("all");
@@ -76,7 +78,7 @@ export function ProjectList({
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <ProjectCard key={p.id} project={p} defaultImage={defaultImage} />
+            <ProjectCard key={p.id} project={p} defaultImage={defaultImage} preview={preview} />
           ))}
         </div>
       )}
