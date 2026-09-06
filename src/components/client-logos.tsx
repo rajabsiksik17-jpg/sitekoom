@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
+import { localizePath } from "@/lib/i18n/config";
 import type { Project } from "@/lib/types";
 
 export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale: "ar" | "en"; title?: { ar: string; en: string } }) {
@@ -8,7 +10,7 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
   const pauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isAr = locale === "ar";
-  const heading = (title ?? { ar: "عملاؤنا وشركاؤنا", en: "Our Clients & Partners" });
+  const heading = title ?? { ar: "عملاؤنا وشركاؤنا", en: "Our Clients & Partners" };
   const headingText = isAr ? heading.ar : heading.en;
 
   const pause = useCallback(() => {
@@ -22,18 +24,25 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
 
   if (logos.length === 0) return null;
 
-  // Single logo → static, elegant presentation.
+  // Circular-ish logo item — full project link.
+  const logoLink = (p: Project, i: number) => (
+    <Link
+      key={`${p.id}-${i}`}
+      href={localizePath(`/projects/${p.slug}`, locale)}
+      aria-label={p.title_ar || p.title_en || "Project"}
+      className="group mx-3 flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-brand-100 bg-white p-2 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={p.logo!} alt="" loading="lazy" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+    </Link>
+  );
+
+  // Single logo → static presentation.
   if (logos.length === 1) {
-    const single = logos[0];
     return (
       <section className="container-site py-14">
         <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{headingText}</h2>
-        <div className="flex justify-center">
-          <span className="flex h-20 w-20 items-center justify-center rounded-2xl border border-brand-100 bg-white p-3 shadow-soft">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={single.logo!} alt={single.title_ar || single.title_en} loading="lazy" className="h-full w-full object-contain" />
-          </span>
-        </div>
+        <div className="flex justify-center">{logoLink(logos[0], 0)}</div>
       </section>
     );
   }
@@ -44,7 +53,7 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
     <section className="container-site py-14">
       <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{headingText}</h2>
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden py-2"
         onPointerDown={pause}
         onPointerUp={resume}
         onPointerLeave={resume}
@@ -57,15 +66,7 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
           className="flex w-max"
           style={{ animation: `logos 30s linear infinite`, animationPlayState: paused ? "paused" : "running" }}
         >
-          {loop.map((p, i) => (
-            <span
-              key={`${p.id}-${i}`}
-              className="mx-3 flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white p-2.5 shadow-soft transition-all duration-300 hover:border-brand-300"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.logo!} alt={p.title_ar || p.title_en} loading="lazy" className="h-full w-full object-contain" />
-            </span>
-          ))}
+          {loop.map((p, i) => logoLink(p, i))}
         </div>
       </div>
       <style>{`
