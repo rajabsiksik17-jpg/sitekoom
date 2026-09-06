@@ -16,7 +16,13 @@ export function ProjectCard({ project, defaultImage }: { project: Project; defau
   const category = localize(locale, project.category?.name_ar, project.category?.name_en);
   const badge = service || category;
 
-  const image = project.thumbnail || defaultImage || null;
+  // Image resolution: service cover → service main → project thumbnail → global default.
+  const image =
+    project.service?.works_image ||
+    project.service?.main_image ||
+    project.thumbnail ||
+    defaultImage ||
+    null;
 
   return (
     <Link
@@ -43,7 +49,7 @@ export function ProjectCard({ project, defaultImage }: { project: Project; defau
           </span>
         )}
         {project.logo && (
-          <span className="absolute bottom-3 end-3 flex h-12 w-12 max-w-[30%] items-center justify-center overflow-hidden rounded-xl border border-white/60 bg-white/90 p-1 shadow-soft backdrop-blur-md">
+          <span className="absolute left-1/2 top-1/2 flex h-16 w-16 max-w-[40%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-1.5 shadow-soft backdrop-blur-md ring-1 ring-brand-200/40 transition-shadow duration-300 group-hover:shadow-glow">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={project.logo} alt="" className="h-full w-full object-contain" />
           </span>

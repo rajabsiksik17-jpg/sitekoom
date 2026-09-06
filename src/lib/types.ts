@@ -60,6 +60,7 @@ export interface Service {
   full_desc_ar: string | null;
   full_desc_en: string | null;
   main_image: string | null;
+  works_image: string | null;
   status: PublishStatus;
   sort: number;
   is_featured: boolean;

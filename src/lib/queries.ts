@@ -114,7 +114,7 @@ export const getProjectCategories = cache(async (): Promise<ProjectCategory[]> =
 export const getProjects = cache(async (): Promise<Project[]> => {
   const { data } = await (await supabase())
     .from("projects")
-    .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*)")
+    .select("*, service:services(id,title_ar,title_en,slug,category_id,works_image,main_image), category:project_categories(*)")
     .eq("status_field", "published")
     .is("deleted_at", null)
     .order("sort")
@@ -125,7 +125,7 @@ export const getProjects = cache(async (): Promise<Project[]> => {
 export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
   const { data } = await (await supabase())
     .from("projects")
-    .select("*, service:services(id,title_ar,title_en,slug,category_id), category:project_categories(*), images:project_images(*)")
+    .select("*, service:services(id,title_ar,title_en,slug,category_id,works_image,main_image), category:project_categories(*), images:project_images(*)")
     .eq("slug", slug)
     .eq("status_field", "published")
     .is("deleted_at", null)

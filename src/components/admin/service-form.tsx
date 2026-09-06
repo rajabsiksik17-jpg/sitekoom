@@ -34,7 +34,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
   const [form, setForm] = useState({
     title_ar: "", title_en: "", slug: "", icon: "sparkles",
     short_desc_ar: "", short_desc_en: "", full_desc_ar: "", full_desc_en: "",
-    main_image: "", status: "published" as "draft" | "published" | "archived", is_featured: false,
+    main_image: "", works_image: "", status: "published" as "draft" | "published" | "archived", is_featured: false,
     category_id: "",
     portfolio_config: [] as string[],
   });
@@ -62,7 +62,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
           title_ar: d.title_ar, title_en: d.title_en, slug: d.slug, icon: d.icon ?? "sparkles",
           short_desc_ar: d.short_desc_ar ?? "", short_desc_en: d.short_desc_en ?? "",
           full_desc_ar: d.full_desc_ar ?? "", full_desc_en: d.full_desc_en ?? "",
-          main_image: d.main_image ?? "", status: d.status, is_featured: d.is_featured,
+          main_image: d.main_image ?? "", works_image: d.works_image ?? "", status: d.status, is_featured: d.is_featured,
           category_id: d.category_id ?? "",
           portfolio_config: d.portfolio_config ?? [],
         });
@@ -101,6 +101,7 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
       full_desc_ar: form.full_desc_ar || null,
       full_desc_en: form.full_desc_en || null,
       main_image: form.main_image || null,
+      works_image: form.works_image || null,
     };
 
     let id = serviceId;
@@ -200,6 +201,10 @@ export function ServiceForm({ serviceId }: { serviceId?: string }) {
 
         <Field label="الصورة الرئيسية">
           <ImageUpload value={form.main_image} onChange={(url) => update("main_image", url)} folder="services" />
+        </Field>
+
+        <Field label="صورة الأعمال للخدمة (1:1)" hint="تظهر تلقائيًا كغلاف لجميع أعمال هذه الخدمة.">
+          <ImageUpload value={form.works_image} onChange={(url) => update("works_image", url)} folder="services" />
         </Field>
 
         <Field label="معرض الصور">
