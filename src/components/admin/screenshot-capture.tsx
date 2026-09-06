@@ -22,9 +22,10 @@ export function ScreenshotCapture({
   const [busy, setBusy] = useState(false);
 
   const isDesktopOnly = devices?.length === 1 && devices[0] === "desktop";
-  const idleLabel = isDesktopOnly ? "سحب Screenshot للدسكتوب فقط" : "جلب Screenshot للموقع من جميع الأجهزة";
-  const busyLabel = isDesktopOnly ? "جارٍ سحب الدسكتوب..." : "جارٍ التقاط الصور...";
-  const successLabel = isDesktopOnly ? "تم سحب Screenshot الدسكتوب بنجاح" : "تم إنشاء Screenshots بنجاح";
+  const isDesktopMobile = devices?.length === 2 && devices.includes("desktop") && devices.includes("mobile");
+  const idleLabel = isDesktopOnly ? "التقاط Desktop" : isDesktopMobile ? "التقاط Desktop + Mobile" : "التقاط جميع المقاسات";
+  const busyLabel = isDesktopOnly ? "جارٍ التقاط Desktop..." : isDesktopMobile ? "جارٍ التقاط Desktop + Mobile..." : "جارٍ التقاط الصور...";
+  const successLabel = isDesktopOnly ? "تم التقاط Desktop بنجاح" : isDesktopMobile ? "تم التقاط Desktop + Mobile بنجاح" : "تم إنشاء Screenshots بنجاح";
 
   async function run() {
     const target = url.trim();

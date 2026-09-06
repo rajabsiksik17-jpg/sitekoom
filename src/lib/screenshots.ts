@@ -3,6 +3,8 @@ import "server-only";
 import { accessSync, constants, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Real, per-device viewports. Each device is opened and captured separately —
@@ -30,6 +32,54 @@ function normalizeUrl(raw: string): string | null {
     return u.toString();
   } catch {
     return null;
+  }
+}
+
+// SSRF guard: block access to loopback, link-local, private and reserved ranges.
+function isBlockedHost(host: string): boolean {
+  const lowered = host.toLowerCase();
+  if (lowered === "localhost" || lowered.endsWith(".localhost") || lowered.endsWith(".local")) return true;
+  if (lowered === "metadata.google.internal") return true; // GCP metadata
+  const version = isIP(lowered);
+  if (version === 0) return false; // not an IP literal — resolved below
+  if (version === 4) {
+    const octets = lowered.split(".").map(Number);
+    const [a, b] = octets;
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 0) ||
+      (a >= 224)
+    );
+  }
+  // IPv6: loopback, link-local, unique-local, unspecified
+  const hextet = lowered.split(":")[0] ?? "";
+  return (
+    lowered === "::1" ||
+    lowered === "::" ||
+    /^fe8/i.test(hextet) ||
+    /^fe[cd]/i.test(hextet) ||
+    /^fc/i.test(hextet) ||
+    /^fd/i.test(hextet)
+  );
+}
+
+async function assertSafeUrl(url: URL): Promise<void> {
+  const host = url.hostname;
+  if (!host) throw new Error("رابط الموقع غير صالح");
+  if (isBlockedHost(host)) throw new Error("لا يمكن فتح عناوين الشبكة الداخلية");
+  // Resolve hostname and block any address that maps to a private/internal range.
+  let addresses: string[] = [];
+  try {
+    addresses = (await lookup(host, { all: true })).map((r) => r.address);
+  } catch {
+    throw new Error("تعذر الوصول إلى الموقع (DNS)");
+  }
+  for (const addr of addresses) {
+    if (isBlockedHost(addr)) throw new Error("لا يمكن فتح عناوين الشبكة الداخلية");
   }
 }
 
@@ -98,6 +148,12 @@ async function scrollThrough(page: import("playwright").Page) {
   await page.waitForTimeout(600);
 }
 
+/**
+ * Extra settle time (ms) waited AFTER the page is ready, so page-load / hero
+ * animations, lazy content, fonts and dynamic rendering finish before capture.
+ */
+const SETTLE_DELAY_MS = Number(process.env.SCREENSHOT_SETTLE_MS ?? 1200);
+
 async function captureDevice(
   browser: import("playwright").Browser,
   url: string,
@@ -118,7 +174,7 @@ async function captureDevice(
       })
       .catch(() => {});
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(SETTLE_DELAY_MS);
     return await page.screenshot({ fullPage: true, type: "png" });
   } finally {
     await context.close();
@@ -145,6 +201,7 @@ async function uploadScreenshot(buffer: Buffer, name: string): Promise<string> {
 export async function captureScreenshots(rawUrl: string, devices?: DeviceKey[]): Promise<CaptureResult> {
   const url = normalizeUrl(rawUrl);
   if (!url) throw new Error("رابط الموقع غير صالح");
+  await assertSafeUrl(new URL(url));
 
   // Only the requested devices are captured (defaults to all three).
   const targets = devices && devices.length ? DEVICES.filter((d) => devices.includes(d.key)) : DEVICES;

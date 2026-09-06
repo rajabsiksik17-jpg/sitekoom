@@ -119,7 +119,8 @@ export const getProjects = cache(async (): Promise<Project[]> => {
     .is("deleted_at", null)
     .order("sort")
     .order("created_at");
-  return (data ?? []) as Project[];
+  const projects = (data ?? []) as Project[];
+  return attachProjectScreenshots(projects);
 });
 
 export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
@@ -130,8 +131,32 @@ export const getProjectBySlug = cache(async (slug: string): Promise<Project | nu
     .eq("status_field", "published")
     .is("deleted_at", null)
     .single();
-  return (data as Project) ?? null;
+  if (!data) return null;
+  const [withShot] = await attachProjectScreenshots([data as Project]);
+  return withShot ?? null;
 });
+
+/**
+ * Attach each project's desktop website screenshot (the primary
+ * 'website_screenshot' portfolio item) as `screenshot` for card previews.
+ */
+async function attachProjectScreenshots(projects: Project[]): Promise<Project[]> {
+  if (!projects.length) return projects;
+  const ids = projects.map((p) => p.id);
+  const { data } = await (await supabase())
+    .from("project_portfolio_items")
+    .select("project_id, url")
+    .in("project_id", ids)
+    .eq("type", "website_screenshot")
+    .eq("is_visible", true)
+    .order("sort")
+    .order("created_at");
+  const byProject = new Map<string, string>();
+  for (const it of (data ?? []) as { project_id: string; url: string | null }[]) {
+    if (!byProject.has(it.project_id) && it.url) byProject.set(it.project_id, it.url);
+  }
+  return projects.map((p) => ({ ...p, screenshot: byProject.get(p.id) ?? null }));
+}
 
 export const getProjectPortfolioItems = cache(async (projectId: string): Promise<PortfolioItem[]> => {
   const { data } = await (await supabase())

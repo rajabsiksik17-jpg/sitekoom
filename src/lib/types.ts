@@ -149,7 +149,6 @@ export interface Project {
   thumbnail: string | null;
   cover_image: string | null;
   logo: string | null;
-  website_screenshot: string | null;
   project_url: string | null;
   technologies: string[];
   status_field: PublishStatus;
@@ -162,6 +161,7 @@ export interface Project {
   service?: Service | null;
   category?: ProjectCategory | null;
   images?: ProjectImage[];
+  screenshot?: string | null;
 }
 
 export interface ProjectImage {

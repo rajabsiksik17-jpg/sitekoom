@@ -32,7 +32,7 @@ export function ProjectCard({
   const category = localize(locale, project.category?.name_ar, project.category?.name_en);
   const badge = service || category;
 
-  const screenshot = project.website_screenshot || null;
+  const screenshot = project.screenshot || null;
   const previewOn = Boolean(preview?.enabled && screenshot);
   const mode = preview?.mode ?? "hover";
   const hoverDelayMs = (preview?.hoverDelay ?? 3) * 1000;
@@ -142,10 +142,11 @@ export function ProjectCard({
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={closePreview}
-                className="absolute top-3 end-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/85 text-brand-700 shadow-soft backdrop-blur-md transition-colors hover:bg-white"
+                className="absolute top-3 end-3 inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-soft backdrop-blur-md transition-colors hover:bg-white"
                 aria-label="العودة"
               >
                 <RotateCcw className="h-4 w-4" />
+                {locale === "ar" ? "العودة" : "Back"}
               </button>
             )}
           </div>
@@ -157,10 +158,11 @@ export function ProjectCard({
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={openPreview}
-            className="absolute bottom-3 end-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/60 bg-white/90 text-brand-700 shadow-soft backdrop-blur-md transition-all duration-300 hover:bg-white hover:shadow-glow"
+            className="preview-pulse absolute bottom-3 end-3 inline-flex items-center gap-1.5 rounded-full border border-brand-300/70 bg-brand-gradient px-3 py-1.5 text-xs font-bold text-white shadow-glow transition-all duration-300 hover:opacity-90"
             aria-label="معاينة الموقع"
           >
             <Eye className="h-4 w-4" />
+            {locale === "ar" ? "معاينة الموقع" : "Preview Website"}
           </button>
         )}
 

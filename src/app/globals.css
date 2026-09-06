@@ -47,6 +47,18 @@
   100% { object-position: center 100%; }
 }
 
+/* Gentle pulse to draw attention to the "preview website" button */
+@keyframes preview-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(122, 26, 255, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(122, 26, 255, 0); }
+}
+.preview-pulse {
+  animation: preview-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview-pulse { animation: none; }
+}
+
 /* Tiny light particle travelling along the timeline */
 @keyframes node-pulse {
   0%, 100% { opacity: 0.4; }

@@ -11,11 +11,13 @@ import { Field } from "@/components/admin/fields";
 import { publishLabels } from "@/components/admin/nav";
 import { slugify } from "@/lib/utils";
 import { useBulkSelection, BulkActionsBar, type BulkActionDef } from "@/components/admin/bulk-actions-bar";
+import { BulkScreenshotModal, type BulkShotProject } from "@/components/admin/bulk-screenshot-modal";
 import type { Project, Service, ProjectCategory } from "@/lib/types";
 
 const BULK_ACTIONS: BulkActionDef[] = [
   { key: "change_category", label: "تغيير التصنيف" },
   { key: "change_service", label: "تغيير الخدمة" },
+  { key: "links", label: "إضافة/تحديد روابط المواقع" },
   { key: "delete", label: "حذف", danger: true },
 ];
 
@@ -34,6 +36,7 @@ export function ProjectsManager() {
   const [bulkCategory, setBulkCategory] = useState("");
   const [bulkService, setBulkService] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [screenshotOpen, setScreenshotOpen] = useState(false);
   const ids = items.map((i) => i.id);
   const sel = useBulkSelection(ids);
 
@@ -192,7 +195,13 @@ export function ProjectsManager() {
               singular="عمل"
               plural="أعمال"
               actions={BULK_ACTIONS}
-              onAction={(key) => setBulk({ action: key as "change_category" | "change_service" | "delete" })}
+              onAction={(key) => {
+                if (key === "links") {
+                  setScreenshotOpen(true);
+                  return;
+                }
+                setBulk({ action: key as "change_category" | "change_service" | "delete" });
+              }}
               onCancel={sel.clear}
               busy={bulkBusy}
             />
@@ -291,6 +300,18 @@ export function ProjectsManager() {
         onConfirm={runBulk}
         loading={bulkBusy}
       />
+
+      {/* Bulk: website links + screenshots */}
+      {screenshotOpen && (
+        <BulkScreenshotModal
+          projects={items.filter((i) => sel.selected.has(i.id)).map((i): BulkShotProject => ({ id: i.id, title: i.title_ar || i.title_en, url: i.project_url ?? "" }))}
+          onClose={() => {
+            setScreenshotOpen(false);
+            sel.clear();
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
