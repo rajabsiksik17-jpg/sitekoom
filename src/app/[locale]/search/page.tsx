@@ -8,6 +8,7 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
+import { getSettings, projectPreviewSettings } from "@/lib/settings";
 import type { Service, Project } from "@/lib/types";
 
 interface ArticleRow {
@@ -36,6 +37,7 @@ export default async function SearchPage({
   const sp = await searchParams;
   const query = (sp.q ?? "").trim();
   const supabase = await createClient();
+  const settings = await getSettings();
 
   let services: Service[] = [];
   let projects: Project[] = [];
@@ -99,7 +101,7 @@ export default async function SearchPage({
                 <h2 className="mb-6 text-xl font-extrabold text-ink-900">{dict.search.projects}</h2>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {projects.map((p) => (
-                    <ProjectCard key={p.id} project={p} />
+                    <ProjectCard key={p.id} project={p} preview={projectPreviewSettings(settings.general)} />
                   ))}
                 </div>
               </section>

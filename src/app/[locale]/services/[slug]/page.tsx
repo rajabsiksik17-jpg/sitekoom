@@ -12,6 +12,7 @@ import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { getServiceDetails, getProjects, getServices, getServiceCategories } from "@/lib/queries";
+import { getSettings, projectPreviewSettings } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 import { faqSchema, serviceSchema, jsonLdToString } from "@/lib/seo";
 import type { ServiceFeature } from "@/lib/types";
@@ -73,7 +74,7 @@ export default async function ServiceDetailPage({
       description: localize(locale, f.description_ar, f.description_en),
     }));
 
-  const [allProjects, allServices, allCategories] = await Promise.all([getProjects(), getServices(), getServiceCategories()]);
+  const [allProjects, allServices, allCategories, settings] = await Promise.all([getProjects(), getServices(), getServiceCategories(), getSettings()]);
   const relatedProjects = allProjects.filter((p) => p.service_id === service.id).slice(0, 3);
   const fallbackProjects = relatedProjects.length ? relatedProjects : allProjects.slice(0, 3);
 
@@ -241,7 +242,7 @@ export default async function ServiceDetailPage({
             <h2 className="mb-8 text-2xl font-extrabold text-ink-900">{dict.service.relatedProjects}</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {fallbackProjects.map((p) => (
-                <ProjectCard key={p.id} project={p} />
+                <ProjectCard key={p.id} project={p} preview={projectPreviewSettings(settings.general)} />
               ))}
             </div>
           </div>
