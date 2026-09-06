@@ -3,15 +3,17 @@ import { ProjectList } from "@/components/project-list";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { getProjects, getServiceCategories, getServices, getHomepageSections } from "@/lib/queries";
+import { getSettings } from "@/lib/settings";
 
 export default async function ProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
-  const [projects, categories, services, sections] = await Promise.all([
+  const [projects, categories, services, sections, settings] = await Promise.all([
     getProjects(),
     getServiceCategories(),
     getServices(),
     getHomepageSections(),
+    getSettings(),
   ]);
   const sec = sections.find((s) => s.key === "projects");
 
@@ -27,7 +29,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
         subtitle={localize(locale, sec?.description_ar, sec?.description_en) ?? dict.home.projectsSubtitle}
       />
       <section className="container-site py-16">
-        <ProjectList projects={projects} categories={categories} services={servicesWithWork} />
+        <ProjectList projects={projects} categories={categories} services={servicesWithWork} defaultImage={settings.general.project_default_image || undefined} />
       </section>
     </>
   );

@@ -35,6 +35,7 @@ export interface GeneralSettings {
   chat_retention_hours: number;
   company_profile_url: string;
   company_profile_display: string; // none | floating | header
+  project_default_image: string;
 }
 
 export interface SeoSettings {
@@ -113,6 +114,7 @@ const defaults = {
     chat_retention_hours: 24,
     company_profile_url: "",
     company_profile_display: "none",
+    project_default_image: "",
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",

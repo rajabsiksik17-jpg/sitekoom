@@ -72,6 +72,42 @@ export function CompanyManager() {
     }));
   }
 
+  function setValueTitle(i: number, lang: "ar" | "en", value: string) {
+    const field = lang === "ar" ? "values_ar" : "values_en";
+    setInfo((prev) => {
+      const arr = [...((prev?.[field] as string[] | undefined) ?? [])];
+      arr[i] = value;
+      return { ...(prev as CompanyInfo), [field]: arr };
+    });
+  }
+
+  function setValueMeta(i: number, patch: Partial<{ icon: string; desc_ar: string; desc_en: string }>) {
+    setInfo((prev) => {
+      const meta = [...((prev?.values_meta ?? []) as { icon: string; desc_ar: string; desc_en: string }[])];
+      const cur = meta[i] ?? { icon: "check-circle", desc_ar: "", desc_en: "" };
+      meta[i] = { icon: patch.icon ?? cur.icon, desc_ar: patch.desc_ar ?? cur.desc_ar, desc_en: patch.desc_en ?? cur.desc_en };
+      return { ...(prev as CompanyInfo), values_meta: meta };
+    });
+  }
+
+  function addValue() {
+    setInfo((prev) => {
+      const ar = [...((prev?.values_ar as string[] | undefined) ?? []), ""];
+      const en = [...((prev?.values_en as string[] | undefined) ?? []), ""];
+      const meta = [...((prev?.values_meta ?? []) as { icon: string; desc_ar: string; desc_en: string }[]), { icon: "check-circle", desc_ar: "", desc_en: "" }];
+      return { ...(prev as CompanyInfo), values_ar: ar, values_en: en, values_meta: meta };
+    });
+  }
+
+  function removeValue(i: number) {
+    setInfo((prev) => ({
+      ...(prev as CompanyInfo),
+      values_ar: (prev?.values_ar ?? []).filter((_, j) => j !== i),
+      values_en: (prev?.values_en ?? []).filter((_, j) => j !== i),
+      values_meta: ((prev?.values_meta ?? []) as { icon: string; desc_ar: string; desc_en: string }[]).filter((_, j) => j !== i),
+    }));
+  }
+
   async function save() {
     if (!info) return;
     setSaving(true);
@@ -111,10 +147,43 @@ export function CompanyManager() {
         <Bilingual label="نبذة عن الشركة" ar={info.about_ar ?? ""} en={info.about_en ?? ""} onAr={(v) => update("about_ar", v)} onEn={(v) => update("about_en", v)} type="textarea" />
         <Bilingual label="رسالتنا" ar={info.mission_ar ?? ""} en={info.mission_en ?? ""} onAr={(v) => update("mission_ar", v)} onEn={(v) => update("mission_en", v)} type="textarea" />
         <Bilingual label="رؤيتنا" ar={info.vision_ar ?? ""} en={info.vision_en ?? ""} onAr={(v) => update("vision_ar", v)} onEn={(v) => update("vision_en", v)} type="textarea" />
-        <Field label="قيمنا (سطر لكل قيمة)" hint="كل سطر يمثل قيمة">
-          <textarea className="input min-h-[100px]" value={(info.values_ar ?? []).join("\n")} onChange={(e) => update("values_ar", e.target.value.split("\n"))} />
-          <textarea className="input mt-2 min-h-[100px]" dir="ltr" value={(info.values_en ?? []).join("\n")} onChange={(e) => update("values_en", e.target.value.split("\n"))} />
-        </Field>
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-bold text-ink-900">قيمنا</p>
+            <button type="button" onClick={addValue} className="btn-secondary px-3 py-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> إضافة قيمة</button>
+          </div>
+          {(info.values_ar ?? []).length === 0 ? (
+            <p className="text-sm text-gray-400">لا توجد قيم بعد.</p>
+          ) : (
+            <div className="space-y-3">
+              {(info.values_ar ?? []).map((v, i) => {
+                const meta = ((info.values_meta ?? []) as { icon: string; desc_ar: string; desc_en: string }[])[i] ?? { icon: "check-circle", desc_ar: "", desc_en: "" };
+                const enVal = (info.values_en ?? [])[i] ?? "";
+                return (
+                  <div key={i} className="rounded-xl border border-brand-100 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-gray-500">
+                        <Icon name={meta.icon} className="h-5 w-5 text-brand-600" /> قيمة {i + 1}
+                      </span>
+                      <button type="button" onClick={() => removeValue(i)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                    <div className="grid gap-3">
+                      <Field label="الأيقونة"><IconPicker value={meta.icon} onChange={(name) => setValueMeta(i, { icon: name })} /></Field>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input className="input" placeholder="الاسم (عربي)" value={v} onChange={(e) => setValueTitle(i, "ar", e.target.value)} />
+                        <input className="input" dir="ltr" placeholder="Name (EN)" value={enVal} onChange={(e) => setValueTitle(i, "en", e.target.value)} />
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input className="input" placeholder="الوصف (عربي)" value={meta.desc_ar} onChange={(e) => setValueMeta(i, { desc_ar: e.target.value })} />
+                        <input className="input" dir="ltr" placeholder="Description (EN)" value={meta.desc_en} onChange={(e) => setValueMeta(i, { desc_en: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <Field label="فيديو الشركة (يظهر في الصفحة الرئيسية)" hint="ارفع فيديو MP4/WebM ليظهر بجانب بيانات الشركة">
           <VideoUpload value={info.video_url ?? ""} onChange={(url) => update("video_url", url)} folder="company" />
         </Field>

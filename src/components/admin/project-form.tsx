@@ -32,7 +32,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
   const [form, setForm] = useState({
     title_ar: "", title_en: "", slug: "", short_desc_ar: "", short_desc_en: "",
     full_desc_ar: "", full_desc_en: "", service_id: "", category_id: "",
-    status: "completed", completion_date: "", thumbnail: "", cover_image: "",
+    status: "completed", completion_date: "", thumbnail: "", cover_image: "", logo: "",
     project_url: "", technologies: "", status_field: "published" as "draft" | "published" | "archived", is_featured: false,
   });
   const [gallery, setGallery] = useState<string[]>([]);
@@ -75,7 +75,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
             full_desc_ar: d.full_desc_ar ?? "", full_desc_en: d.full_desc_en ?? "",
             service_id: d.service_id ?? "", category_id: d.category_id ?? "",
             status: d.status, completion_date: d.completion_date ?? "",
-            thumbnail: d.thumbnail ?? "", cover_image: d.cover_image ?? "",
+            thumbnail: d.thumbnail ?? "", cover_image: d.cover_image ?? "", logo: d.logo ?? "",
             project_url: d.project_url ?? "", technologies: (d.technologies ?? []).join(", "),
             status_field: d.status_field, is_featured: d.is_featured,
           });
@@ -132,6 +132,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
       completion_date: form.completion_date || null,
       thumbnail: form.thumbnail || null,
       cover_image: form.cover_image || null,
+      logo: form.logo || null,
       project_url: form.project_url || null,
       short_desc_ar: form.short_desc_ar || null,
       short_desc_en: form.short_desc_en || null,
@@ -277,6 +278,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         <div className="grid gap-6 sm:grid-cols-2">
           <Field label="الصورة المصغرة (Thumbnail)"><ImageUpload value={form.thumbnail} onChange={(url) => update("thumbnail", url)} folder="projects" /></Field>
           <Field label="صورة الغلاف (Cover)"><ImageUpload value={form.cover_image} onChange={(url) => update("cover_image", url)} folder="projects" /></Field>
+          <Field label="شعار العمل (Logo — 1:1)"><ImageUpload value={form.logo} onChange={(url) => update("logo", url)} folder="projects" /></Field>
         </div>
 
         <Field label="معرض الصور">

@@ -147,6 +147,7 @@ export interface Project {
   completion_date: string | null;
   thumbnail: string | null;
   cover_image: string | null;
+  logo: string | null;
   project_url: string | null;
   technologies: string[];
   status_field: PublishStatus;
@@ -264,6 +265,7 @@ export interface CompanyInfo {
   vision_en: string | null;
   values_ar: string[];
   values_en: string[];
+  values_meta: { icon: string; desc_ar: string; desc_en: string }[];
   why_ar: WhyItem[];
   why_en: WhyItem[];
   video_url: string | null;

@@ -14,12 +14,15 @@ import { StatisticsSection } from "@/components/home/statistics-section";
 import { CtaSection } from "@/components/home/cta-section";
 import { GoogleReviewsSection } from "@/components/home/google-reviews-section";
 import { HomepageIntroSection } from "@/components/home/homepage-intro-section";
+import { ClientLogos } from "@/components/client-logos";
+import { WhySection } from "@/components/why-section";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
 import { localizePath } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 import { getGoogleReviews, getGoogleReviewsSettings } from "@/lib/reviews";
 import { getContentSections } from "@/lib/content-sections";
+import { getSettings } from "@/lib/settings";
 import {
   getSliders,
   getMarqueeMessages,
@@ -68,7 +71,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const dict = locale === "ar" ? ar : en;
   const p = (path: string) => localizePath(path, locale);
 
-  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements, reviews, reviewsSettings, contentSections] = await Promise.all([
+  const [sliders, marquee, sections, services, categories, projects, company, stats, social, offers, achievements, reviews, reviewsSettings, contentSections, settings] = await Promise.all([
     getSliders(),
     getMarqueeMessages(),
     getHomepageSections(),
@@ -83,7 +86,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getGoogleReviews(),
     getGoogleReviewsSettings(),
     getContentSections(),
+    getSettings(),
   ]);
+
+  const projectLogos = projects.filter((p) => p.logo).slice(0, 20);
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.key, s]));
   const isActive = (key: string) => sectionMap[key]?.is_active !== false;
@@ -234,19 +240,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   {localize(locale, sectionMap.why?.title_ar, sectionMap.why?.title_en) ?? dict.home.whyTitle}
                 </h2>
               </Reveal>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {whyItems.map((w, i) => (
-                  <Reveal key={i} delay={i * 60}>
-                    <div className="card card-hover h-full p-6">
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                        <Icon name={w.icon} className="h-6 w-6" />
-                      </div>
-                      <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
-                      <p className="text-sm text-gray-600">{w.description}</p>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
+              <WhySection items={whyItems} locale={locale} />
             </section>
           )}
 
@@ -277,19 +271,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   {localize(locale, sectionMap.why?.title_ar, sectionMap.why?.title_en) ?? dict.home.whyTitle}
                 </h2>
               </Reveal>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {whyItems.map((w, i) => (
-                  <Reveal key={i} delay={i * 60}>
-                    <div className="card card-hover h-full p-6">
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                        <Icon name={w.icon} className="h-6 w-6" />
-                      </div>
-                      <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
-                      <p className="text-sm text-gray-600">{w.description}</p>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
+              <WhySection items={whyItems} locale={locale} />
             </section>
           )}
         </>
@@ -321,13 +303,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredProjects.map((p, i) => (
                 <Reveal key={p.id} delay={i * 60}>
-                  <ProjectCard project={p} />
+                  <ProjectCard project={p} defaultImage={settings.general.project_default_image || undefined} />
                 </Reveal>
               ))}
             </div>
           </div>
         </section>
       )}
+
+      <ClientLogos logos={projectLogos} locale={locale} />
 
       {reviewsSettings.enabled && reviews.length > 0 && (
         <GoogleReviewsSection reviews={reviews.slice(0, Number(reviewsSettings.count || 6))} total={reviewsTotal} average={reviewsAverage} settings={reviewsSettings} locale={locale} />

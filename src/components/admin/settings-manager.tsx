@@ -107,6 +107,7 @@ export function SettingsManager() {
                 <option value="header">في الهيدر</option>
               </select>
             </Field>
+            <Field label="الصورة الافتراضية للأعمال (1:1)" hint="تظهر لكافة الأعمال بدون صورة مخصصة"><ImageUpload value={String(g.project_default_image ?? "")} onChange={(url) => update("general", "project_default_image", url)} folder="projects" /></Field>
           </div>
         )}
 

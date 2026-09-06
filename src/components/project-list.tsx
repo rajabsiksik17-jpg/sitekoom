@@ -10,10 +10,12 @@ export function ProjectList({
   projects,
   categories,
   services,
+  defaultImage,
 }: {
   projects: Project[];
   categories: ServiceCategory[];
   services: Service[];
+  defaultImage?: string;
 }) {
   const { dict, locale } = useLocale();
   const [categoryId, setCategoryId] = useState("all");
@@ -74,7 +76,7 @@ export function ProjectList({
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <ProjectCard key={p.id} project={p} />
+            <ProjectCard key={p.id} project={p} defaultImage={defaultImage} />
           ))}
         </div>
       )}

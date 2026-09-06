@@ -9,19 +9,21 @@ import { TeamCard } from "@/components/home/team-card";
 import { TeamSlider } from "@/components/home/team-slider";
 import { localize } from "@/lib/utils";
 import { ar, en } from "@/lib/i18n/dictionaries";
-import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks } from "@/lib/queries";
+import { getCompanyInfo, getTeamMembers, getStatistics, getSocialLinks, getProjects } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
 import { getAppointmentSettings, formatWorkingHours } from "@/lib/appointments";
 import { getContentSections } from "@/lib/content-sections";
 import { AboutProcessSectionView } from "@/components/about-process-section";
 import { AboutCodeSection } from "@/components/about-code-section";
 import { AboutTechnologySection } from "@/components/about-technology-section";
+import { ClientLogos } from "@/components/client-logos";
+import { WhySection } from "@/components/why-section";
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as "ar" | "en";
   const dict = locale === "ar" ? ar : en;
 
-  const [company, team, stats, social, settings, appointmentSettings, contentSections] = await Promise.all([
+  const [company, team, stats, social, settings, appointmentSettings, contentSections, projects] = await Promise.all([
     getCompanyInfo(),
     getTeamMembers(),
     getStatistics(),
@@ -29,7 +31,10 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
     getSettings(),
     getAppointmentSettings(),
     getContentSections(),
+    getProjects(),
   ]);
+
+  const projectLogos = projects.filter((p) => p.logo).slice(0, 20);
 
   const workingHours = formatWorkingHours(appointmentSettings, locale);
 
@@ -37,6 +42,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
   const mission = localize(locale, company?.mission_ar, company?.mission_en);
   const vision = localize(locale, company?.vision_ar, company?.vision_en);
   const values = (locale === "ar" ? company?.values_ar : company?.values_en) ?? [];
+  const valuesMeta = (company?.values_meta ?? []) as { icon: string; desc_ar: string; desc_en: string }[];
   const whyItems = (locale === "ar" ? company?.why_ar : company?.why_en) ?? [];
 
   return (
@@ -91,17 +97,24 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
               {locale === "ar" ? "قيمنا" : "Our Values"}
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-              {values.map((v, i) => (
-                <Reveal key={i} delay={i * 40}>
-                  <div className="card card-hover flex h-full items-center gap-2 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 sm:h-9 sm:w-9">
-                      <Icon name="check-circle" className="h-5 w-5" />
-                    </span>
-                    <span className="text-sm font-semibold leading-snug text-ink-900 sm:text-base">{v}</span>
-                  </div>
-                </Reveal>
-              ))}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {values.map((v, i) => {
+                const meta = valuesMeta[i] ?? { icon: "check-circle", desc_ar: "", desc_en: "" };
+                const desc = localize(locale, meta.desc_ar, meta.desc_en);
+                return (
+                  <Reveal key={i} delay={i * 40}>
+                    <div className="card card-hover flex h-full flex-col gap-3 p-5">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-soft">
+                        <Icon name={meta.icon} className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="font-bold text-ink-900">{v}</p>
+                        {desc && <p className="mt-1 text-sm leading-relaxed text-gray-600">{desc}</p>}
+                      </div>
+                    </div>
+                  </Reveal>
+                );
+              })}
             </div>
           </section>
         )}
@@ -115,19 +128,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         {whyItems.length > 0 && (
           <section className="mt-16">
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">{dict.home.whyTitle}</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {whyItems.map((w, i) => (
-                <Reveal key={i} delay={i * 50}>
-                  <div className="card card-hover h-full p-6">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                      <Icon name={w.icon} className="h-6 w-6" />
-                    </div>
-                    <h3 className="mb-2 font-bold text-ink-900">{w.title}</h3>
-                    <p className="text-sm text-gray-600">{w.description}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            <WhySection items={whyItems} locale={locale} />
           </section>
         )}
 
@@ -166,6 +167,8 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         )}
 
         <CompanyInfoSection locale={locale} settings={settings.general} social={social} dict={dict} workingHours={workingHours} />
+
+        <ClientLogos logos={projectLogos} locale={locale} title={{ ar: "عملاؤنا", en: "Our Clients" }} />
       </div>
     </>
   );
