@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,8 +58,8 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-ink-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+  const panel = (
+    <div className="fixed inset-0 z-[999] flex items-end justify-center bg-ink-900/40 p-0 sm:items-center sm:p-4">
       <div
         className={cn(
           "flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-card sm:rounded-2xl",
@@ -67,7 +68,7 @@ export function Modal({
       >
         <div className="flex items-center justify-between border-b border-brand-100 px-6 py-4">
           <h3 className="text-lg font-bold text-ink-900">{title}</h3>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-brand-50">
+          <button type="button" onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-brand-50" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -76,6 +77,12 @@ export function Modal({
       </div>
     </div>
   );
+
+  // Portal to <body> so no parent stacking context / overflow-hidden clips it.
+  if (typeof document !== "undefined") {
+    return createPortal(panel, document.body);
+  }
+  return panel;
 }
 
 export function ConfirmDialog({

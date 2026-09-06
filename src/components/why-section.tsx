@@ -11,24 +11,26 @@ export function WhySection({ items, locale = "ar" }: { items: WhyItem[]; locale?
 
   if (items.length === 0) return null;
 
-  // Mobile: show first 4, then "view more". Desktop/tablet show all.
-  const visible = expanded || items.length <= 4 ? items : items.slice(0, 4);
   const showToggle = items.length > 4;
 
   return (
     <div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {visible.map((w, i) => (
-          <Reveal key={i} delay={i * 50}>
-            <div className="card card-hover h-full p-6">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                <Icon name={w.icon} className="h-6 w-6" />
+        {items.map((w, i) => {
+          // Hide items past the 4th ONLY on mobile; show all on ≥sm.
+          const mobileHidden = !expanded && i >= 4;
+          return (
+            <Reveal key={i} delay={i * 50} className={mobileHidden ? "hidden sm:block" : undefined}>
+              <div className="card card-hover h-full p-6">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <Icon name={w.icon} className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
+                <p className="text-sm text-gray-600">{w.description}</p>
               </div>
-              <h3 className="mb-2 text-lg font-bold text-ink-900">{w.title}</h3>
-              <p className="text-sm text-gray-600">{w.description}</p>
-            </div>
-          </Reveal>
-        ))}
+            </Reveal>
+          );
+        })}
       </div>
       {showToggle && (
         <div className="mt-6 text-center sm:hidden">
