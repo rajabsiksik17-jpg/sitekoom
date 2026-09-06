@@ -6,23 +6,47 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Copy, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
-import { EmptyState, ConfirmDialog, Badge, Spinner, PageTitle } from "@/components/admin/ui";
+import { EmptyState, ConfirmDialog, Badge, Spinner, PageTitle, Modal } from "@/components/admin/ui";
+import { Field } from "@/components/admin/fields";
 import { publishLabels } from "@/components/admin/nav";
 import { slugify } from "@/lib/utils";
-import type { Project } from "@/lib/types";
+import { useBulkSelection, BulkActionsBar, type BulkActionDef } from "@/components/admin/bulk-actions-bar";
+import type { Project, Service, ProjectCategory } from "@/lib/types";
+
+const BULK_ACTIONS: BulkActionDef[] = [
+  { key: "change_category", label: "تغيير التصنيف" },
+  { key: "change_service", label: "تغيير الخدمة" },
+  { key: "delete", label: "حذف", danger: true },
+];
 
 export function ProjectsManager() {
   const { push } = useToast();
   const router = useRouter();
   const [items, setItems] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<ProjectCategory[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [cloning, setCloning] = useState<string | null>(null);
 
+  // Bulk state
+  const [bulk, setBulk] = useState<{ action: "change_category" | "change_service" | "delete" } | null>(null);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkService, setBulkService] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const ids = items.map((i) => i.id);
+  const sel = useBulkSelection(ids);
+
   const load = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase.from("projects").select("*, category:project_categories(*)").is("deleted_at", null).order("sort").order("created_at");
-    setItems((data ?? []) as Project[]);
+    const [p, c, s] = await Promise.all([
+      supabase.from("projects").select("*, category:project_categories(*)").is("deleted_at", null).order("sort").order("created_at"),
+      supabase.from("project_categories").select("*").order("name_ar"),
+      supabase.from("services").select("id,title_ar,title_en,sort").is("deleted_at", null).order("sort"),
+    ]);
+    setItems((p.data ?? []) as Project[]);
+    setCategories((c.data ?? []) as ProjectCategory[]);
+    setServices((s.data ?? []) as Service[]);
     setLoading(false);
   }, []);
 
@@ -47,6 +71,31 @@ export function ProjectsManager() {
     load();
   }
 
+  async function runBulk() {
+    if (!bulk) return;
+    setBulkBusy(true);
+    try {
+      const value = bulk.action === "change_category" ? bulkCategory : bulk.action === "change_service" ? bulkService : "";
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity: "projects", action: bulk.action, ids: Array.from(sel.selected), value }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "فشل العملية");
+      push("success", `تم تحديث ${data.updated} عمل بنجاح`);
+      sel.clear();
+      setBulk(null);
+      setBulkCategory("");
+      setBulkService("");
+      load();
+    } catch (e) {
+      push("error", e instanceof Error ? e.message : "فشل العملية");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function clone(item: Project) {
     const supabase = createClient();
     setCloning(item.id);
@@ -68,6 +117,7 @@ export function ProjectsManager() {
           completion_date: item.completion_date,
           thumbnail: item.thumbnail,
           cover_image: item.cover_image,
+          logo: item.logo,
           project_url: item.project_url,
           technologies: item.technologies ?? [],
           status_field: "draft",
@@ -135,44 +185,112 @@ export function ProjectsManager() {
       {items.length === 0 ? (
         <EmptyState title="لا توجد مشاريع" description="ابدأ بإضافة أول مشروع." action={<Link href="/admin/projects/new" className="btn-primary px-4 py-2.5"><Plus className="h-4 w-4" /> إضافة مشروع</Link>} />
       ) : (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-brand-50 text-start text-gray-600">
-              <tr>
-                <th className="px-4 py-3 text-start font-semibold">العنوان</th>
-                <th className="px-4 py-3 text-start font-semibold">التصنيف</th>
-                <th className="px-4 py-3 text-start font-semibold">الحالة</th>
-                <th className="px-4 py-3 text-end font-semibold">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-50">
-              {items.map((item) => {
-                const st = publishLabels[item.status_field] ?? { label: item.status_field, color: "gray" as const };
-                return (
-                  <tr key={item.id} className="hover:bg-brand-50/40">
-                    <td className="px-4 py-3 font-medium text-ink-900">{item.title_ar}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.category?.name_ar}</td>
-                    <td className="px-4 py-3">
-                      <button type="button" onClick={() => togglePublish(item)}><Badge color={st.color}>{st.label}</Badge></button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <button type="button" onClick={() => clone(item)} disabled={cloning === item.id} className="rounded-lg p-2 text-gray-500 hover:bg-brand-50" aria-label="استنساخ">
-                          {cloning === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
-                        </button>
-                        <Link href={`/admin/projects/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50"><Pencil className="h-4 w-4" /></Link>
-                        <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {sel.any && (
+            <BulkActionsBar
+              count={sel.count}
+              singular="عمل"
+              plural="أعمال"
+              actions={BULK_ACTIONS}
+              onAction={(key) => setBulk({ action: key as "change_category" | "change_service" | "delete" })}
+              onCancel={sel.clear}
+              busy={bulkBusy}
+            />
+          )}
+
+          <div className="card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-brand-50 text-start text-gray-600">
+                <tr>
+                  <th className="w-12 px-3 py-3">
+                    <input type="checkbox" className="rounded border-brand-200 text-brand-600" checked={sel.allSelected} onChange={sel.toggleAll} aria-label="تحديد الكل" />
+                  </th>
+                  <th className="px-2 py-3 text-start font-semibold">العنوان</th>
+                  <th className="px-4 py-3 text-start font-semibold">التصنيف</th>
+                  <th className="px-4 py-3 text-start font-semibold">الحالة</th>
+                  <th className="px-4 py-3 text-end font-semibold">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-50">
+                {items.map((item) => {
+                  const st = publishLabels[item.status_field] ?? { label: item.status_field, color: "gray" as const };
+                  return (
+                    <tr key={item.id} className="hover:bg-brand-50/40">
+                      <td className="px-3 py-3">
+                        <input type="checkbox" className="rounded border-brand-200 text-brand-600" checked={sel.selected.has(item.id)} onChange={() => sel.toggle(item.id)} aria-label={`تحديد ${item.title_ar}`} />
+                      </td>
+                      <td className="px-2 py-3 font-medium text-ink-900">{item.title_ar}</td>
+                      <td className="px-4 py-3 text-gray-500">{item.category?.name_ar}</td>
+                      <td className="px-4 py-3">
+                        <button type="button" onClick={() => togglePublish(item)}><Badge color={st.color}>{st.label}</Badge></button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <button type="button" onClick={() => clone(item)} disabled={cloning === item.id} className="rounded-lg p-2 text-gray-500 hover:bg-brand-50" aria-label="استنساخ">
+                            {cloning === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                          </button>
+                          <Link href={`/admin/projects/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50"><Pencil className="h-4 w-4" /></Link>
+                          <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <ConfirmDialog open={!!deleting} title="حذف المشروع" message={`هل أنت متأكد من حذف "${deleting?.title_ar}"؟`} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />
+
+      {/* Bulk: change category */}
+      <Modal
+        open={bulk?.action === "change_category"}
+        onClose={() => setBulk(null)}
+        title="تغيير التصنيف"
+        size="sm"
+        footer={<>
+          <button type="button" onClick={() => setBulk(null)} className="btn-secondary px-4 py-2 text-sm">إلغاء</button>
+          <button type="button" onClick={runBulk} disabled={bulkBusy || !bulkCategory} className="btn-primary px-6 py-2 text-sm">{bulkBusy ? "جارٍ التنفيذ..." : `تغيير ${sel.count} عمل`}</button>
+        </>}
+      >
+        <Field label="التصنيف الجديد">
+          <select className="input" value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
+            <option value="">اختر التصنيف</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+          </select>
+        </Field>
+      </Modal>
+
+      {/* Bulk: change service */}
+      <Modal
+        open={bulk?.action === "change_service"}
+        onClose={() => setBulk(null)}
+        title="تغيير الخدمة"
+        size="sm"
+        footer={<>
+          <button type="button" onClick={() => setBulk(null)} className="btn-secondary px-4 py-2 text-sm">إلغاء</button>
+          <button type="button" onClick={runBulk} disabled={bulkBusy || !bulkService} className="btn-primary px-6 py-2 text-sm">{bulkBusy ? "جارٍ التنفيذ..." : `تغيير ${sel.count} عمل`}</button>
+        </>}
+      >
+        <Field label="الخدمة الجديدة" hint="تتغيّر صورة الأعمال للمشاريع ذات الشعار تلقائيًا حسب الخدمة الجديدة.">
+          <select className="input" value={bulkService} onChange={(e) => setBulkService(e.target.value)}>
+            <option value="">اختر الخدمة</option>
+            {services.map((s) => <option key={s.id} value={s.id}>{s.title_ar}</option>)}
+          </select>
+        </Field>
+      </Modal>
+
+      {/* Bulk: delete */}
+      <ConfirmDialog
+        open={bulk?.action === "delete"}
+        title="حذف الأعمال"
+        message={`هل أنت متأكد من حذف ${sel.count} أعمال؟`}
+        onCancel={() => setBulk(null)}
+        onConfirm={runBulk}
+        loading={bulkBusy}
+      />
     </div>
   );
 }

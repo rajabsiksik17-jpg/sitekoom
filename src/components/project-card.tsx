@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { useLocale } from "@/components/providers";
 import { useLocalizedHref } from "@/lib/i18n/use-localized-href";
 import { localize } from "@/lib/utils";
@@ -15,8 +16,9 @@ export function ProjectCard({ project, defaultImage }: { project: Project; defau
   const category = localize(locale, project.category?.name_ar, project.category?.name_en);
   const badge = service || category;
 
-  // Only render a cover image when the project actually has a logo.
-  const coverImage = project.logo
+  // Only resolve a cover image when the project actually has a logo.
+  const hasLogo = Boolean(project.logo);
+  const coverImage = hasLogo
     ? project.service?.works_image || project.service?.main_image || project.thumbnail || defaultImage || null
     : null;
 
@@ -25,27 +27,33 @@ export function ProjectCard({ project, defaultImage }: { project: Project; defau
       href={href(`/projects/${project.slug}`)}
       className="group card flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-glow"
     >
-      {coverImage ? (
-        <div className="relative aspect-square w-full overflow-hidden bg-brand-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="relative aspect-square w-full overflow-hidden bg-brand-50">
+        {coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImage}
             alt={title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          {badge && (
-            <span className="absolute top-3 start-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-700 backdrop-blur">
-              {badge}
-            </span>
-          )}
-          {/* Circular logo area: 42.74% of cover, centered, cover cropped to a circle */}
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-brand-gradient text-white">
+            <ArrowUpRight className="h-10 w-10 opacity-50" />
+          </div>
+        )}
+        {badge && (
+          <span className="absolute top-3 start-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-700 backdrop-blur">
+            {badge}
+          </span>
+        )}
+        {hasLogo && (
+          /* Circular logo area: 42.74% of cover, centered, cover cropped to a circle */
           <span className="absolute left-1/2 top-1/2 aspect-square w-[42.74%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-white/70 bg-white/85 shadow-soft ring-1 ring-brand-200/40 backdrop-blur-md transition-shadow duration-300 group-hover:shadow-glow">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={project.logo!} alt="" className="h-full w-full object-cover" />
           </span>
-        </div>
-      ) : null}
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-5">
         <h3 className="text-lg font-bold text-ink-900 group-hover:text-brand-700">{title}</h3>

@@ -7,9 +7,17 @@ import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Copy, Loader2 } from "luc
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/admin/toast";
 import { EmptyState, ConfirmDialog, Badge, Spinner, PageTitle } from "@/components/admin/ui";
+import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import { publishLabels } from "@/components/admin/nav";
 import { slugify } from "@/lib/utils";
+import { useBulkSelection, BulkActionsBar, type BulkActionDef } from "@/components/admin/bulk-actions-bar";
 import type { Service } from "@/lib/types";
+
+const BULK_ACTIONS: BulkActionDef[] = [
+  { key: "change_works_image", label: "تغيير صورة الأعمال" },
+  { key: "remove_works_image", label: "إزالة صورة الأعمال" },
+  { key: "delete", label: "حذف", danger: true },
+];
 
 export function ServicesManager() {
   const { push } = useToast();
@@ -18,6 +26,13 @@ export function ServicesManager() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Service | null>(null);
   const [cloning, setCloning] = useState<string | null>(null);
+
+  // Bulk state
+  const [bulk, setBulk] = useState<{ action: "change_works_image" | "remove_works_image" | "delete" } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const ids = items.map((i) => i.id);
+  const sel = useBulkSelection(ids);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -50,11 +65,38 @@ export function ServicesManager() {
   async function confirmDelete() {
     if (!deleting) return;
     const supabase = createClient();
+    const { count } = await supabase.from("projects").select("id", { count: "exact", head: true }).eq("service_id", deleting.id).is("deleted_at", null);
+    if (count && count > 0) {
+      setDeleting(null);
+      return push("error", `يوجد ${count} عمل مرتبط بهذه الخدمة. انقل الأعمال أولًا.`);
+    }
     const { error } = await supabase.from("services").update({ deleted_at: new Date().toISOString() }).eq("id", deleting.id);
     setDeleting(null);
     if (error) return push("error", error.message);
     push("success", "تم حذف الخدمة");
     load();
+  }
+
+  async function runBulk(value?: string) {
+    if (!bulk) return;
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity: "services", action: bulk.action, ids: Array.from(sel.selected), value: value ?? "" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "فشل العملية");
+      push("success", `تم تحديث ${data.updated} خدمة بنجاح`);
+      sel.clear();
+      setBulk(null);
+      load();
+    } catch (e) {
+      push("error", e instanceof Error ? e.message : "فشل العملية");
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function move(item: Service, dir: -1 | 1) {
@@ -84,6 +126,7 @@ export function ServicesManager() {
           full_desc_ar: item.full_desc_ar,
           full_desc_en: item.full_desc_en,
           main_image: item.main_image,
+          works_image: item.works_image,
           category_id: item.category_id,
           portfolio_config: item.portfolio_config ?? [],
           status: "draft",
@@ -155,33 +198,55 @@ export function ServicesManager() {
           }
         />
       ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const st = publishLabels[item.status] ?? { label: item.status, color: "gray" as const };
-            return (
-              <div key={item.id} className="card flex flex-wrap items-center gap-3 p-4">
-                <Link href={`/admin/services/${item.id}`} className="min-w-0 flex-1">
-                  <p className="font-semibold text-ink-900 hover:text-brand-700">{item.title_ar}</p>
-                  <p className="text-xs text-gray-400" dir="ltr">{item.slug}</p>
-                </Link>
+        <>
+          {sel.any && (
+            <BulkActionsBar
+              count={sel.count}
+              singular="خدمة"
+              plural="خدمات"
+              actions={BULK_ACTIONS}
+              onAction={(key) => {
+                if (key === "change_works_image") {
+                  setBulk({ action: "change_works_image" });
+                  setPickerOpen(true);
+                } else {
+                  setBulk({ action: key as "remove_works_image" | "delete" });
+                }
+              }}
+              onCancel={sel.clear}
+              busy={bulkBusy}
+            />
+          )}
 
-                <button type="button" onClick={() => togglePublish(item)}>
-                  <Badge color={st.color}>{st.label}</Badge>
-                </button>
+          <div className="space-y-3">
+            {items.map((item) => {
+              const st = publishLabels[item.status] ?? { label: item.status, color: "gray" as const };
+              return (
+                <div key={item.id} className="card flex flex-wrap items-center gap-3 p-4">
+                  <input type="checkbox" className="rounded border-brand-200 text-brand-600" checked={sel.selected.has(item.id)} onChange={() => sel.toggle(item.id)} aria-label={`تحديد ${item.title_ar}`} />
+                  <Link href={`/admin/services/${item.id}`} className="min-w-0 flex-1">
+                    <p className="font-semibold text-ink-900 hover:text-brand-700">{item.title_ar}</p>
+                    <p className="text-xs text-gray-400" dir="ltr">{item.slug}</p>
+                  </Link>
 
-                <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => clone(item)} disabled={cloning === item.id} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="استنساخ">
-                    {cloning === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                  <button type="button" onClick={() => togglePublish(item)}>
+                    <Badge color={st.color}>{st.label}</Badge>
                   </button>
-                  <button type="button" onClick={() => move(item, -1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أعلى"><ChevronUp className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => move(item, 1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أسفل"><ChevronDown className="h-4 w-4" /></button>
-                  <Link href={`/admin/services/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50" aria-label="تعديل"><Pencil className="h-4 w-4" /></Link>
-                  <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" aria-label="حذف"><Trash2 className="h-4 w-4" /></button>
+
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => clone(item)} disabled={cloning === item.id} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="استنساخ">
+                      {cloning === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                    <button type="button" onClick={() => move(item, -1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أعلى"><ChevronUp className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => move(item, 1)} className="rounded-lg p-2 text-gray-500 hover:bg-brand-100" aria-label="أسفل"><ChevronDown className="h-4 w-4" /></button>
+                    <Link href={`/admin/services/${item.id}`} className="rounded-lg p-2 text-brand-600 hover:bg-brand-50" aria-label="تعديل"><Pencil className="h-4 w-4" /></Link>
+                    <button type="button" onClick={() => setDeleting(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" aria-label="حذف"><Trash2 className="h-4 w-4" /></button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <ConfirmDialog
@@ -190,6 +255,37 @@ export function ServicesManager() {
         message={`هل أنت متأكد من حذف "${deleting?.title_ar}"؟`}
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}
+      />
+
+      {/* Bulk: remove works image */}
+      <ConfirmDialog
+        open={bulk?.action === "remove_works_image"}
+        title="إزالة صورة الأعمال"
+        message={`هل أنت متأكد من إزالة صورة الأعمال من ${sel.count} خدمات؟`}
+        onCancel={() => setBulk(null)}
+        onConfirm={() => runBulk()}
+        loading={bulkBusy}
+      />
+
+      {/* Bulk: delete */}
+      <ConfirmDialog
+        open={bulk?.action === "delete"}
+        title="حذف الخدمات"
+        message={`هل أنت متأكد من حذف ${sel.count} خدمات؟`}
+        onCancel={() => setBulk(null)}
+        onConfirm={() => runBulk()}
+        loading={bulkBusy}
+      />
+
+      {/* Media picker for bulk works image */}
+      <MediaPickerModal
+        open={pickerOpen}
+        onClose={() => { setPickerOpen(false); setBulk(null); }}
+        accept="image"
+        onSelect={(url) => {
+          setPickerOpen(false);
+          runBulk(url);
+        }}
       />
     </div>
   );
