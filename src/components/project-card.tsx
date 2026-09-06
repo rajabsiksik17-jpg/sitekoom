@@ -120,7 +120,7 @@ export function ProjectCard({
         )}
 
         {project.logo && (
-          <span className={cn("absolute left-1/2 top-1/2 aspect-square w-[42.74%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-white/70 bg-white/85 shadow-soft ring-1 ring-brand-200/40 backdrop-blur-md transition-all duration-500 group-hover:shadow-glow", previewing && "scale-90 opacity-0")}>
+          <span className={cn("absolute left-1/2 top-1/2 aspect-square w-[42.74%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-2 border-brand-300 bg-white/90 shadow-glow ring-4 ring-brand-500/10 backdrop-blur-md transition-all duration-500 group-hover:border-brand-400 group-hover:ring-brand-500/20 group-hover:scale-[1.03]", previewing && "scale-90 opacity-0")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={project.logo} alt="" className="h-full w-full object-cover" />
           </span>

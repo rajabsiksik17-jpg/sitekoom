@@ -81,6 +81,15 @@ export async function POST(request: NextRequest) {
       const { error } = await admin.from("services").update({ works_image: null }).in("id", body.ids);
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
       updated = body.ids.length;
+    } else if (body.action === "change_logo") {
+      if (!body.value) return NextResponse.json({ ok: false, error: "Missing logo" }, { status: 400 });
+      const { error } = await admin.from("projects").update({ logo: body.value }).in("id", body.ids);
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+      updated = body.ids.length;
+    } else if (body.action === "remove_logo") {
+      const { error } = await admin.from("projects").update({ logo: null }).in("id", body.ids);
+      if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+      updated = body.ids.length;
     } else {
       return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 });
     }

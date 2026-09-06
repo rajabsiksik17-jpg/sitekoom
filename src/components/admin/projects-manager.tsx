@@ -12,12 +12,14 @@ import { publishLabels } from "@/components/admin/nav";
 import { slugify } from "@/lib/utils";
 import { useBulkSelection, BulkActionsBar, type BulkActionDef } from "@/components/admin/bulk-actions-bar";
 import { BulkScreenshotModal, type BulkShotProject } from "@/components/admin/bulk-screenshot-modal";
+import { BulkLogoModal } from "@/components/admin/bulk-logo-modal";
 import type { Project, Service, ProjectCategory } from "@/lib/types";
 
 const BULK_ACTIONS: BulkActionDef[] = [
   { key: "change_category", label: "تغيير التصنيف" },
   { key: "change_service", label: "تغيير الخدمة" },
   { key: "links", label: "إضافة/تحديد روابط المواقع" },
+  { key: "logo", label: "وضع شعار" },
   { key: "delete", label: "حذف", danger: true },
 ];
 
@@ -37,6 +39,7 @@ export function ProjectsManager() {
   const [bulkService, setBulkService] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [screenshotOpen, setScreenshotOpen] = useState(false);
+  const [logoOpen, setLogoOpen] = useState(false);
   const ids = items.map((i) => i.id);
   const sel = useBulkSelection(ids);
 
@@ -200,6 +203,10 @@ export function ProjectsManager() {
                   setScreenshotOpen(true);
                   return;
                 }
+                if (key === "logo") {
+                  setLogoOpen(true);
+                  return;
+                }
                 setBulk({ action: key as "change_category" | "change_service" | "delete" });
               }}
               onCancel={sel.clear}
@@ -307,6 +314,18 @@ export function ProjectsManager() {
           projects={items.filter((i) => sel.selected.has(i.id)).map((i): BulkShotProject => ({ id: i.id, title: i.title_ar || i.title_en, url: i.project_url ?? "" }))}
           onClose={() => {
             setScreenshotOpen(false);
+            sel.clear();
+            load();
+          }}
+        />
+      )}
+
+      {/* Bulk: set logo */}
+      {logoOpen && (
+        <BulkLogoModal
+          projects={items.filter((i) => sel.selected.has(i.id))}
+          onClose={() => {
+            setLogoOpen(false);
             sel.clear();
             load();
           }}
