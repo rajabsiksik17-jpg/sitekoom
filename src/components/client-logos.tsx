@@ -1555,7 +1555,7 @@ export function ClientLogos({
       >
         {/*
          * Real logos only.
-         */
+         */}
         {clients.map(
           (project, index) =>
             renderLogo(
@@ -1573,7 +1573,7 @@ export function ClientLogos({
          * soft cloudy entrance/exit.
          *
          * It does NOT affect the movement.
-         */
+         */}
         <div
           aria-hidden="true"
           className="
