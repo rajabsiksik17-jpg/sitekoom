@@ -373,8 +373,10 @@ export function ClientLogos({
    */
   const syncPausedState =
     useCallback(() => {
+      // Autoplay is the default state.
+      // Only an active touch/drag gesture may pause it.
+      // Mouse hover MUST NOT stop the automatic movement.
       pausedRef.current =
-        hoveredRef.current ||
         touchingRef.current ||
         draggingRef.current;
     }, []);
@@ -657,10 +659,7 @@ export function ClientLogos({
        * Automatic movement is the default state.
        * It pauses ONLY for actual user interaction or reduced motion.
        */
-      if (
-        !pausedRef.current &&
-        !reducedMotionRef.current
-      ) {
+      if (!pausedRef.current) {
         const speed = getSpeed();
         speedRef.current = speed;
 
@@ -873,14 +872,9 @@ export function ClientLogos({
       (
         event: React.PointerEvent<HTMLDivElement>
       ) => {
-        if (
-          event.pointerType ===
-          "mouse"
-        ) {
-          hoveredRef.current =
-            true;
-
-          syncPausedState();
+        if (event.pointerType === "mouse") {
+          // Hovering with the mouse never pauses autoplay.
+          hoveredRef.current = true;
         }
       },
       [syncPausedState]
@@ -894,14 +888,8 @@ export function ClientLogos({
       (
         event: React.PointerEvent<HTMLDivElement>
       ) => {
-        if (
-          event.pointerType ===
-          "mouse"
-        ) {
-          hoveredRef.current =
-            false;
-
-          syncPausedState();
+        if (event.pointerType === "mouse") {
+          hoveredRef.current = false;
         }
       },
       [syncPausedState]
@@ -927,18 +915,14 @@ export function ClientLogos({
         dragMovedRef.current =
           false;
 
-        draggingRef.current =
-          true;
-
-        if (
-          event.pointerType ===
-          "touch"
-        ) {
-          touchingRef.current =
-            true;
+        // Only touch starts a drag gesture.
+        // Mouse clicks stay native so a direct desktop click
+        // on a logo always follows its Next.js link.
+        if (event.pointerType === "touch") {
+          draggingRef.current = true;
+          touchingRef.current = true;
+          syncPausedState();
         }
-
-        syncPausedState();
 
         try {
           event.currentTarget.setPointerCapture(
@@ -1269,15 +1253,15 @@ export function ClientLogos({
       (
         event: React.MouseEvent<HTMLAnchorElement>
       ) => {
-        if (
-          dragMovedRef.current
-        ) {
+        if (dragMovedRef.current) {
           event.preventDefault();
           event.stopPropagation();
-
-          dragMovedRef.current =
-            false;
+          dragMovedRef.current = false;
+          return;
         }
+
+        // Normal desktop click: do not prevent or stop the Next.js Link.
+        dragMovedRef.current = false;
       },
       []
     );
