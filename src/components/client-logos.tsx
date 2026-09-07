@@ -676,10 +676,37 @@ export function ClientLogos({
         );
       };
 
-    const initialTimer =
-      window.setTimeout(() => {
+    let initializationAttempts = 0;
+    let initializationTimer: number | null = null;
+
+    const initializeWhenReady = () => {
+      initializationAttempts += 1;
+
+      const firstLogo = logoRefs.current[0];
+      const currentViewport = viewportRef.current;
+
+      if (
+        currentViewport &&
+        firstLogo &&
+        currentViewport.getBoundingClientRect().width > 0 &&
+        firstLogo.getBoundingClientRect().width > 0
+      ) {
         initialize(true);
-      }, 100);
+        return;
+      }
+
+      if (initializationAttempts < 20) {
+        initializationTimer = window.setTimeout(
+          initializeWhenReady,
+          100
+        );
+      }
+    };
+
+    initializationTimer = window.setTimeout(
+      initializeWhenReady,
+      100
+    );
 
     const resizeObserver =
       new ResizeObserver(
@@ -717,9 +744,11 @@ export function ClientLogos({
     );
 
     return () => {
-      window.clearTimeout(
-        initialTimer
-      );
+      if (initializationTimer !== null) {
+        window.clearTimeout(
+          initializationTimer
+        );
+      }
 
       resizeObserver.disconnect();
     };
