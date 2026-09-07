@@ -19,6 +19,11 @@ type ClientLogosProps = {
   };
 };
 
+const LOGO_SIZE = 96;
+const LOGO_GAP = 24;
+const MOBILE_SPEED = 38;
+const DESKTOP_SPEED = 45;
+
 export function ClientLogos({
   logos,
   locale,
@@ -33,194 +38,167 @@ export function ClientLogos({
 
   const headingText = isAr ? heading.ar : heading.en;
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const groupRef = useRef<HTMLDivElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
-  const offsetRef = useRef(0);
-  const groupWidthRef = useRef(0);
-
-  const [paused, setPaused] = useState(false);
-  const [ready, setReady] = useState(false);
-
   /**
-   * Fixed movement speed.
+   * Remove duplicated projects.
    *
-   * The speed does NOT depend on the number or length
-   * of logos. The group width only determines how long
-   * one complete cycle takes.
-   */
-  const SPEED_PX_PER_SECOND = 45;
-
-  /**
-   * Deduplicate projects by ID and ignore projects
-   * without a logo.
+   * The same project/logo can only exist once
+   * in the original source list.
    */
   const unique = Array.from(
     new Map(
       logos
-        .filter((project) => project?.id && project?.logo)
+        .filter(
+          (project) =>
+            Boolean(project?.id) &&
+            Boolean(project?.logo)
+        )
         .map((project) => [project.id, project])
     ).values()
   );
 
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const groupRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+
+  const [loopDistance, setLoopDistance] =
+    useState<number>(0);
+
+  const [paused, setPaused] = useState(false);
+
+  const pointerDownRef = useRef(false);
+
   /**
-   * Measure the exact width of the first logo group.
+   * Measure the exact distance between the beginning
+   * of group #1 and the beginning of group #2.
    *
-   * This is important because the animation must travel
-   * exactly one complete group width before restarting.
+   * This is the critical value for a seamless loop.
    */
-  const measureGroup = useCallback(() => {
+  const measureLoop = useCallback(() => {
     const group = groupRef.current;
 
     if (!group) return;
 
     const width = group.getBoundingClientRect().width;
 
-    if (width > 0) {
-      groupWidthRef.current = width;
+    if (!width) return;
 
-      /**
-       * For RTL we start from the second copy.
-       * For LTR we start from the first copy.
-       */
-      if (isAr) {
-        offsetRef.current = -width;
-      } else {
-        offsetRef.current = 0;
-      }
+    /**
+     * The second group starts after:
+     *
+     * group width + LOGO_GAP
+     *
+     * because the two groups are separated by the same
+     * gap used between logos.
+     */
+    const distance = width + LOGO_GAP;
 
-      setReady(true);
+    setLoopDistance(distance);
+  }, []);
+
+  useEffect(() => {
+    if (unique.length <= 1) return;
+
+    measureLoop();
+
+    const resize = () => {
+      measureLoop();
+    };
+
+    window.addEventListener("resize", resize);
+
+    let observer: ResizeObserver | null = null;
+
+    if (
+      typeof ResizeObserver !== "undefined" &&
+      groupRef.current
+    ) {
+      observer = new ResizeObserver(() => {
+        measureLoop();
+      });
+
+      observer.observe(groupRef.current);
     }
-  }, [isAr]);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      observer?.disconnect();
+    };
+  }, [measureLoop, unique.length]);
 
   /**
-   * Measure initially and whenever the viewport changes.
+   * Recalculate after images have loaded.
+   *
+   * This prevents the loop width from being measured
+   * before the logos finish loading.
    */
   useEffect(() => {
     if (unique.length <= 1) return;
 
-    measureGroup();
+    const images =
+      groupRef.current?.querySelectorAll("img");
 
-    const handleResize = () => {
-      measureGroup();
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    let resizeObserver: ResizeObserver | null = null;
-
-    if (groupRef.current && "ResizeObserver" in window) {
-      resizeObserver = new ResizeObserver(() => {
-        measureGroup();
-      });
-
-      resizeObserver.observe(groupRef.current);
+    if (!images?.length) {
+      measureLoop();
+      return;
     }
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      resizeObserver?.disconnect();
+    const handleImageLoad = () => {
+      measureLoop();
     };
-  }, [measureGroup, unique.length]);
+
+    images.forEach((image) => {
+      if (!image.complete) {
+        image.addEventListener(
+          "load",
+          handleImageLoad
+        );
+      }
+    });
+
+    measureLoop();
+
+    return () => {
+      images.forEach((image) => {
+        image.removeEventListener(
+          "load",
+          handleImageLoad
+        );
+      });
+    };
+  }, [measureLoop, unique]);
 
   /**
-   * Infinite marquee animation.
-   *
-   * Instead of CSS translateX(50%), we use the actual
-   * measured width of the first group.
-   *
-   * This prevents the visible jump that happened before.
+   * Keep animation running smoothly after resize.
    */
   useEffect(() => {
-    if (unique.length <= 1 || !ready) return;
+    if (!trackRef.current || !loopDistance) return;
 
-    const animate = (time: number) => {
-      if (lastTimeRef.current === null) {
-        lastTimeRef.current = time;
-      }
-
-      const delta = Math.min(
-        time - lastTimeRef.current,
-        50
-      );
-
-      lastTimeRef.current = time;
-
-      if (!paused) {
-        const distance =
-          (SPEED_PX_PER_SECOND * delta) / 1000;
-
-        const groupWidth = groupWidthRef.current;
-
-        if (groupWidth > 0) {
-          if (isAr) {
-            /**
-             * RTL:
-             * Start at -groupWidth and move toward 0.
-             *
-             * Once reaching 0, immediately move back to
-             * -groupWidth. Since both groups are identical,
-             * this reset is invisible.
-             */
-            offsetRef.current += distance;
-
-            if (offsetRef.current >= 0) {
-              offsetRef.current -= groupWidth;
-            }
-          } else {
-            /**
-             * LTR:
-             * Start at 0 and move toward -groupWidth.
-             */
-            offsetRef.current -= distance;
-
-            if (offsetRef.current <= -groupWidth) {
-              offsetRef.current += groupWidth;
-            }
-          }
-
-          if (groupRef.current?.parentElement) {
-            const track = groupRef.current.parentElement;
-
-            track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
-          }
-        }
-      }
-
-      animationFrameRef.current =
-        requestAnimationFrame(animate);
-    };
-
-    animationFrameRef.current =
-      requestAnimationFrame(animate);
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      animationFrameRef.current = null;
-      lastTimeRef.current = null;
-    };
-  }, [isAr, paused, ready, unique.length]);
+    trackRef.current.style.setProperty(
+      "--logos-loop-distance",
+      `${loopDistance}px`
+    );
+  }, [loopDistance]);
 
   /**
-   * Pause interaction.
+   * Pause while interacting with the slider.
    */
   const pause = useCallback(() => {
+    pointerDownRef.current = true;
     setPaused(true);
   }, []);
 
-  /**
-   * Resume interaction.
-   */
   const resume = useCallback(() => {
-    setPaused(false);
+    pointerDownRef.current = false;
+
+    window.setTimeout(() => {
+      if (!pointerDownRef.current) {
+        setPaused(false);
+      }
+    }, 350);
   }, []);
 
   /**
-   * Keyboard accessibility.
+   * Toggle with keyboard.
    */
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -228,15 +206,13 @@ export function ClientLogos({
         event.key === "Enter" ||
         event.key === " "
       ) {
-        setPaused((current) => !current);
+        event.preventDefault();
+        setPaused((value) => !value);
       }
     },
     []
   );
 
-  /**
-   * No logos.
-   */
   if (unique.length === 0) {
     return null;
   }
@@ -244,26 +220,26 @@ export function ClientLogos({
   /**
    * Render one logo.
    */
-  const logoItem = (
+  const renderLogo = (
     project: Project,
     index: number,
     duplicate = false
   ) => {
     const projectTitle =
-      project.title_ar ||
-      project.title_en ||
-      "Project";
+      locale === "ar"
+        ? project.title_ar || project.title_en
+        : project.title_en || project.title_ar;
 
     return (
       <Link
-        key={`${project.id}-${duplicate ? "duplicate" : "original"}-${index}`}
+        key={`${duplicate ? "clone" : "original"}-${project.id}-${index}`}
         href={localizePath(
           `/projects/${project.slug}`,
           locale
         )}
-        aria-label={projectTitle}
+        aria-label={projectTitle || "Project"}
+        aria-hidden={duplicate}
         tabIndex={duplicate ? -1 : 0}
-        aria-hidden={duplicate ? true : undefined}
         className="
           group
           relative
@@ -291,16 +267,15 @@ export function ClientLogos({
           focus-visible:ring-2
           focus-visible:ring-brand-400
           focus-visible:ring-offset-2
-
           sm:h-26
           sm:w-26
-
           md:h-28
           md:w-28
         "
       >
         {/* Premium inner ring */}
         <span
+          aria-hidden="true"
           className="
             pointer-events-none
             absolute
@@ -310,10 +285,9 @@ export function ClientLogos({
             border-dashed
             border-brand-200/60
           "
-          aria-hidden="true"
         />
 
-        {/* Logo container */}
+        {/* Logo */}
         <span
           className="
             relative
@@ -330,11 +304,12 @@ export function ClientLogos({
           <img
             src={project.logo!}
             alt=""
-            loading={duplicate ? "eager" : "lazy"}
             draggable={false}
+            loading={duplicate ? "eager" : "lazy"}
             className="
               max-h-full
               max-w-full
+              select-none
               object-contain
               transition-transform
               duration-300
@@ -347,8 +322,7 @@ export function ClientLogos({
   };
 
   /**
-   * Only one logo:
-   * No ticker is necessary.
+   * One logo does not need animation.
    */
   if (unique.length === 1) {
     return (
@@ -367,21 +341,54 @@ export function ClientLogos({
         </h2>
 
         <div className="flex justify-center">
-          {logoItem(unique[0], 0)}
+          {renderLogo(unique[0], 0)}
         </div>
       </section>
     );
   }
 
   /**
-   * Two identical groups.
-   *
    * IMPORTANT:
-   * We do not deduplicate this second copy because it is
-   * only a technical clone required for the seamless loop.
    *
-   * It is aria-hidden and not keyboard-focusable.
+   * Do NOT reverse the data depending on RTL.
+   *
+   * The visual direction is controlled by the track
+   * animation, not by flex-direction / dir="rtl".
+   *
+   * This prevents Arabic from reversing the actual
+   * sequence of logos.
    */
+  const firstGroup = unique;
+  const secondGroup = unique;
+
+  /**
+   * Animation direction:
+   *
+   * Arabic:
+   * First → Second → Third → ... → Last → First
+   *
+   * English:
+   * First → Second → Third → ... → Last → First
+   *
+   * Both use the same physical ticker direction.
+   *
+   * The language itself must NOT cause the logos to
+   * suddenly reverse their order.
+   */
+  const animationDirection = "normal";
+
+  const animationDuration =
+    loopDistance > 0
+      ? `${Math.max(
+          loopDistance /
+            (typeof window !== "undefined" &&
+            window.innerWidth < 640
+              ? MOBILE_SPEED
+              : DESKTOP_SPEED),
+          4
+        )}s`
+      : "30s";
+
   return (
     <section className="container-site py-14">
       <h2
@@ -398,11 +405,11 @@ export function ClientLogos({
       </h2>
 
       <div
-        ref={containerRef}
-        dir={isAr ? "rtl" : "ltr"}
+        ref={viewportRef}
         role="region"
         aria-label={headingText}
         tabIndex={0}
+        dir="ltr"
         onKeyDown={handleKeyDown}
         onPointerDown={pause}
         onPointerUp={resume}
@@ -414,41 +421,38 @@ export function ClientLogos({
           relative
           w-full
           overflow-hidden
-          py-2
+          py-3
           outline-none
+          touch-pan-y
         "
       >
-        {/*
-          IMPORTANT:
-          No white gradients here.
-
-          The previous implementation used two absolute
-          white gradient layers on the sides. Those layers
-          caused the visible white bars/lines, especially
-          in Arabic RTL.
-
-          They are intentionally removed.
-        */}
-
         <div
-          className="
+          ref={trackRef}
+          className={`
+            logos-track
             flex
             w-max
             items-center
-            will-change-transform
             gap-6
+            will-change-transform
             sm:gap-7
             md:gap-8
-          "
+            ${paused ? "logos-track-paused" : ""}
+          `}
           style={{
-            transform: ready
-              ? `translate3d(${offsetRef.current}px, 0, 0)`
-              : isAr
-                ? "translate3d(-100%, 0, 0)"
-                : "translate3d(0, 0, 0)",
-          }}
+            animationName: "client-logos-marquee",
+            animationDuration,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            animationPlayState: paused
+              ? "paused"
+              : "running",
+            animationDirection,
+            "--logos-loop-distance":
+              `${loopDistance}px`,
+          } as React.CSSProperties}
         >
-          {/* FIRST GROUP */}
+          {/* ORIGINAL GROUP */}
           <div
             ref={groupRef}
             className="
@@ -460,12 +464,12 @@ export function ClientLogos({
               md:gap-8
             "
           >
-            {unique.map((project, index) =>
-              logoItem(project, index, false)
+            {firstGroup.map((project, index) =>
+              renderLogo(project, index, false)
             )}
           </div>
 
-          {/* SECOND IDENTICAL GROUP */}
+          {/* CLONED GROUP */}
           <div
             className="
               flex
@@ -477,12 +481,43 @@ export function ClientLogos({
             "
             aria-hidden="true"
           >
-            {unique.map((project, index) =>
-              logoItem(project, index, true)
+            {secondGroup.map((project, index) =>
+              renderLogo(project, index, true)
             )}
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .logos-track {
+          transform: translate3d(0, 0, 0);
+        }
+
+        .logos-track-paused {
+          animation-play-state: paused !important;
+        }
+
+        @keyframes client-logos-marquee {
+          from {
+            transform: translate3d(0, 0, 0);
+          }
+
+          to {
+            transform: translate3d(
+              calc(-1 * var(--logos-loop-distance)),
+              0,
+              0
+            );
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .logos-track {
+            animation: none !important;
+            transform: translate3d(0, 0, 0) !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }
