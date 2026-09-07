@@ -14,159 +14,161 @@ type ClientLogosProps = {
   };
 };
 
+const DESKTOP_SPEED = 45;
+const TABLET_SPEED = 42;
+const MOBILE_SPEED = 38;
+
 export function ClientLogos({
   logos,
   locale,
   title,
 }: ClientLogosProps) {
-  const isAr = locale === "ar";
+  const isArabic = locale === "ar";
 
-  const heading = title ?? {
+  const sectionTitle = title ?? {
     ar: "عملاؤنا وشركاؤنا",
     en: "Our Clients & Partners",
   };
 
-  const headingText = isAr ? heading.ar : heading.en;
+  const heading = isArabic
+    ? sectionTitle.ar
+    : sectionTitle.en;
 
   /*
-   * Remove duplicate projects.
-   * Each real client/project appears once.
+   * Remove duplicated projects.
+   * A project without a logo is ignored.
    */
-  const unique = Array.from(
+  const clients = Array.from(
     new Map(
       logos
         .filter(
           (project) =>
-            project &&
-            project.id &&
-            project.logo
+            Boolean(project?.id) &&
+            Boolean(project?.logo)
         )
-        .map((project) => [project.id, project])
+        .map((project) => [
+          project.id,
+          project,
+        ])
     ).values()
   );
 
-  const groupRef = useRef<HTMLDivElement | null>(null);
+  const trackRef =
+    useRef<HTMLDivElement | null>(null);
 
-  const [groupWidth, setGroupWidth] = useState(0);
+  const firstGroupRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const [distance, setDistance] = useState(0);
+  const [duration, setDuration] = useState(30);
   const [paused, setPaused] = useState(false);
 
   /*
-   * Measure the first group.
-   *
-   * The animation moves exactly one complete group.
-   * This makes the duplicated second group line up
-   * perfectly with the first group when the animation
-   * starts again.
+   * Get the correct speed for the viewport.
    */
-  const measureGroup = useCallback(() => {
-    if (!groupRef.current) {
+  const getSpeed = useCallback(() => {
+    if (typeof window === "undefined") {
+      return DESKTOP_SPEED;
+    }
+
+    if (window.innerWidth < 640) {
+      return MOBILE_SPEED;
+    }
+
+    if (window.innerWidth < 1024) {
+      return TABLET_SPEED;
+    }
+
+    return DESKTOP_SPEED;
+  }, []);
+
+  /*
+   * Measure the first complete group.
+   */
+  const measure = useCallback(() => {
+    if (!firstGroupRef.current) {
       return;
     }
 
     const width =
-      groupRef.current.getBoundingClientRect().width;
+      firstGroupRef.current.getBoundingClientRect().width;
 
-    if (width > 0) {
-      setGroupWidth(width);
-    }
-  }, []);
-
-  /*
-   * Initial measurement + responsive measurement.
-   */
-  useEffect(() => {
-    if (unique.length <= 1) {
+    if (width <= 0) {
       return;
     }
 
-    const update = () => {
-      measureGroup();
-    };
+    const speed = getSpeed();
 
-    const frame = window.requestAnimationFrame(update);
-
-    window.addEventListener("resize", update);
-
-    let observer: ResizeObserver | null = null;
-
-    if (
-      typeof ResizeObserver !== "undefined" &&
-      groupRef.current
-    ) {
-      observer = new ResizeObserver(() => {
-        measureGroup();
-      });
-
-      observer.observe(groupRef.current);
-    }
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", update);
-      observer?.disconnect();
-    };
-  }, [measureGroup, unique.length]);
+    setDistance(width);
+    setDuration(Math.max(width / speed, 8));
+  }, [getSpeed]);
 
   /*
-   * Re-measure after images have loaded.
+   * Initial measurement.
    */
   useEffect(() => {
-    if (unique.length <= 1) {
+    if (clients.length <= 1) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      measure();
+    }, 100);
+
+    window.addEventListener("resize", measure);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", measure);
+    };
+  }, [clients.length, measure]);
+
+  /*
+   * Re-measure after images load.
+   */
+  useEffect(() => {
+    if (clients.length <= 1) {
       return;
     }
 
     const images =
-      groupRef.current?.querySelectorAll("img");
+      firstGroupRef.current?.querySelectorAll("img");
 
-    if (!images || images.length === 0) {
-      measureGroup();
+    if (!images) {
       return;
     }
 
-    const handleImageLoad = () => {
-      measureGroup();
+    const onImageLoad = () => {
+      measure();
     };
 
     images.forEach((image) => {
-      image.addEventListener("load", handleImageLoad);
+      image.addEventListener("load", onImageLoad);
     });
 
-    measureGroup();
+    measure();
 
     return () => {
       images.forEach((image) => {
         image.removeEventListener(
           "load",
-          handleImageLoad
+          onImageLoad
         );
       });
     };
-  }, [measureGroup, unique.length]);
+  }, [clients.length, measure]);
 
   /*
-   * Pause when the user interacts with the slider.
+   * Pause on pointer interaction.
    */
-  const handlePointerDown = useCallback(() => {
+  const pause = useCallback(() => {
     setPaused(true);
   }, []);
 
-  const handlePointerUp = useCallback(() => {
-    setPaused(false);
-  }, []);
-
   /*
-   * Touch events are intentionally separate.
-   * They do not receive or expect PointerEvent types.
+   * Resume after pointer interaction.
    */
-  const handleTouchStart = useCallback(() => {
-    setPaused(true);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    setPaused(false);
-  }, []);
-
-  const handleTouchCancel = useCallback(() => {
+  const resume = useCallback(() => {
     setPaused(false);
   }, []);
 
@@ -174,34 +176,36 @@ export function ClientLogos({
    * Keyboard accessibility.
    */
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
+    (
+      event: React.KeyboardEvent<HTMLDivElement>
+    ) => {
       if (
         event.key === "Enter" ||
         event.key === " "
       ) {
         event.preventDefault();
-        setPaused((current) => !current);
+        setPaused((value) => !value);
       }
     },
     []
   );
 
   /*
-   * No client logos.
+   * No logos.
    */
-  if (unique.length === 0) {
+  if (clients.length === 0) {
     return null;
   }
 
   /*
-   * Render a single logo.
+   * Render one logo.
    */
   const renderLogo = (
     project: Project,
     index: number,
-    duplicate: boolean
+    cloned: boolean
   ) => {
-    const projectTitle = isAr
+    const projectName = isArabic
       ? project.title_ar ||
         project.title_en ||
         "Project"
@@ -211,16 +215,21 @@ export function ClientLogos({
 
     return (
       <Link
-        key={`${duplicate ? "clone" : "original"}-${project.id}-${index}`}
+        key={
+          (cloned ? "clone-" : "logo-") +
+          project.id +
+          "-" +
+          index
+        }
         href={localizePath(
-          `/projects/${project.slug}`,
+          "/projects/" + project.slug,
           locale
         )}
-        aria-label={projectTitle}
+        aria-label={projectName}
         aria-hidden={
-          duplicate ? true : undefined
+          cloned ? true : undefined
         }
-        tabIndex={duplicate ? -1 : undefined}
+        tabIndex={cloned ? -1 : undefined}
         className="
           group
           relative
@@ -281,10 +290,10 @@ export function ClientLogos({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={project.logo!}
+            src={project.logo || ""}
             alt=""
             draggable={false}
-            loading={duplicate ? "eager" : "lazy"}
+            loading={cloned ? "eager" : "lazy"}
             className="
               max-h-full
               max-w-full
@@ -301,10 +310,9 @@ export function ClientLogos({
   };
 
   /*
-   * If there is only one logo, there is no need for
-   * an infinite slider.
+   * Single logo.
    */
-  if (unique.length === 1) {
+  if (clients.length === 1) {
     return (
       <section className="container-site py-14">
         <h2
@@ -317,36 +325,49 @@ export function ClientLogos({
             sm:text-3xl
           "
         >
-          {headingText}
+          {heading}
         </h2>
 
         <div className="flex justify-center">
-          {renderLogo(unique[0], 0, false)}
+          {renderLogo(clients[0], 0, false)}
         </div>
       </section>
     );
   }
 
   /*
-   * The distance of one complete cycle.
+   * Calculate the animation distance.
    *
-   * The two groups have the exact same contents,
-   * dimensions and gap.
+   * We include the gap between the two groups.
    */
-  const animationDistance = groupWidth;
+  const animationDistance =
+    distance > 0
+      ? distance + 24
+      : 0;
 
   /*
-   * Fixed duration based on the actual group width.
+   * Inline animation declaration.
    *
-   * This keeps the visual speed consistent.
+   * No CSS variables.
+   * No style jsx.
+   * No React.CSSProperties.
    */
-  const animationDuration =
+  const animationStyle =
     animationDistance > 0
-      ? `${Math.max(
-          animationDistance / 45,
-          8
-        )}s`
-      : "30s";
+      ? {
+          animationName: isArabic
+            ? "clientLogosRTL"
+            : "clientLogosLTR",
+          animationDuration:
+            duration + "s",
+          animationTimingFunction: "linear",
+          animationIterationCount:
+            "infinite",
+          animationPlayState: paused
+            ? "paused"
+            : "running",
+        }
+      : undefined;
 
   return (
     <section className="container-site py-14">
@@ -360,22 +381,22 @@ export function ClientLogos({
           sm:text-3xl
         "
       >
-        {headingText}
+        {heading}
       </h2>
 
       <div
         dir="ltr"
         role="region"
-        aria-label={headingText}
+        aria-label={heading}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchCancel}
+        onPointerDown={pause}
+        onPointerUp={resume}
+        onPointerCancel={resume}
+        onPointerLeave={resume}
+        onTouchStart={pause}
+        onTouchEnd={resume}
+        onTouchCancel={resume}
         className="
           relative
           w-full
@@ -386,6 +407,7 @@ export function ClientLogos({
         "
       >
         <div
+          ref={trackRef}
           className="
             client-logos-track
             flex
@@ -395,14 +417,11 @@ export function ClientLogos({
             sm:gap-7
             md:gap-8
           "
-          style={{
-            "--logo-loop-distance": `${animationDistance}px`,
-            "--logo-animation-duration": animationDuration,
-          } as React.CSSProperties}
+          style={animationStyle}
         >
-          {/* FIRST GROUP */}
+          {/* ORIGINAL GROUP */}
           <div
-            ref={groupRef}
+            ref={firstGroupRef}
             className="
               flex
               shrink-0
@@ -412,16 +431,17 @@ export function ClientLogos({
               md:gap-8
             "
           >
-            {unique.map((project, index) =>
-              renderLogo(
-                project,
-                index,
-                false
-              )
+            {clients.map(
+              (project, index) =>
+                renderLogo(
+                  project,
+                  index,
+                  false
+                )
             )}
           </div>
 
-          {/* SECOND GROUP - technical clone */}
+          {/* IDENTICAL TECHNICAL CLONE */}
           <div
             aria-hidden="true"
             className="
@@ -433,65 +453,51 @@ export function ClientLogos({
               md:gap-8
             "
           >
-            {unique.map((project, index) =>
-              renderLogo(
-                project,
-                index,
-                true
-              )
+            {clients.map(
+              (project, index) =>
+                renderLogo(
+                  project,
+                  index,
+                  true
+                )
             )}
           </div>
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .client-logos-track {
-          animation-name: client-logos-scroll;
-          animation-duration: var(
-            --logo-animation-duration
-          );
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-          animation-play-state: ${paused
-            ? "paused"
-            : "running"};
-          animation-direction: ${isAr
-            ? "reverse"
-            : "normal"};
           will-change: transform;
         }
 
-        @keyframes client-logos-scroll {
+        @keyframes clientLogosLTR {
           from {
-            transform: translate3d(
-              0,
-              0,
-              0
+            transform: translateX(0);
+          }
+
+          to {
+            transform: translateX(
+              calc(-1 * var(--client-logo-distance))
+            );
+          }
+        }
+
+        @keyframes clientLogosRTL {
+          from {
+            transform: translateX(
+              calc(-1 * var(--client-logo-distance))
             );
           }
 
           to {
-            transform: translate3d(
-              calc(
-                -1 *
-                  var(
-                    --logo-loop-distance
-                  )
-              ),
-              0,
-              0
-            );
+            transform: translateX(0);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
           .client-logos-track {
             animation: none !important;
-            transform: translate3d(
-              0,
-              0,
-              0
-            ) !important;
+            transform: translateX(0) !important;
           }
         }
       `}</style>
