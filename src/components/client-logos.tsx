@@ -537,126 +537,163 @@ export function ClientLogos({
     );
 
   /*
-   * Main animation loop.
+   * ROOT AUTOPLAY ENGINE
+   *
+   * The animation must NEVER depend on ResizeObserver, image-load events,
+   * or initializedRef being set by another effect.
+   *
+   * The RAF loop owns its own initialization. As soon as the viewport and
+   * first logo have measurable dimensions, positions are created and motion
+   * starts automatically.
    */
   useEffect(() => {
     if (clients.length <= 1) {
       return;
     }
 
-    const mediaQuery =
-      window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      );
+    let mounted = true;
+    let frameId: number | null = null;
 
-    const updateReducedMotion =
-      () => {
-        reducedMotionRef.current =
-          mediaQuery.matches;
-      };
-
-    updateReducedMotion();
-
-    mediaQuery.addEventListener(
-      "change",
-      updateReducedMotion
+    const mediaQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
     );
 
-    let mounted = true;
+    const updateReducedMotion = () => {
+      reducedMotionRef.current = mediaQuery.matches;
+    };
 
-    const frame = (
-      now: number
-    ) => {
+    updateReducedMotion();
+    mediaQuery.addEventListener("change", updateReducedMotion);
+
+    const ensureInitialized = () => {
+      const viewport = viewportRef.current;
+      const firstLogo = logoRefs.current[0];
+
+      if (!viewport || !firstLogo) {
+        return false;
+      }
+
+      const viewportWidth =
+        viewport.getBoundingClientRect().width;
+      const logoWidth =
+        firstLogo.getBoundingClientRect().width;
+
+      if (viewportWidth <= 0 || logoWidth <= 0) {
+        return false;
+      }
+
+      /*
+       * If another effect already initialized valid positions,
+       * keep them and start moving immediately.
+       */
+      if (
+        initializedRef.current &&
+        positionsRef.current.length === clients.length &&
+        viewportWidthRef.current > 0 &&
+        logoWidthRef.current > 0
+      ) {
+        return true;
+      }
+
+      /*
+       * Initialize directly here. This is the critical fallback that
+       * makes autoplay independent from effect ordering/timing.
+       */
+      const speed = getSpeed();
+
+      let minimumGap = 24;
+
+      if (window.innerWidth >= TABLET_BREAKPOINT) {
+        minimumGap = 32;
+      } else if (window.innerWidth >= MOBILE_BREAKPOINT) {
+        minimumGap = 28;
+      }
+
+      const spacing = Math.max(
+        logoWidth + minimumGap,
+        viewportWidth / clients.length
+      );
+
+      viewportWidthRef.current = viewportWidth;
+      logoWidthRef.current = logoWidth;
+      spacingRef.current = spacing;
+      speedRef.current = speed;
+      lastMeasuredWidthRef.current = viewportWidth;
+
+      positionsRef.current = clients.map((_, index) => {
+        if (isArabic) {
+          return viewportWidth - logoWidth - index * spacing;
+        }
+
+        return index * spacing;
+      });
+
+      applyAllPositions();
+      initializedRef.current = true;
+      lastFrameTimeRef.current = performance.now();
+
+      return true;
+    };
+
+    const frame = (now: number) => {
       if (!mounted) {
         return;
       }
 
-      if (
-        lastFrameTimeRef.current ===
-        null
-      ) {
-        lastFrameTimeRef.current =
-          now;
+      /*
+       * Never let initialization failure stop the RAF loop.
+       * The loop keeps checking until the DOM has real dimensions.
+       */
+      if (!ensureInitialized()) {
+        frameId = window.requestAnimationFrame(frame);
+        return;
       }
 
-      /*
-       * Cap elapsed time.
-       *
-       * This prevents a huge jump if the browser
-       * temporarily pauses rendering.
-       */
-      const elapsed =
-        Math.min(
-          now -
-            lastFrameTimeRef.current,
-          50
-        );
-
-      lastFrameTimeRef.current =
-        now;
+      const last = lastFrameTimeRef.current ?? now;
+      const elapsed = Math.min(Math.max(now - last, 0), 50);
+      lastFrameTimeRef.current = now;
 
       /*
-       * Always make sure the slider is initialized.
-       *
-       * The animation loop must not depend on a separate
-       * timer/ResizeObserver winning a race during the
-       * first render. This is especially important when
-       * there are only a few real logos.
+       * Automatic movement is the default state.
+       * It pauses ONLY for actual user interaction or reduced motion.
        */
-      if (!initializedRef.current) {
-        initializePositions(true);
-      }
-
       if (
         !pausedRef.current &&
-        !reducedMotionRef.current &&
-        initializedRef.current
+        !reducedMotionRef.current
       ) {
-        const delta =
-          speedRef.current *
-          (elapsed / 1000);
+        const speed = getSpeed();
+        speedRef.current = speed;
 
-        if (
-          delta > 0
-        ) {
+        const delta = speed * (elapsed / 1000);
+
+        if (delta > 0) {
           moveLogos(delta);
         }
       }
 
-      animationFrameRef.current =
-        window.requestAnimationFrame(
-          frame
-        );
+      frameId = window.requestAnimationFrame(frame);
     };
 
-    animationFrameRef.current =
-      window.requestAnimationFrame(
-        frame
-      );
+    frameId = window.requestAnimationFrame(frame);
 
     return () => {
       mounted = false;
 
-      if (
-        animationFrameRef.current !==
-        null
-      ) {
-        window.cancelAnimationFrame(
-          animationFrameRef.current
-        );
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
       }
 
-      animationFrameRef.current =
-        null;
-
+      frameId = null;
       mediaQuery.removeEventListener(
         "change",
         updateReducedMotion
       );
     };
   }, [
-    clients.length,
-    initializePositions,
+    clients,
+    getSpeed,
+    isArabic,
+    applyAllPositions,
     moveLogos,
   ]);
 
@@ -793,12 +830,9 @@ export function ClientLogos({
          * Force measurement because the actual
          * logo dimensions may have changed.
          */
-        initializedRef.current =
-          false;
-
-        initializePositions(
-          true
-        );
+        if (!initializedRef.current) {
+          initializePositions(true);
+        }
       };
 
     images.forEach(
