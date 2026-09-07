@@ -42,7 +42,11 @@ export function PortfolioEditor({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   function addItem(type: string) {
-    onChange([...value, emptyItem(type, value.length)]);
+    const item = emptyItem(type, value.length);
+    if (type === "website_screenshot") {
+      item.data = { before_description: true };
+    }
+    onChange([...value, item]);
   }
 
   function updateItem(index: number, patch: Partial<PortfolioItemDraft>) {
@@ -207,6 +211,24 @@ function ItemRow({
                       <input className="input" dir="ltr" placeholder="https://example.com" value={String(item.data?.source_url ?? "")} onChange={(e) => set("data", { ...(item.data ?? {}), source_url: e.target.value })} />
                     </Field>
                     <div className="mt-3 flex flex-wrap gap-2">
+                      <ScreenshotCapture
+                        url={String(item.data?.source_url ?? projectUrl ?? "")}
+                        previous={{
+                          desktop: item.url ?? undefined,
+                          tablet: item.data?.tablet_screenshot ? String(item.data.tablet_screenshot) : undefined,
+                          mobile: item.data?.mobile_screenshot ? String(item.data.mobile_screenshot) : undefined,
+                        }}
+                        onCaptured={(images) =>
+                          onUpdate({
+                            ...(images.desktop ? { url: images.desktop } : {}),
+                            data: {
+                              ...(item.data ?? {}),
+                              ...(images.tablet ? { tablet_screenshot: images.tablet, enable_tablet: true } : {}),
+                              ...(images.mobile ? { mobile_screenshot: images.mobile, enable_mobile: true } : {}),
+                            },
+                          })
+                        }
+                      />
                       <ScreenshotCapture
                         devices={["desktop", "mobile"]}
                         url={String(item.data?.source_url ?? projectUrl ?? "")}

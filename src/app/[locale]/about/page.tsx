@@ -97,20 +97,20 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             <h2 className="mb-6 text-2xl font-extrabold text-ink-900">
               {locale === "ar" ? "قيمنا" : "Our Values"}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
               {values.map((v, i) => {
                 const meta = valuesMeta[i] ?? { icon: "check-circle", desc_ar: "", desc_en: "" };
                 const desc = localize(locale, meta.desc_ar, meta.desc_en);
                 return (
                   <Reveal key={i} delay={i * 40}>
-                    <div className="card card-hover flex h-full flex-col gap-3 p-5">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-soft">
-                        <Icon name={meta.icon} className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <p className="font-bold text-ink-900">{v}</p>
-                        {desc && <p className="mt-1 text-sm leading-relaxed text-gray-600">{desc}</p>}
+                    <div className="card card-hover flex h-full flex-col gap-3 p-3 text-start lg:p-5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-gradient text-white shadow-soft lg:h-11 lg:w-11 lg:rounded-xl">
+                          <Icon name={meta.icon} className="h-4 w-4 lg:h-5 lg:w-5" />
+                        </span>
+                        <p className="break-words text-sm font-bold leading-snug text-ink-900 lg:text-base">{v}</p>
                       </div>
+                      {desc && <p className="break-words text-xs leading-relaxed text-gray-600 lg:text-sm">{desc}</p>}
                     </div>
                   </Reveal>
                 );

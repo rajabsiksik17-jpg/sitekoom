@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Trash2, Save, ArrowRight } from "lucide-react";
@@ -101,6 +101,14 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
 
   function update(field: string, value: unknown) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  const slugTouched = useRef(false);
+
+  function autoSlug(titleAr: string, titleEn: string, currentForm: typeof form) {
+    if (slugTouched.current) return currentForm;
+    const base = (titleAr || titleEn || "").trim();
+    return { ...currentForm, slug: slugify(base) };
   }
 
   function updateServiceCategory(categoryId: string) {
@@ -220,9 +228,16 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
 
       <div className="card space-y-6 p-6">
         <h2 className="text-lg font-bold text-ink-900">المعلومات الأساسية</h2>
-        <Bilingual label="العنوان" required ar={form.title_ar} en={form.title_en} onAr={(v) => update("title_ar", v)} onEn={(v) => update("title_en", v)} />
+        <Bilingual
+          label="العنوان"
+          required
+          ar={form.title_ar}
+          en={form.title_en}
+          onAr={(v) => setForm((f) => autoSlug(v, f.title_en, { ...f, title_ar: v }))}
+          onEn={(v) => setForm((f) => autoSlug(f.title_ar, v, { ...f, title_en: v }))}
+        />
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Slug"><input className="input" dir="ltr" value={form.slug} onChange={(e) => update("slug", e.target.value)} /></Field>
+          <Field label="Slug"><input className="input" dir="ltr" value={form.slug} onChange={(e) => { slugTouched.current = true; update("slug", e.target.value); }} /></Field>
           <Field label="تصنيف الخدمة">
             <select className="input" value={serviceCategoryId} onChange={(e) => updateServiceCategory(e.target.value)}>
               <option value="">— كل التصنيفات —</option>

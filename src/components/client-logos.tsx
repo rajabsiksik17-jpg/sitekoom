@@ -22,37 +22,47 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
     pauseTimer.current = setTimeout(() => setPaused(false), 400);
   }, []);
 
-  if (logos.length === 0) return null;
+  // De-duplicate by project id — each client appears once (technically duplicated
+  // only below for the seamless marquee loop).
+  const unique = Array.from(new Map(logos.map((p) => [p.id, p])).values()).filter((p) => p.logo);
 
-  // Circular-ish logo item — full project link.
-  const logoLink = (p: Project, i: number) => (
+  if (unique.length === 0) return null;
+
+  const logoItem = (p: Project, i: number) => (
     <Link
       key={`${p.id}-${i}`}
       href={localizePath(`/projects/${p.slug}`, locale)}
       aria-label={p.title_ar || p.title_en || "Project"}
-      className="group mx-3 flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-brand-100 bg-white p-2 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
+      className="group relative mx-3 flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-brand-200/70 bg-white p-1.5 shadow-soft ring-2 ring-brand-500/10 transition-all duration-300 hover:-translate-y-1 hover:border-brand-400 hover:shadow-glow hover:ring-brand-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={p.logo!} alt="" loading="lazy" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+      {/* wavy/dotted premium inner ring */}
+      <span className="pointer-events-none absolute inset-1 rounded-full border border-dashed border-brand-200/60" aria-hidden="true" />
+      <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.logo!} alt="" loading="lazy" className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+      </span>
     </Link>
   );
 
-  // Single logo → static presentation.
-  if (logos.length === 1) {
+  if (unique.length === 1) {
     return (
       <section className="container-site py-14">
         <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{headingText}</h2>
-        <div className="flex justify-center">{logoLink(logos[0], 0)}</div>
+        <div className="flex justify-center">{logoItem(unique[0], 0)}</div>
       </section>
     );
   }
 
-  const loop = [...logos, ...logos];
+  // Seamless ticker: duplicate the list and translate by exactly 50% of the track
+  // so the loop restarts with the first logo without a jump.
+  const loop = [...unique, ...unique];
+  const dir = isAr ? "rtl" : "ltr";
 
   return (
     <section className="container-site py-14">
       <h2 className="mb-8 text-center text-2xl font-extrabold text-ink-900 sm:text-3xl">{headingText}</h2>
       <div
+        dir={dir}
         className="relative overflow-hidden py-2"
         onPointerDown={pause}
         onPointerUp={resume}
@@ -60,17 +70,18 @@ export function ClientLogos({ logos, locale, title }: { logos: Project[]; locale
         onTouchStart={pause}
         onTouchEnd={resume}
       >
-        <div className="absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-r from-white to-transparent" aria-hidden="true" />
-        <div className="absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-l from-white to-transparent" aria-hidden="true" />
+        <div className={isAr ? "absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-l from-white to-transparent" : "absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-r from-white to-transparent"} aria-hidden="true" />
+        <div className={isAr ? "absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-r from-white to-transparent" : "absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-l from-white to-transparent"} aria-hidden="true" />
         <div
           className="flex w-max"
-          style={{ animation: `logos 30s linear infinite`, animationPlayState: paused ? "paused" : "running" }}
+          style={{ animation: isAr ? `logos-rtl 30s linear infinite` : `logos 30s linear infinite`, animationPlayState: paused ? "paused" : "running" }}
         >
-          {loop.map((p, i) => logoLink(p, i))}
+          {loop.map((p, i) => logoItem(p, i))}
         </div>
       </div>
       <style>{`
         @keyframes logos { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes logos-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
       `}</style>
     </section>
   );
