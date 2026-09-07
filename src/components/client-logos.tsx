@@ -474,6 +474,8 @@ export function ClientLogos({
             }
           }
 
+          // CRITICAL: commit the new Arabic positions to the DOM.
+          applyAllPositions();
           return;
         }
 
@@ -534,6 +536,9 @@ export function ClientLogos({
               spacing;
           }
         }
+
+        // CRITICAL: commit the new English positions to the DOM.
+        applyAllPositions();
       },
       [applyAllPositions, isArabic]
     );
@@ -1253,6 +1258,8 @@ export function ClientLogos({
       (
         event: React.MouseEvent<HTMLAnchorElement>
       ) => {
+        // Only a real horizontal touch drag may cancel navigation.
+        // Desktop mouse clicks must ALWAYS follow the Next.js Link.
         if (dragMovedRef.current) {
           event.preventDefault();
           event.stopPropagation();
@@ -1260,7 +1267,6 @@ export function ClientLogos({
           return;
         }
 
-        // Normal desktop click: do not prevent or stop the Next.js Link.
         dragMovedRef.current = false;
       },
       []
