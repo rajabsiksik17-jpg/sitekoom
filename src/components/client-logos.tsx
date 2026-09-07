@@ -595,6 +595,18 @@ export function ClientLogos({
       lastFrameTimeRef.current =
         now;
 
+      /*
+       * Always make sure the slider is initialized.
+       *
+       * The animation loop must not depend on a separate
+       * timer/ResizeObserver winning a race during the
+       * first render. This is especially important when
+       * there are only a few real logos.
+       */
+      if (!initializedRef.current) {
+        initializePositions(true);
+      }
+
       if (
         !pausedRef.current &&
         !reducedMotionRef.current &&
@@ -644,6 +656,7 @@ export function ClientLogos({
     };
   }, [
     clients.length,
+    initializePositions,
     moveLogos,
   ]);
 
