@@ -5,6 +5,8 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import Link from "next/link";
 import { localizePath } from "@/lib/i18n/config";
@@ -19,10 +21,13 @@ type ClientLogosProps = {
   };
 };
 
-const LOGO_SIZE = 96;
-const LOGO_GAP = 24;
 const MOBILE_SPEED = 38;
+const TABLET_SPEED = 42;
 const DESKTOP_SPEED = 45;
+
+const MOBILE_GAP = 24;
+const TABLET_GAP = 28;
+const DESKTOP_GAP = 32;
 
 export function ClientLogos({
   logos,
@@ -41,8 +46,8 @@ export function ClientLogos({
   /**
    * Remove duplicated projects.
    *
-   * The same project/logo can only exist once
-   * in the original source list.
+   * Every real project/logo exists only once.
+   * There are NO cloned logo elements.
    */
   const unique = Array.from(
     new Map(
@@ -56,137 +61,603 @@ export function ClientLogos({
     ).values()
   );
 
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const groupRef = useRef<HTMLDivElement | null>(null);
-  const trackRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef =
+    useRef<HTMLDivElement | null>(null);
 
-  const [loopDistance, setLoopDistance] =
-    useState<number>(0);
+  const itemRefs =
+    useRef<Array<HTMLAnchorElement | null>>([]);
 
-  const [paused, setPaused] = useState(false);
+  const positionsRef = useRef<number[]>([]);
+
+  const animationFrameRef =
+    useRef<number | null>(null);
+
+  const lastTimeRef = useRef<number | null>(null);
+
+  const containerWidthRef = useRef(0);
+  const itemWidthRef = useRef(96);
+  const spacingRef = useRef(120);
 
   const pointerDownRef = useRef(false);
 
+  const [ready, setReady] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] =
+    useState(false);
+
   /**
-   * Measure the exact distance between the beginning
-   * of group #1 and the beginning of group #2.
-   *
-   * This is the critical value for a seamless loop.
+   * Get responsive gap.
    */
-  const measureLoop = useCallback(() => {
-    const group = groupRef.current;
-
-    if (!group) return;
-
-    const width = group.getBoundingClientRect().width;
-
-    if (!width) return;
-
-    /**
-     * The second group starts after:
-     *
-     * group width + LOGO_GAP
-     *
-     * because the two groups are separated by the same
-     * gap used between logos.
-     */
-    const distance = width + LOGO_GAP;
-
-    setLoopDistance(distance);
-  }, []);
-
-  useEffect(() => {
-    if (unique.length <= 1) return;
-
-    measureLoop();
-
-    const resize = () => {
-      measureLoop();
-    };
-
-    window.addEventListener("resize", resize);
-
-    let observer: ResizeObserver | null = null;
-
-    if (
-      typeof ResizeObserver !== "undefined" &&
-      groupRef.current
-    ) {
-      observer = new ResizeObserver(() => {
-        measureLoop();
-      });
-
-      observer.observe(groupRef.current);
+  const getGap = useCallback(() => {
+    if (typeof window === "undefined") {
+      return DESKTOP_GAP;
     }
 
-    return () => {
-      window.removeEventListener("resize", resize);
-      observer?.disconnect();
-    };
-  }, [measureLoop, unique.length]);
+    if (window.innerWidth < 640) {
+      return MOBILE_GAP;
+    }
+
+    if (window.innerWidth < 1024) {
+      return TABLET_GAP;
+    }
+
+    return DESKTOP_GAP;
+  }, []);
 
   /**
-   * Recalculate after images have loaded.
+   * Get fixed movement speed for the current viewport.
    *
-   * This prevents the loop width from being measured
-   * before the logos finish loading.
+   * Speed is NOT related to logo count or logo length.
    */
-  useEffect(() => {
-    if (unique.length <= 1) return;
+  const getSpeed = useCallback(() => {
+    if (typeof window === "undefined") {
+      return DESKTOP_SPEED;
+    }
 
-    const images =
-      groupRef.current?.querySelectorAll("img");
+    if (window.innerWidth < 640) {
+      return MOBILE_SPEED;
+    }
 
-    if (!images?.length) {
-      measureLoop();
+    if (window.innerWidth < 1024) {
+      return TABLET_SPEED;
+    }
+
+    return DESKTOP_SPEED;
+  }, []);
+
+  /**
+   * Measure and initialize all logo positions.
+   *
+   * IMPORTANT:
+   * The logos are positioned independently.
+   * There are no duplicated logo groups.
+   */
+  const initializePositions = useCallback(() => {
+    const viewport = viewportRef.current;
+
+    if (!viewport || unique.length === 0) {
       return;
     }
 
-    const handleImageLoad = () => {
-      measureLoop();
+    const containerWidth =
+      viewport.getBoundingClientRect().width;
+
+    if (containerWidth <= 0) {
+      return;
+    }
+
+    const firstItem = itemRefs.current[0];
+
+    const measuredItemWidth =
+      firstItem?.getBoundingClientRect().width ??
+      96;
+
+    const gap = getGap();
+
+    /**
+     * Keep logos distributed across the available width.
+     *
+     * This is important when there are only a few clients.
+     * It prevents all logos from being clustered on one side.
+     */
+    const minimumSpacing =
+      measuredItemWidth + gap;
+
+    const distributedSpacing =
+      unique.length > 0
+        ? containerWidth / unique.length
+        : minimumSpacing;
+
+    const spacing = Math.max(
+      minimumSpacing,
+      distributedSpacing
+    );
+
+    containerWidthRef.current = containerWidth;
+    itemWidthRef.current = measuredItemWidth;
+    spacingRef.current = spacing;
+
+    const positions: number[] = [];
+
+    if (isAr) {
+      /**
+       * Arabic / RTL:
+       *
+       * First logo starts on the RIGHT.
+       *
+       * Visual order:
+       *
+       * [1] [2] [3] [4]
+       *  ↑
+       * first logo
+       *
+       * They move toward the right.
+       * Once a logo completely leaves the right side,
+       * it is placed outside the LEFT side.
+       */
+      for (
+        let index = 0;
+        index < unique.length;
+        index += 1
+      ) {
+        positions.push(
+          containerWidth -
+            measuredItemWidth -
+            index * spacing
+        );
+      }
+    } else {
+      /**
+       * English / LTR:
+       *
+       * First logo starts on the LEFT.
+       *
+       * Visual order:
+       *
+       * [1] [2] [3] [4]
+       *  ↑
+       * first logo
+       *
+       * They move toward the left.
+       * Once a logo completely leaves the left side,
+       * it is placed outside the RIGHT side.
+       */
+      for (
+        let index = 0;
+        index < unique.length;
+        index += 1
+      ) {
+        positions.push(index * spacing);
+      }
+    }
+
+    positionsRef.current = positions;
+
+    /**
+     * Apply positions directly to DOM.
+     *
+     * This avoids React re-rendering every animation frame.
+     */
+    itemRefs.current.forEach((item, index) => {
+      if (!item) return;
+
+      const position =
+        positions[index] ?? 0;
+
+      item.style.transform =
+        `translate3d(${position}px, 0, 0)`;
+    });
+
+    setReady(true);
+  }, [getGap, isAr, unique.length]);
+
+  /**
+   * Initial measurement.
+   */
+  useEffect(() => {
+    if (unique.length <= 1) {
+      setReady(true);
+      return;
+    }
+
+    /**
+     * Give the browser one frame so dimensions are
+     * available after the images/layout have rendered.
+     */
+    const frame = requestAnimationFrame(() => {
+      initializePositions();
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [initializePositions, unique.length]);
+
+  /**
+   * Recalculate after logo images load.
+   */
+  useEffect(() => {
+    if (unique.length <= 1) {
+      return;
+    }
+
+    const images =
+      viewportRef.current?.querySelectorAll(
+        "img"
+      );
+
+    if (!images?.length) {
+      return;
+    }
+
+    const handleLoad = () => {
+      initializePositions();
     };
 
     images.forEach((image) => {
       if (!image.complete) {
         image.addEventListener(
           "load",
-          handleImageLoad
+          handleLoad
         );
       }
     });
-
-    measureLoop();
 
     return () => {
       images.forEach((image) => {
         image.removeEventListener(
           "load",
-          handleImageLoad
+          handleLoad
         );
       });
     };
-  }, [measureLoop, unique]);
+  }, [initializePositions, unique.length]);
 
   /**
-   * Keep animation running smoothly after resize.
+   * ResizeObserver.
+   *
+   * Rebuild positions when the screen/container changes.
    */
   useEffect(() => {
-    if (!trackRef.current || !loopDistance) return;
+    if (unique.length <= 1) {
+      return;
+    }
 
-    trackRef.current.style.setProperty(
-      "--logos-loop-distance",
-      `${loopDistance}px`
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    let resizeTimer:
+      ReturnType<typeof setTimeout> | null = null;
+
+    const handleResize = () => {
+      setReady(false);
+
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+
+      resizeTimer = setTimeout(() => {
+        initializePositions();
+      }, 100);
+    };
+
+    window.addEventListener(
+      "resize",
+      handleResize
     );
-  }, [loopDistance]);
+
+    let observer: ResizeObserver | null = null;
+
+    if (
+      typeof ResizeObserver !== "undefined"
+    ) {
+      observer = new ResizeObserver(() => {
+        handleResize();
+      });
+
+      observer.observe(viewport);
+    }
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        handleResize
+      );
+
+      observer?.disconnect();
+
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+    };
+  }, [initializePositions, unique.length]);
 
   /**
-   * Pause while interacting with the slider.
+   * Detect prefers-reduced-motion.
    */
-  const pause = useCallback(() => {
-    pointerDownRef.current = true;
-    setPaused(true);
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !window.matchMedia
+    ) {
+      return;
+    }
+
+    const mediaQuery =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+    const update = () => {
+      setReducedMotion(mediaQuery.matches);
+    };
+
+    update();
+
+    mediaQuery.addEventListener(
+      "change",
+      update
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        update
+      );
+    };
   }, []);
 
+  /**
+   * Main animation loop.
+   *
+   * Each logo moves independently.
+   *
+   * There is no duplicated DOM.
+   * There is no CSS animation reset.
+   * There is no translateX(50%).
+   */
+  useEffect(() => {
+    if (
+      unique.length <= 1 ||
+      !ready ||
+      reducedMotion
+    ) {
+      return;
+    }
+
+    const animate = (time: number) => {
+      if (lastTimeRef.current === null) {
+        lastTimeRef.current = time;
+      }
+
+      const delta = Math.min(
+        time - lastTimeRef.current,
+        50
+      );
+
+      lastTimeRef.current = time;
+
+      if (
+        !paused &&
+        !pointerDownRef.current
+      ) {
+        const speed = getSpeed();
+
+        const movement =
+          (speed * delta) / 1000;
+
+        const containerWidth =
+          containerWidthRef.current;
+
+        const itemWidth =
+          itemWidthRef.current;
+
+        const spacing =
+          spacingRef.current;
+
+        const positions =
+          positionsRef.current;
+
+        /**
+         * RTL:
+         *
+         * First logo begins at the right.
+         * Movement is toward the right.
+         *
+         * When it completely exits:
+         *
+         * RIGHT → OUT
+         *
+         * Then it is placed after the leftmost logo:
+         *
+         * OUT → LEFT
+         *
+         * This creates:
+         *
+         * 1 → 2 → 3 → 1 → 2 → 3
+         */
+        if (isAr) {
+          for (
+            let index = 0;
+            index < positions.length;
+            index += 1
+          ) {
+            positions[index] += movement;
+          }
+
+          for (
+            let index = 0;
+            index < positions.length;
+            index += 1
+          ) {
+            if (
+              positions[index] >
+              containerWidth
+            ) {
+              let leftmost =
+                Number.POSITIVE_INFINITY;
+
+              for (
+                let i = 0;
+                i < positions.length;
+                i += 1
+              ) {
+                if (
+                  i !== index &&
+                  positions[i] <
+                    leftmost
+                ) {
+                  leftmost =
+                    positions[i];
+                }
+              }
+
+              if (
+                leftmost !==
+                Number.POSITIVE_INFINITY
+              ) {
+                positions[index] =
+                  leftmost -
+                  spacing;
+              }
+            }
+          }
+        } else {
+          /**
+           * LTR:
+           *
+           * First logo begins at the left.
+           * Movement is toward the left.
+           *
+           * When it completely exits:
+           *
+           * LEFT → OUT
+           *
+           * Then it is placed after the rightmost logo:
+           *
+           * OUT → RIGHT
+           *
+           * This creates:
+           *
+           * 1 → 2 → 3 → 1 → 2 → 3
+           */
+          for (
+            let index = 0;
+            index < positions.length;
+            index += 1
+          ) {
+            positions[index] -= movement;
+          }
+
+          for (
+            let index = 0;
+            index < positions.length;
+            index += 1
+          ) {
+            if (
+              positions[index] +
+                itemWidth <
+              0
+            ) {
+              let rightmost =
+                Number.NEGATIVE_INFINITY;
+
+              for (
+                let i = 0;
+                i < positions.length;
+                i += 1
+              ) {
+                if (
+                  i !== index &&
+                  positions[i] >
+                    rightmost
+                ) {
+                  rightmost =
+                    positions[i];
+                }
+              }
+
+              if (
+                rightmost !==
+                Number.NEGATIVE_INFINITY
+              ) {
+                positions[index] =
+                  rightmost +
+                  spacing;
+              }
+            }
+          }
+        }
+
+        /**
+         * Write transforms directly.
+         */
+        itemRefs.current.forEach(
+          (item, index) => {
+            if (!item) return;
+
+            const position =
+              positions[index];
+
+            if (
+              typeof position !==
+              "number"
+            ) {
+              return;
+            }
+
+            item.style.transform =
+              `translate3d(${position}px, 0, 0)`;
+          }
+        );
+      }
+
+      animationFrameRef.current =
+        requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current =
+      requestAnimationFrame(animate);
+
+    return () => {
+      if (
+        animationFrameRef.current !==
+        null
+      ) {
+        cancelAnimationFrame(
+          animationFrameRef.current
+        );
+      }
+
+      animationFrameRef.current = null;
+      lastTimeRef.current = null;
+    };
+  }, [
+    getSpeed,
+    isAr,
+    paused,
+    ready,
+    reducedMotion,
+    unique.length,
+  ]);
+
+  /**
+   * Pause while interacting.
+   */
+  const pause = useCallback(
+    (_event?: ReactPointerEvent<HTMLDivElement>) => {
+      pointerDownRef.current = true;
+      setPaused(true);
+    },
+    []
+  );
+
+  /**
+   * Resume after interaction.
+   */
   const resume = useCallback(() => {
     pointerDownRef.current = false;
 
@@ -198,10 +669,12 @@ export function ClientLogos({
   }, []);
 
   /**
-   * Toggle with keyboard.
+   * Keyboard accessibility.
    */
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
+    (
+      event: React.KeyboardEvent<HTMLDivElement>
+    ) => {
       if (
         event.key === "Enter" ||
         event.key === " "
@@ -213,36 +686,55 @@ export function ClientLogos({
     []
   );
 
+  /**
+   * No logos.
+   */
   if (unique.length === 0) {
     return null;
   }
 
   /**
-   * Render one logo.
+   * Render logo.
+   *
+   * No duplicate rendering.
    */
   const renderLogo = (
     project: Project,
-    index: number,
-    duplicate = false
+    index: number
   ) => {
     const projectTitle =
-      locale === "ar"
-        ? project.title_ar || project.title_en
-        : project.title_en || project.title_ar;
+      isAr
+        ? project.title_ar ||
+          project.title_en ||
+          "Project"
+        : project.title_en ||
+          project.title_ar ||
+          "Project";
+
+    const style: CSSProperties = {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      transform:
+        "translate3d(0, 0, 0)",
+      willChange: "transform",
+    };
 
     return (
       <Link
-        key={`${duplicate ? "clone" : "original"}-${project.id}-${index}`}
+        key={project.id}
+        ref={(element) => {
+          itemRefs.current[index] =
+            element;
+        }}
         href={localizePath(
           `/projects/${project.slug}`,
           locale
         )}
-        aria-label={projectTitle || "Project"}
-        aria-hidden={duplicate}
-        tabIndex={duplicate ? -1 : 0}
+        aria-label={projectTitle}
+        style={style}
         className="
           group
-          relative
           flex
           h-24
           w-24
@@ -257,9 +749,8 @@ export function ClientLogos({
           shadow-soft
           ring-2
           ring-brand-500/10
-          transition-all
+          transition-[border-color,box-shadow,transform]
           duration-300
-          hover:-translate-y-1
           hover:border-brand-400
           hover:shadow-glow
           hover:ring-brand-500/25
@@ -287,7 +778,7 @@ export function ClientLogos({
           "
         />
 
-        {/* Logo */}
+        {/* Logo container */}
         <span
           className="
             relative
@@ -305,7 +796,7 @@ export function ClientLogos({
             src={project.logo!}
             alt=""
             draggable={false}
-            loading={duplicate ? "eager" : "lazy"}
+            loading="lazy"
             className="
               max-h-full
               max-w-full
@@ -322,7 +813,7 @@ export function ClientLogos({
   };
 
   /**
-   * One logo does not need animation.
+   * Only one logo.
    */
   if (unique.length === 1) {
     return (
@@ -347,48 +838,6 @@ export function ClientLogos({
     );
   }
 
-  /**
-   * IMPORTANT:
-   *
-   * Do NOT reverse the data depending on RTL.
-   *
-   * The visual direction is controlled by the track
-   * animation, not by flex-direction / dir="rtl".
-   *
-   * This prevents Arabic from reversing the actual
-   * sequence of logos.
-   */
-  const firstGroup = unique;
-  const secondGroup = unique;
-
-  /**
-   * Animation direction:
-   *
-   * Arabic:
-   * First → Second → Third → ... → Last → First
-   *
-   * English:
-   * First → Second → Third → ... → Last → First
-   *
-   * Both use the same physical ticker direction.
-   *
-   * The language itself must NOT cause the logos to
-   * suddenly reverse their order.
-   */
-  const animationDirection = "normal";
-
-  const animationDuration =
-    loopDistance > 0
-      ? `${Math.max(
-          loopDistance /
-            (typeof window !== "undefined" &&
-            window.innerWidth < 640
-              ? MOBILE_SPEED
-              : DESKTOP_SPEED),
-          4
-        )}s`
-      : "30s";
-
   return (
     <section className="container-site py-14">
       <h2
@@ -406,10 +855,10 @@ export function ClientLogos({
 
       <div
         ref={viewportRef}
+        dir="ltr"
         role="region"
         aria-label={headingText}
         tabIndex={0}
-        dir="ltr"
         onKeyDown={handleKeyDown}
         onPointerDown={pause}
         onPointerUp={resume}
@@ -419,105 +868,19 @@ export function ClientLogos({
         onTouchEnd={resume}
         className="
           relative
+          h-24
           w-full
           overflow-hidden
-          py-3
+          py-0
           outline-none
-          touch-pan-y
+          sm:h-26
+          md:h-28
         "
       >
-        <div
-          ref={trackRef}
-          className={`
-            logos-track
-            flex
-            w-max
-            items-center
-            gap-6
-            will-change-transform
-            sm:gap-7
-            md:gap-8
-            ${paused ? "logos-track-paused" : ""}
-          `}
-          style={{
-            animationName: "client-logos-marquee",
-            animationDuration,
-            animationTimingFunction: "linear",
-            animationIterationCount: "infinite",
-            animationPlayState: paused
-              ? "paused"
-              : "running",
-            animationDirection,
-            "--logos-loop-distance":
-              `${loopDistance}px`,
-          } as React.CSSProperties}
-        >
-          {/* ORIGINAL GROUP */}
-          <div
-            ref={groupRef}
-            className="
-              flex
-              shrink-0
-              items-center
-              gap-6
-              sm:gap-7
-              md:gap-8
-            "
-          >
-            {firstGroup.map((project, index) =>
-              renderLogo(project, index, false)
-            )}
-          </div>
-
-          {/* CLONED GROUP */}
-          <div
-            className="
-              flex
-              shrink-0
-              items-center
-              gap-6
-              sm:gap-7
-              md:gap-8
-            "
-            aria-hidden="true"
-          >
-            {secondGroup.map((project, index) =>
-              renderLogo(project, index, true)
-            )}
-          </div>
-        </div>
+        {unique.map((project, index) =>
+          renderLogo(project, index)
+        )}
       </div>
-
-      <style jsx>{`
-        .logos-track {
-          transform: translate3d(0, 0, 0);
-        }
-
-        .logos-track-paused {
-          animation-play-state: paused !important;
-        }
-
-        @keyframes client-logos-marquee {
-          from {
-            transform: translate3d(0, 0, 0);
-          }
-
-          to {
-            transform: translate3d(
-              calc(-1 * var(--logos-loop-distance)),
-              0,
-              0
-            );
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .logos-track {
-            animation: none !important;
-            transform: translate3d(0, 0, 0) !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
