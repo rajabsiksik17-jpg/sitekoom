@@ -131,6 +131,32 @@ export function SettingsManager() {
               <Field label="سرعة تمرير اللقطة (px/ثانية)">
                 <input className="input" dir="ltr" type="number" min={50} max={2000} disabled={!(g.website_preview_enabled ?? true)} value={Number(g.website_preview_scroll_speed ?? 240)} onChange={(e) => update("general", "website_preview_scroll_speed", Number(e.target.value))} />
               </Field>
+              <Field label="سرعة Desktop (px/ثانية)">
+                <input className="input" dir="ltr" type="number" min={50} max={2000} value={Number(g.scroll_speed_desktop ?? 140)} onChange={(e) => update("general", "scroll_speed_desktop", Number(e.target.value))} />
+              </Field>
+              <Field label="سرعة Tablet (px/ثانية)">
+                <input className="input" dir="ltr" type="number" min={50} max={2000} value={Number(g.scroll_speed_tablet ?? 160)} onChange={(e) => update("general", "scroll_speed_tablet", Number(e.target.value))} />
+              </Field>
+              <Field label="سرعة Mobile (px/ثانية)">
+                <input className="input" dir="ltr" type="number" min={50} max={2000} value={Number(g.scroll_speed_mobile ?? 180)} onChange={(e) => update("general", "scroll_speed_mobile", Number(e.target.value))} />
+              </Field>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-brand-100 p-5">
+            <p className="mb-4 font-bold text-ink-900">عرض الأعمال</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="طريقة عرض الأعمال في الرئيسية">
+                <select className="input" value={String(g.homepage_projects_display ?? "grid")} onChange={(e) => update("general", "homepage_projects_display", e.target.value)}>
+                  <option value="grid">Grid (شبكة)</option>
+                  <option value="slider">Slider (سلايدر)</option>
+                </select>
+              </Field>
+              <Field label="عدد الأعمال في صفحة الأعمال (Pagination)">
+                <select className="input" value={String(g.works_page_size ?? 9)} onChange={(e) => update("general", "works_page_size", Number(e.target.value))}>
+                  {[6, 8, 9, 12, 16, 20].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </Field>
             </div>
           </div>
           </>
