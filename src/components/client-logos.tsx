@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { localizePath } from "@/lib/i18n/config";
 import type { Project } from "@/lib/types";
@@ -18,14 +13,6 @@ type ClientLogosProps = {
     en: string;
   };
 };
-
-const MOBILE_GAP = 24;
-const TABLET_GAP = 28;
-const DESKTOP_GAP = 32;
-
-const MOBILE_SPEED = 38;
-const TABLET_SPEED = 42;
-const DESKTOP_SPEED = 45;
 
 export function ClientLogos({
   logos,
@@ -43,114 +30,49 @@ export function ClientLogos({
 
   /*
    * Remove duplicate projects.
-   *
-   * Each actual client/project appears only once
-   * in the original data.
+   * Each real client/project appears once.
    */
   const unique = Array.from(
     new Map(
       logos
         .filter(
           (project) =>
-            Boolean(project?.id) &&
-            Boolean(project?.logo)
+            project &&
+            project.id &&
+            project.logo
         )
         .map((project) => [project.id, project])
     ).values()
   );
 
-  const viewportRef =
-    useRef<HTMLDivElement | null>(null);
+  const groupRef = useRef<HTMLDivElement | null>(null);
 
-  const groupRef =
-    useRef<HTMLDivElement | null>(null);
-
-  const trackRef =
-    useRef<HTMLDivElement | null>(null);
-
-  const [loopDistance, setLoopDistance] =
-    useState(0);
-
+  const [groupWidth, setGroupWidth] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const [speed, setSpeed] =
-    useState(DESKTOP_SPEED);
-
-  const pointerDownRef =
-    useRef(false);
-
-  /**
-   * Return the responsive gap.
+  /*
+   * Measure the first group.
+   *
+   * The animation moves exactly one complete group.
+   * This makes the duplicated second group line up
+   * perfectly with the first group when the animation
+   * starts again.
    */
-  const getGap = useCallback(() => {
-    if (typeof window === "undefined") {
-      return DESKTOP_GAP;
-    }
-
-    if (window.innerWidth < 640) {
-      return MOBILE_GAP;
-    }
-
-    if (window.innerWidth < 1024) {
-      return TABLET_GAP;
-    }
-
-    return DESKTOP_GAP;
-  }, []);
-
-  /**
-   * Return the responsive animation speed.
-   *
-   * Speed is fixed per viewport.
-   * It does NOT depend on the number of logos.
-   */
-  const getSpeed = useCallback(() => {
-    if (typeof window === "undefined") {
-      return DESKTOP_SPEED;
-    }
-
-    if (window.innerWidth < 640) {
-      return MOBILE_SPEED;
-    }
-
-    if (window.innerWidth < 1024) {
-      return TABLET_SPEED;
-    }
-
-    return DESKTOP_SPEED;
-  }, []);
-
-  /**
-   * Measure the exact width of the first group.
-   *
-   * The animation moves exactly:
-   *
-   * group width + gap between groups
-   *
-   * This makes the second copy line up perfectly
-   * with the first copy when the animation loops.
-   */
-  const measureLoop = useCallback(() => {
-    const group = groupRef.current;
-
-    if (!group) {
+  const measureGroup = useCallback(() => {
+    if (!groupRef.current) {
       return;
     }
 
     const width =
-      group.getBoundingClientRect().width;
+      groupRef.current.getBoundingClientRect().width;
 
-    if (!width || width <= 0) {
-      return;
+    if (width > 0) {
+      setGroupWidth(width);
     }
+  }, []);
 
-    const gap = getGap();
-
-    setLoopDistance(width + gap);
-  }, [getGap]);
-
-  /**
-   * Measure initial dimensions.
+  /*
+   * Initial measurement + responsive measurement.
    */
   useEffect(() => {
     if (unique.length <= 1) {
@@ -158,29 +80,21 @@ export function ClientLogos({
     }
 
     const update = () => {
-      measureLoop();
-      setSpeed(getSpeed());
+      measureGroup();
     };
 
-    const frame =
-      window.requestAnimationFrame(update);
+    const frame = window.requestAnimationFrame(update);
 
-    window.addEventListener(
-      "resize",
-      update
-    );
+    window.addEventListener("resize", update);
 
-    let observer:
-      | ResizeObserver
-      | null = null;
+    let observer: ResizeObserver | null = null;
 
     if (
-      typeof ResizeObserver !==
-        "undefined" &&
+      typeof ResizeObserver !== "undefined" &&
       groupRef.current
     ) {
       observer = new ResizeObserver(() => {
-        update();
+        measureGroup();
       });
 
       observer.observe(groupRef.current);
@@ -188,22 +102,13 @@ export function ClientLogos({
 
     return () => {
       window.cancelAnimationFrame(frame);
-
-      window.removeEventListener(
-        "resize",
-        update
-      );
-
+      window.removeEventListener("resize", update);
       observer?.disconnect();
     };
-  }, [
-    getSpeed,
-    measureLoop,
-    unique.length,
-  ]);
+  }, [measureGroup, unique.length]);
 
-  /**
-   * Re-measure after images finish loading.
+  /*
+   * Re-measure after images have loaded.
    */
   useEffect(() => {
     if (unique.length <= 1) {
@@ -211,134 +116,90 @@ export function ClientLogos({
     }
 
     const images =
-      groupRef.current?.querySelectorAll(
-        "img"
-      );
+      groupRef.current?.querySelectorAll("img");
 
-    if (!images?.length) {
-      measureLoop();
+    if (!images || images.length === 0) {
+      measureGroup();
       return;
     }
 
-    const handleLoad = () => {
-      measureLoop();
+    const handleImageLoad = () => {
+      measureGroup();
     };
 
     images.forEach((image) => {
-      if (!image.complete) {
-        image.addEventListener(
-          "load",
-          handleLoad
-        );
-      }
+      image.addEventListener("load", handleImageLoad);
     });
 
-    measureLoop();
+    measureGroup();
 
     return () => {
       images.forEach((image) => {
         image.removeEventListener(
           "load",
-          handleLoad
+          handleImageLoad
         );
       });
     };
-  }, [
-    measureLoop,
-    unique.length,
-  ]);
+  }, [measureGroup, unique.length]);
 
-  /**
-   * Pause the ticker.
-   *
-   * No event argument is required.
-   *
-   * Therefore this function can safely be used with:
-   * onPointerDown
-   * onTouchStart
-   * onMouseEnter
-   * etc.
+  /*
+   * Pause when the user interacts with the slider.
    */
-  const pause = useCallback(() => {
-    pointerDownRef.current = true;
+  const handlePointerDown = useCallback(() => {
     setPaused(true);
   }, []);
 
-  /**
-   * Resume the ticker.
-   */
-  const resume = useCallback(() => {
-    pointerDownRef.current = false;
-
-    window.setTimeout(() => {
-      if (!pointerDownRef.current) {
-        setPaused(false);
-      }
-    }, 350);
+  const handlePointerUp = useCallback(() => {
+    setPaused(false);
   }, []);
 
-  /**
-   * Pointer handlers.
+  /*
+   * Touch events are intentionally separate.
+   * They do not receive or expect PointerEvent types.
    */
-  const handlePointerDown =
-    useCallback(() => {
-      pause();
-    }, [pause]);
+  const handleTouchStart = useCallback(() => {
+    setPaused(true);
+  }, []);
 
-  const handlePointerUp =
-    useCallback(() => {
-      resume();
-    }, [resume]);
+  const handleTouchEnd = useCallback(() => {
+    setPaused(false);
+  }, []);
 
-  /**
-   * Touch handlers.
-   *
-   * These are intentionally separate from pointer handlers
-   * so TypeScript never mixes PointerEvent and TouchEvent.
-   */
-  const handleTouchStart =
-    useCallback(() => {
-      pause();
-    }, [pause]);
+  const handleTouchCancel = useCallback(() => {
+    setPaused(false);
+  }, []);
 
-  const handleTouchEnd =
-    useCallback(() => {
-      resume();
-    }, [resume]);
-
-  /**
+  /*
    * Keyboard accessibility.
    */
-  const handleKeyDown =
-    useCallback(
-      (
-        event: React.KeyboardEvent<HTMLDivElement>
-      ) => {
-        if (
-          event.key === "Enter" ||
-          event.key === " "
-        ) {
-          event.preventDefault();
-          setPaused((value) => !value);
-        }
-      },
-      []
-    );
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+        setPaused((current) => !current);
+      }
+    },
+    []
+  );
 
-  /**
-   * No logos.
+  /*
+   * No client logos.
    */
   if (unique.length === 0) {
     return null;
   }
 
-  /**
-   * Render one logo.
+  /*
+   * Render a single logo.
    */
-  const logoItem = (
+  const renderLogo = (
     project: Project,
     index: number,
-    duplicate = false
+    duplicate: boolean
   ) => {
     const projectTitle = isAr
       ? project.title_ar ||
@@ -359,9 +220,7 @@ export function ClientLogos({
         aria-hidden={
           duplicate ? true : undefined
         }
-        tabIndex={
-          duplicate ? -1 : undefined
-        }
+        tabIndex={duplicate ? -1 : undefined}
         className="
           group
           relative
@@ -395,7 +254,6 @@ export function ClientLogos({
           md:w-28
         "
       >
-        {/* Premium inner ring */}
         <span
           aria-hidden="true"
           className="
@@ -409,7 +267,6 @@ export function ClientLogos({
           "
         />
 
-        {/* Logo */}
         <span
           className="
             relative
@@ -427,11 +284,7 @@ export function ClientLogos({
             src={project.logo!}
             alt=""
             draggable={false}
-            loading={
-              duplicate
-                ? "eager"
-                : "lazy"
-            }
+            loading={duplicate ? "eager" : "lazy"}
             className="
               max-h-full
               max-w-full
@@ -447,8 +300,9 @@ export function ClientLogos({
     );
   };
 
-  /**
-   * Only one logo.
+  /*
+   * If there is only one logo, there is no need for
+   * an infinite slider.
    */
   if (unique.length === 1) {
     return (
@@ -467,31 +321,31 @@ export function ClientLogos({
         </h2>
 
         <div className="flex justify-center">
-          {logoItem(unique[0], 0)}
+          {renderLogo(unique[0], 0, false)}
         </div>
       </section>
     );
   }
 
   /*
-   * Two identical groups.
+   * The distance of one complete cycle.
    *
-   * This is ONLY a technical clone for seamless animation.
-   * The data itself remains deduplicated.
+   * The two groups have the exact same contents,
+   * dimensions and gap.
    */
-  const firstGroup = unique;
-  const secondGroup = unique;
+  const animationDistance = groupWidth;
 
-  /**
-   * Animation duration is calculated from:
+  /*
+   * Fixed duration based on the actual group width.
    *
-   * exact loop distance / fixed speed
-   *
-   * Therefore the visual speed remains constant.
+   * This keeps the visual speed consistent.
    */
   const animationDuration =
-    loopDistance > 0
-      ? `${loopDistance / speed}s`
+    animationDistance > 0
+      ? `${Math.max(
+          animationDistance / 45,
+          8
+        )}s`
       : "30s";
 
   return (
@@ -510,7 +364,6 @@ export function ClientLogos({
       </h2>
 
       <div
-        ref={viewportRef}
         dir="ltr"
         role="region"
         aria-label={headingText}
@@ -522,7 +375,7 @@ export function ClientLogos({
         onPointerLeave={handlePointerUp}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
         className="
           relative
           w-full
@@ -533,26 +386,19 @@ export function ClientLogos({
         "
       >
         <div
-          ref={trackRef}
           className="
             client-logos-track
             flex
             w-max
             items-center
             gap-6
-            will-change-transform
             sm:gap-7
             md:gap-8
           "
-          style={
-            {
-              "--logos-distance": `${loopDistance}px`,
-              "--logos-duration": animationDuration,
-              animationPlayState: paused
-                ? "paused"
-                : "running",
-            } as React.CSSProperties
-          }
+          style={{
+            "--logo-loop-distance": `${animationDistance}px`,
+            "--logo-animation-duration": animationDuration,
+          } as React.CSSProperties}
         >
           {/* FIRST GROUP */}
           <div
@@ -566,18 +412,18 @@ export function ClientLogos({
               md:gap-8
             "
           >
-            {firstGroup.map(
-              (project, index) =>
-                logoItem(
-                  project,
-                  index,
-                  false
-                )
+            {unique.map((project, index) =>
+              renderLogo(
+                project,
+                index,
+                false
+              )
             )}
           </div>
 
-          {/* SECOND GROUP */}
+          {/* SECOND GROUP - technical clone */}
           <div
+            aria-hidden="true"
             className="
               flex
               shrink-0
@@ -586,15 +432,13 @@ export function ClientLogos({
               sm:gap-7
               md:gap-8
             "
-            aria-hidden="true"
           >
-            {secondGroup.map(
-              (project, index) =>
-                logoItem(
-                  project,
-                  index,
-                  true
-                )
+            {unique.map((project, index) =>
+              renderLogo(
+                project,
+                index,
+                true
+              )
             )}
           </div>
         </div>
@@ -603,20 +447,37 @@ export function ClientLogos({
       <style jsx>{`
         .client-logos-track {
           animation-name: client-logos-scroll;
-          animation-duration: var(--logos-duration);
+          animation-duration: var(
+            --logo-animation-duration
+          );
           animation-timing-function: linear;
           animation-iteration-count: infinite;
-          animation-fill-mode: both;
+          animation-play-state: ${paused
+            ? "paused"
+            : "running"};
+          animation-direction: ${isAr
+            ? "reverse"
+            : "normal"};
+          will-change: transform;
         }
 
         @keyframes client-logos-scroll {
           from {
-            transform: translate3d(0, 0, 0);
+            transform: translate3d(
+              0,
+              0,
+              0
+            );
           }
 
           to {
             transform: translate3d(
-              calc(-1 * var(--logos-distance)),
+              calc(
+                -1 *
+                  var(
+                    --logo-loop-distance
+                  )
+              ),
               0,
               0
             );
@@ -626,7 +487,11 @@ export function ClientLogos({
         @media (prefers-reduced-motion: reduce) {
           .client-logos-track {
             animation: none !important;
-            transform: translate3d(0, 0, 0) !important;
+            transform: translate3d(
+              0,
+              0,
+              0
+            ) !important;
           }
         }
       `}</style>
