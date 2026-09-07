@@ -43,12 +43,8 @@ export function ClientLogos({
     : sectionTitle.en;
 
   /*
-   * Keep only real unique projects.
-   *
-   * IMPORTANT:
-   * There are NO cloned logos.
-   * Every logo that appears on screen represents one
-   * real project from the database.
+   * Only real unique projects.
+   * No cloned logos are ever created.
    */
   const clients = useMemo(() => {
     return Array.from(
@@ -73,80 +69,91 @@ export function ClientLogos({
   const logoRefs =
     useRef<Array<HTMLAnchorElement | null>>([]);
 
-  /*
-   * Current X position of every logo.
-   */
-  const positionsRef = useRef<number[]>([]);
+  const positionsRef =
+    useRef<number[]>([]);
 
-  /*
-   * Distance between the beginning of each logo.
-   */
-  const spacingRef = useRef(0);
+  const spacingRef =
+    useRef(0);
 
-  /*
-   * Actual logo width.
-   */
-  const logoWidthRef = useRef(0);
+  const logoWidthRef =
+    useRef(0);
 
-  /*
-   * Current viewport width.
-   */
-  const viewportWidthRef = useRef(0);
+  const viewportWidthRef =
+    useRef(0);
 
-  /*
-   * Current movement speed.
-   */
-  const speedRef = useRef(DESKTOP_SPEED);
+  const speedRef =
+    useRef(DESKTOP_SPEED);
 
-  /*
-   * Animation state.
-   */
   const animationFrameRef =
     useRef<number | null>(null);
 
   const lastFrameTimeRef =
     useRef<number | null>(null);
 
-  const initializedRef = useRef(false);
+  const initializedRef =
+    useRef(false);
 
   /*
-   * Interaction states.
+   * IMPORTANT:
+   * Store the last REAL WIDTH.
+   *
+   * Mobile browsers can fire resize events while
+   * the address bar is expanding/collapsing during
+   * vertical page scrolling.
+   *
+   * We must NOT reset the slider in that situation.
    */
-  const pausedRef = useRef(false);
+  const lastMeasuredWidthRef =
+    useRef(0);
 
-  const hoveredRef = useRef(false);
+  const pausedRef =
+    useRef(false);
 
-  const touchingRef = useRef(false);
+  const hoveredRef =
+    useRef(false);
 
-  const draggingRef = useRef(false);
+  const touchingRef =
+    useRef(false);
 
-  const horizontalDragRef = useRef(false);
+  const draggingRef =
+    useRef(false);
 
-  const dragMovedRef = useRef(false);
+  const horizontalDragRef =
+    useRef(false);
 
-  const lastPointerXRef = useRef(0);
+  const dragMovedRef =
+    useRef(false);
+
+  const lastPointerXRef =
+    useRef(0);
 
   const pointerIdRef =
     useRef<number | null>(null);
 
-  /*
-   * Respect reduced motion.
-   */
-  const reducedMotionRef = useRef(false);
+  const reducedMotionRef =
+    useRef(false);
 
   /*
-   * Get speed according to viewport.
+   * Get responsive speed.
    */
   const getSpeed = useCallback(() => {
-    if (typeof window === "undefined") {
+    if (
+      typeof window === "undefined"
+    ) {
       return DESKTOP_SPEED;
     }
 
-    if (window.innerWidth < MOBILE_BREAKPOINT) {
+    if (
+      window.innerWidth <
+      MOBILE_BREAKPOINT
+    ) {
       return MOBILE_SPEED;
     }
 
-    if (window.innerWidth < TABLET_BREAKPOINT) {
+    if (
+      window.innerWidth <
+      TABLET_BREAKPOINT
+    ) {
       return TABLET_SPEED;
     }
 
@@ -154,9 +161,14 @@ export function ClientLogos({
   }, []);
 
   /*
-   * Write the current position directly to DOM.
+   * Apply one logo position.
    *
-   * This avoids React re-rendering every frame.
+   * No opacity.
+   * No fade.
+   * No transition on transform.
+   *
+   * This is important so a wrapped logo enters
+   * immediately from the opposite edge.
    */
   const applyPosition = useCallback(
     (
@@ -172,255 +184,325 @@ export function ClientLogos({
   );
 
   /*
-   * Apply all current positions.
+   * Apply every logo position.
    */
-  const applyAllPositions = useCallback(() => {
-    positionsRef.current.forEach(
-      (x, index) => {
-        const element =
-          logoRefs.current[index];
+  const applyAllPositions =
+    useCallback(() => {
+      positionsRef.current.forEach(
+        (x, index) => {
+          const element =
+            logoRefs.current[index];
 
-        if (!element) {
+          if (!element) {
+            return;
+          }
+
+          applyPosition(
+            element,
+            x
+          );
+        }
+      );
+    }, [applyPosition]);
+
+  /*
+   * Initialize the slider.
+   *
+   * IMPORTANT:
+   * This should only happen when the actual
+   * horizontal width changes, NOT simply because
+   * the mobile browser fired a resize during scroll.
+   */
+  const initializePositions =
+    useCallback(
+      (
+        force = false
+      ) => {
+        const viewport =
+          viewportRef.current;
+
+        if (
+          !viewport ||
+          clients.length === 0
+        ) {
           return;
         }
 
-        applyPosition(element, x);
-      }
-    );
-  }, [applyPosition]);
+        const viewportWidth =
+          viewport.getBoundingClientRect()
+            .width;
 
-  /*
-   * Initialize all logos.
-   *
-   * Arabic:
-   *   First logo starts on the RIGHT
-   *   and moves toward the LEFT.
-   *
-   * English:
-   *   First logo starts on the LEFT
-   *   and moves toward the RIGHT.
-   *
-   * There is only ONE DOM element per logo.
-   */
-  const initializePositions = useCallback(() => {
-    const viewport =
-      viewportRef.current;
+        if (
+          viewportWidth <= 0
+        ) {
+          return;
+        }
 
-    if (!viewport || clients.length === 0) {
-      return;
-    }
-
-    const viewportWidth =
-      viewport.getBoundingClientRect().width;
-
-    if (viewportWidth <= 0) {
-      return;
-    }
-
-    const firstLogo =
-      logoRefs.current[0];
-
-    if (!firstLogo) {
-      return;
-    }
-
-    const logoWidth =
-      firstLogo.getBoundingClientRect().width;
-
-    if (logoWidth <= 0) {
-      return;
-    }
-
-    const speed = getSpeed();
-
-    /*
-     * Responsive gap.
-     */
-    let minimumGap = 24;
-
-    if (window.innerWidth >= TABLET_BREAKPOINT) {
-      minimumGap = 32;
-    } else if (
-      window.innerWidth >= MOBILE_BREAKPOINT
-    ) {
-      minimumGap = 28;
-    }
-
-    /*
-     * Spread the real logos across the available
-     * viewport when there are only a few logos.
-     *
-     * No duplicates are created to fill space.
-     */
-    const spacing = Math.max(
-      logoWidth + minimumGap,
-      viewportWidth / clients.length
-    );
-
-    viewportWidthRef.current =
-      viewportWidth;
-
-    logoWidthRef.current =
-      logoWidth;
-
-    spacingRef.current =
-      spacing;
-
-    speedRef.current =
-      speed;
-
-    positionsRef.current =
-      clients.map((_, index) => {
-        if (isArabic) {
-          /*
-           * RTL:
-           *
-           * First logo = right
-           * Second = left of first
-           * Third = left of second
-           */
-          return (
+        /*
+         * Do not reset the animation if the width
+         * did not actually change.
+         *
+         * This prevents the mobile scroll restart bug.
+         */
+        if (
+          !force &&
+          initializedRef.current &&
+          Math.abs(
             viewportWidth -
-            logoWidth -
-            index * spacing
+              lastMeasuredWidthRef.current
+          ) < 1
+        ) {
+          return;
+        }
+
+        const firstLogo =
+          logoRefs.current[0];
+
+        if (!firstLogo) {
+          return;
+        }
+
+        const logoWidth =
+          firstLogo.getBoundingClientRect()
+            .width;
+
+        if (
+          logoWidth <= 0
+        ) {
+          return;
+        }
+
+        const speed =
+          getSpeed();
+
+        let minimumGap = 24;
+
+        if (
+          window.innerWidth >=
+          TABLET_BREAKPOINT
+        ) {
+          minimumGap = 32;
+        } else if (
+          window.innerWidth >=
+          MOBILE_BREAKPOINT
+        ) {
+          minimumGap = 28;
+        }
+
+        /*
+         * When there are only a few real logos,
+         * spread them across the available space.
+         *
+         * Still NO duplicates.
+         */
+        const spacing =
+          Math.max(
+            logoWidth +
+              minimumGap,
+            viewportWidth /
+              clients.length
           );
-        }
 
-        /*
-         * LTR:
-         *
-         * First logo = left
-         * Second = right of first
-         * Third = right of second
-         */
-        return index * spacing;
-      });
+        viewportWidthRef.current =
+          viewportWidth;
 
-    applyAllPositions();
+        logoWidthRef.current =
+          logoWidth;
 
-    initializedRef.current = true;
+        spacingRef.current =
+          spacing;
 
-    lastFrameTimeRef.current =
-      performance.now();
-  }, [
-    clients,
-    getSpeed,
-    isArabic,
-    applyAllPositions,
-  ]);
+        speedRef.current =
+          speed;
 
-  /*
-   * Update pause state.
-   */
-  const syncPausedState = useCallback(() => {
-    pausedRef.current =
-      hoveredRef.current ||
-      touchingRef.current ||
-      draggingRef.current;
-  }, []);
+        lastMeasuredWidthRef.current =
+          viewportWidth;
 
-  /*
-   * Move every logo by delta.
-   */
-  const moveLogos = useCallback(
-    (delta: number) => {
-      const viewportWidth =
-        viewportWidthRef.current;
-
-      const logoWidth =
-        logoWidthRef.current;
-
-      const spacing =
-        spacingRef.current;
-
-      const positions =
-        positionsRef.current;
-
-      if (
-        viewportWidth <= 0 ||
-        logoWidth <= 0 ||
-        spacing <= 0 ||
-        positions.length === 0
-      ) {
-        return;
-      }
-
-      /*
-       * Arabic / RTL
-       *
-       * Move from right -> left.
-       */
-      if (isArabic) {
-        for (
-          let index = 0;
-          index < positions.length;
-          index += 1
-        ) {
-          positions[index] -= delta;
-        }
-
-        /*
-         * Find every logo that completely left
-         * the left side.
-         *
-         * Move it to the RIGHT of the current
-         * right-most logo.
-         */
-        for (
-          let index = 0;
-          index < positions.length;
-          index += 1
-        ) {
-          if (
-            positions[index] +
-              logoWidth <
-            0
-          ) {
-            let rightMost =
-              positions[0];
-
-            for (
-              let i = 1;
-              i < positions.length;
-              i += 1
-            ) {
-              if (
-                positions[i] >
-                rightMost
-              ) {
-                rightMost =
-                  positions[i];
+        positionsRef.current =
+          clients.map(
+            (_, index) => {
+              if (isArabic) {
+                /*
+                 * Arabic:
+                 *
+                 * A   B   C
+                 * ← ← ←
+                 *
+                 * First logo starts from the right.
+                 */
+                return (
+                  viewportWidth -
+                  logoWidth -
+                  index *
+                    spacing
+                );
               }
-            }
 
-            positions[index] =
-              rightMost + spacing;
-          }
+              /*
+               * English:
+               *
+               * A   B   C
+               * → → →
+               *
+               * First logo starts from the left.
+               */
+              return (
+                index * spacing
+              );
+            }
+          );
+
+        applyAllPositions();
+
+        initializedRef.current =
+          true;
+
+        lastFrameTimeRef.current =
+          performance.now();
+      },
+      [
+        clients,
+        getSpeed,
+        isArabic,
+        applyAllPositions,
+      ]
+    );
+
+  /*
+   * Keep pause state synchronized.
+   */
+  const syncPausedState =
+    useCallback(() => {
+      pausedRef.current =
+        hoveredRef.current ||
+        touchingRef.current ||
+        draggingRef.current;
+    }, []);
+
+  /*
+   * Move logos.
+   *
+   * Every logo is an independent real element.
+   */
+  const moveLogos =
+    useCallback(
+      (delta: number) => {
+        const viewportWidth =
+          viewportWidthRef.current;
+
+        const logoWidth =
+          logoWidthRef.current;
+
+        const spacing =
+          spacingRef.current;
+
+        const positions =
+          positionsRef.current;
+
+        if (
+          viewportWidth <= 0 ||
+          logoWidth <= 0 ||
+          spacing <= 0 ||
+          positions.length === 0
+        ) {
+          return;
         }
-      } else {
+
         /*
-         * English / LTR
+         * ============================
+         * RTL / ARABIC
+         * ============================
          *
-         * Move from left -> right.
+         * Move right -> left.
+         */
+        if (isArabic) {
+          for (
+            let index = 0;
+            index <
+            positions.length;
+            index += 1
+          ) {
+            positions[index] -=
+              delta;
+          }
+
+          /*
+           * If a logo completely leaves
+           * the LEFT edge:
+           *
+           * put the SAME logo immediately
+           * after the right-most logo.
+           *
+           * No clone.
+           * No fade.
+           * No reset.
+           */
+          for (
+            let index = 0;
+            index <
+            positions.length;
+            index += 1
+          ) {
+            if (
+              positions[index] +
+                logoWidth <
+              0
+            ) {
+              let rightMost =
+                positions[0];
+
+              for (
+                let i = 1;
+                i <
+                positions.length;
+                i += 1
+              ) {
+                if (
+                  positions[i] >
+                  rightMost
+                ) {
+                  rightMost =
+                    positions[i];
+                }
+              }
+
+              positions[index] =
+                rightMost +
+                spacing;
+            }
+          }
+
+          return;
+        }
+
+        /*
+         * ============================
+         * LTR / ENGLISH
+         * ============================
+         *
+         * Move left -> right.
          */
         for (
           let index = 0;
-          index < positions.length;
+          index <
+          positions.length;
           index += 1
         ) {
-          positions[index] += delta;
+          positions[index] +=
+            delta;
         }
 
         /*
-         * Find every logo that completely left
-         * the right side.
+         * If a logo completely leaves
+         * the RIGHT edge:
          *
-         * Move it to the LEFT of the current
-         * left-most logo.
+         * put the SAME logo immediately
+         * before the left-most logo.
          */
         for (
           let index = 0;
-          index < positions.length;
+          index <
+          positions.length;
           index += 1
         ) {
           if (
@@ -432,7 +514,8 @@ export function ClientLogos({
 
             for (
               let i = 1;
-              i < positions.length;
+              i <
+              positions.length;
               i += 1
             ) {
               if (
@@ -445,15 +528,13 @@ export function ClientLogos({
             }
 
             positions[index] =
-              leftMost - spacing;
+              leftMost -
+              spacing;
           }
         }
-      }
-
-      applyAllPositions();
-    },
-    [applyAllPositions, isArabic]
-  );
+      },
+      [applyAllPositions, isArabic]
+    );
 
   /*
    * Main animation loop.
@@ -468,10 +549,11 @@ export function ClientLogos({
         "(prefers-reduced-motion: reduce)"
       );
 
-    const updateReducedMotion = () => {
-      reducedMotionRef.current =
-        mediaQuery.matches;
-    };
+    const updateReducedMotion =
+      () => {
+        reducedMotionRef.current =
+          mediaQuery.matches;
+      };
 
     updateReducedMotion();
 
@@ -482,7 +564,9 @@ export function ClientLogos({
 
     let mounted = true;
 
-    const frame = (now: number) => {
+    const frame = (
+      now: number
+    ) => {
       if (!mounted) {
         return;
       }
@@ -495,6 +579,12 @@ export function ClientLogos({
           now;
       }
 
+      /*
+       * Cap elapsed time.
+       *
+       * This prevents a huge jump if the browser
+       * temporarily pauses rendering.
+       */
       const elapsed =
         Math.min(
           now -
@@ -514,7 +604,9 @@ export function ClientLogos({
           speedRef.current *
           (elapsed / 1000);
 
-        if (delta > 0) {
+        if (
+          delta > 0
+        ) {
           moveLogos(delta);
         }
       }
@@ -542,57 +634,86 @@ export function ClientLogos({
         );
       }
 
-      animationFrameRef.current = null;
+      animationFrameRef.current =
+        null;
 
       mediaQuery.removeEventListener(
         "change",
         updateReducedMotion
       );
     };
-  }, [clients.length, moveLogos]);
+  }, [
+    clients.length,
+    moveLogos,
+  ]);
 
   /*
-   * Initial measurement + responsive resize.
+   * Initial setup.
+   *
+   * ResizeObserver is intentionally used instead
+   * of blindly reacting to every window resize.
+   *
+   * On mobile scrolling, the browser may change
+   * viewport UI dimensions. If horizontal width
+   * stays the same, NOTHING is reset.
    */
   useEffect(() => {
     if (clients.length <= 1) {
       return;
     }
 
-    let resizeTimer:
-      | number
-      | null = null;
+    const viewport =
+      viewportRef.current;
 
-    const initialize = () => {
-      initializedRef.current =
-        false;
+    if (!viewport) {
+      return;
+    }
 
-      initializePositions();
-    };
-
-    const delayedInitialize = () => {
-      if (resizeTimer !== null) {
-        window.clearTimeout(
-          resizeTimer
+    const initialize =
+      (force = false) => {
+        initializePositions(
+          force
         );
-      }
-
-      resizeTimer =
-        window.setTimeout(
-          initialize,
-          80
-        );
-    };
+      };
 
     const initialTimer =
-      window.setTimeout(
-        initialize,
-        100
+      window.setTimeout(() => {
+        initialize(true);
+      }, 100);
+
+    const resizeObserver =
+      new ResizeObserver(
+        (entries) => {
+          const entry =
+            entries[0];
+
+          if (!entry) {
+            return;
+          }
+
+          const width =
+            entry.contentRect.width;
+
+          /*
+           * ONLY reinitialize when horizontal
+           * width really changes.
+           *
+           * Vertical mobile scrolling will not
+           * reset the slider.
+           */
+          if (
+            Math.abs(
+              width -
+                lastMeasuredWidthRef.current
+            ) >= 1
+          ) {
+            initialize(false);
+          }
+        }
       );
 
-    window.addEventListener(
-      "resize",
-      delayedInitialize
+    resizeObserver.observe(
+      viewport
     );
 
     return () => {
@@ -600,16 +721,7 @@ export function ClientLogos({
         initialTimer
       );
 
-      if (resizeTimer !== null) {
-        window.clearTimeout(
-          resizeTimer
-        );
-      }
-
-      window.removeEventListener(
-        "resize",
-        delayedInitialize
-      );
+      resizeObserver.disconnect();
     };
   }, [
     clients.length,
@@ -617,7 +729,7 @@ export function ClientLogos({
   ]);
 
   /*
-   * Re-initialize after logos finish loading.
+   * Reinitialize only after an image actually loads.
    */
   useEffect(() => {
     if (clients.length <= 1) {
@@ -633,24 +745,44 @@ export function ClientLogos({
       return;
     }
 
-    const handleImageLoad = () => {
-      initializePositions();
-    };
+    const handleImageLoad =
+      () => {
+        /*
+         * Force measurement because the actual
+         * logo dimensions may have changed.
+         */
+        initializedRef.current =
+          false;
 
-    images.forEach((image) => {
-      image.addEventListener(
-        "load",
-        handleImageLoad
-      );
-    });
+        initializePositions(
+          true
+        );
+      };
 
-    return () => {
-      images.forEach((image) => {
-        image.removeEventListener(
+    images.forEach(
+      (image) => {
+        if (
+          image.complete
+        ) {
+          return;
+        }
+
+        image.addEventListener(
           "load",
           handleImageLoad
         );
-      });
+      }
+    );
+
+    return () => {
+      images.forEach(
+        (image) => {
+          image.removeEventListener(
+            "load",
+            handleImageLoad
+          );
+        }
+      );
     };
   }, [
     clients.length,
@@ -658,7 +790,7 @@ export function ClientLogos({
   ]);
 
   /*
-   * Pause when mouse enters.
+   * Desktop mouse enter.
    */
   const handlePointerEnter =
     useCallback(
@@ -666,7 +798,8 @@ export function ClientLogos({
         event: React.PointerEvent<HTMLDivElement>
       ) => {
         if (
-          event.pointerType === "mouse"
+          event.pointerType ===
+          "mouse"
         ) {
           hoveredRef.current =
             true;
@@ -678,7 +811,7 @@ export function ClientLogos({
     );
 
   /*
-   * Resume when mouse leaves.
+   * Desktop mouse leave.
    */
   const handlePointerLeave =
     useCallback(
@@ -686,7 +819,8 @@ export function ClientLogos({
         event: React.PointerEvent<HTMLDivElement>
       ) => {
         if (
-          event.pointerType === "mouse"
+          event.pointerType ===
+          "mouse"
         ) {
           hoveredRef.current =
             false;
@@ -698,11 +832,7 @@ export function ClientLogos({
     );
 
   /*
-   * Pointer down:
-   *
-   * - Mouse: pause immediately.
-   * - Touch: pause immediately.
-   * - Also prepare horizontal dragging.
+   * Pointer down.
    */
   const handlePointerDown =
     useCallback(
@@ -725,7 +855,8 @@ export function ClientLogos({
           true;
 
         if (
-          event.pointerType === "touch"
+          event.pointerType ===
+          "touch"
         ) {
           touchingRef.current =
             true;
@@ -738,22 +869,17 @@ export function ClientLogos({
             event.pointerId
           );
         } catch {
-          /*
-           * Pointer capture is not available
-           * in some older environments.
-           */
+          // Ignore unsupported pointer capture.
         }
       },
       [syncPausedState]
     );
 
   /*
-   * Pointer move:
+   * Pointer move.
    *
-   * Allows the user to physically drag the
-   * logos on mobile/tablet/desktop.
-   *
-   * Vertical page scrolling is preserved.
+   * Vertical movement is left to the browser.
+   * Horizontal movement becomes slider dragging.
    */
   const handlePointerMove =
     useCallback(
@@ -783,11 +909,16 @@ export function ClientLogos({
         lastPointerXRef.current =
           currentX;
 
+        /*
+         * Do not lock the gesture immediately.
+         * This allows normal vertical page scrolling.
+         */
         if (
           !horizontalDragRef.current
         ) {
           if (
-            Math.abs(deltaX) < 4
+            Math.abs(deltaX) <
+            5
           ) {
             return;
           }
@@ -799,32 +930,11 @@ export function ClientLogos({
             true;
         }
 
-        /*
-         * Prevent browser handling of horizontal
-         * dragging once horizontal intent is clear.
-         */
         event.preventDefault();
 
-        /*
-         * The movement direction follows the
-         * user's finger/mouse.
-         */
         const positions =
           positionsRef.current;
 
-        for (
-          let index = 0;
-          index < positions.length;
-          index += 1
-        ) {
-          positions[index] +=
-            deltaX;
-        }
-
-        /*
-         * Keep the same seamless wrap behavior
-         * while manually dragging.
-         */
         const viewportWidth =
           viewportWidthRef.current;
 
@@ -834,16 +944,27 @@ export function ClientLogos({
         const spacing =
           spacingRef.current;
 
-        if (
-          isArabic
+        /*
+         * Drag follows the finger.
+         */
+        for (
+          let index = 0;
+          index <
+          positions.length;
+          index += 1
         ) {
-          /*
-           * RTL manual drag:
-           * use the same wrapping logic.
-           */
+          positions[index] +=
+            deltaX;
+        }
+
+        /*
+         * Keep wrapping seamless while dragging.
+         */
+        if (isArabic) {
           for (
             let index = 0;
-            index < positions.length;
+            index <
+            positions.length;
             index += 1
           ) {
             if (
@@ -856,7 +977,8 @@ export function ClientLogos({
 
               for (
                 let i = 1;
-                i < positions.length;
+                i <
+                positions.length;
                 i += 1
               ) {
                 if (
@@ -869,18 +991,19 @@ export function ClientLogos({
               }
 
               positions[index] =
-                rightMost + spacing;
+                rightMost +
+                spacing;
             }
           }
 
           /*
-           * If user drags strongly to the right,
-           * also handle logos leaving from the
-           * right edge.
+           * Also support dragging toward the
+           * opposite direction.
            */
           for (
             let index = 0;
-            index < positions.length;
+            index <
+            positions.length;
             index += 1
           ) {
             if (
@@ -892,7 +1015,8 @@ export function ClientLogos({
 
               for (
                 let i = 1;
-                i < positions.length;
+                i <
+                positions.length;
                 i += 1
               ) {
                 if (
@@ -905,16 +1029,15 @@ export function ClientLogos({
               }
 
               positions[index] =
-                leftMost - spacing;
+                leftMost -
+                spacing;
             }
           }
         } else {
-          /*
-           * LTR manual drag.
-           */
           for (
             let index = 0;
-            index < positions.length;
+            index <
+            positions.length;
             index += 1
           ) {
             if (
@@ -926,7 +1049,8 @@ export function ClientLogos({
 
               for (
                 let i = 1;
-                i < positions.length;
+                i <
+                positions.length;
                 i += 1
               ) {
                 if (
@@ -939,17 +1063,15 @@ export function ClientLogos({
               }
 
               positions[index] =
-                leftMost - spacing;
+                leftMost -
+                spacing;
             }
           }
 
-          /*
-           * Also support dragging strongly
-           * toward the opposite direction.
-           */
           for (
             let index = 0;
-            index < positions.length;
+            index <
+            positions.length;
             index += 1
           ) {
             if (
@@ -962,7 +1084,8 @@ export function ClientLogos({
 
               for (
                 let i = 1;
-                i < positions.length;
+                i <
+                positions.length;
                 i += 1
               ) {
                 if (
@@ -975,19 +1098,22 @@ export function ClientLogos({
               }
 
               positions[index] =
-                rightMost + spacing;
+                rightMost +
+                spacing;
             }
           }
         }
 
         applyAllPositions();
       },
-      [applyAllPositions, isArabic]
+      [
+        applyAllPositions,
+        isArabic,
+      ]
     );
 
   /*
-   * Pointer up:
-   * release touch/drag pause.
+   * Pointer up.
    */
   const handlePointerUp =
     useCallback(
@@ -1013,10 +1139,6 @@ export function ClientLogos({
         pointerIdRef.current =
           null;
 
-        /*
-         * Mouse remains paused if the cursor
-         * is still inside the slider.
-         */
         syncPausedState();
 
         try {
@@ -1024,9 +1146,7 @@ export function ClientLogos({
             event.pointerId
           );
         } catch {
-          /*
-           * Ignore unsupported pointer capture.
-           */
+          // Ignore unsupported pointer capture.
         }
       },
       [syncPausedState]
@@ -1059,17 +1179,14 @@ export function ClientLogos({
             event.pointerId
           );
         } catch {
-          /*
-           * Ignore unsupported pointer capture.
-           */
+          // Ignore unsupported pointer capture.
         }
       },
       [syncPausedState]
     );
 
   /*
-   * Prevent opening a project when the user
-   * actually dragged the slider.
+   * Prevent navigation after an actual drag.
    */
   const handleLogoClick =
     useCallback(
@@ -1090,9 +1207,7 @@ export function ClientLogos({
     );
 
   /*
-   * Keyboard accessibility:
-   *
-   * Space / Enter pauses the slider.
+   * Keyboard accessibility.
    */
   const handleKeyDown =
     useCallback(
@@ -1124,23 +1239,22 @@ export function ClientLogos({
   }
 
   /*
-   * Render a single real logo.
+   * Render one REAL logo.
    *
-   * IMPORTANT:
-   * There is no "clone" parameter.
-   * There are no duplicate logos.
+   * There is intentionally no clone argument.
    */
   const renderLogo = (
     project: Project,
     index: number
   ) => {
-    const projectName = isArabic
-      ? project.title_ar ||
-        project.title_en ||
-        "Project"
-      : project.title_en ||
-        project.title_ar ||
-        "Project";
+    const projectName =
+      isArabic
+        ? project.title_ar ||
+          project.title_en ||
+          "Project"
+        : project.title_en ||
+          project.title_ar ||
+          "Project";
 
     return (
       <Link
@@ -1157,6 +1271,7 @@ export function ClientLogos({
         aria-label={projectName}
         onClick={handleLogoClick}
         className="
+          group
           absolute
           left-0
           top-1/2
@@ -1175,7 +1290,7 @@ export function ClientLogos({
           shadow-soft
           ring-2
           ring-brand-500/10
-          transition-[border-color,box-shadow,filter]
+          transition-[border-color,box-shadow,ring-color]
           duration-300
           hover:border-brand-400
           hover:shadow-glow
@@ -1192,7 +1307,9 @@ export function ClientLogos({
         style={{
           transform:
             "translate3d(0, -50%, 0)",
-          willChange: "transform",
+          willChange:
+            "transform",
+          opacity: 1,
         }}
       >
         <span
@@ -1242,8 +1359,7 @@ export function ClientLogos({
   };
 
   /*
-   * One logo only:
-   * no animation is necessary.
+   * Single logo.
    */
   if (clients.length === 1) {
     return (
@@ -1265,13 +1381,111 @@ export function ClientLogos({
           className="
             flex
             justify-center
-            py-6
+            px-4
+            py-8
           "
         >
-          {renderLogo(
-            clients[0],
-            0
-          )}
+          {/*
+            The single logo is rendered normally.
+            It does not need slider positioning.
+          */}
+          <div
+            className="
+              flex
+              h-28
+              w-28
+              items-center
+              justify-center
+            "
+          >
+            <Link
+              href={localizePath(
+                "/projects/" +
+                  clients[0].slug,
+                locale
+              )}
+              aria-label={
+                isArabic
+                  ? clients[0].title_ar ||
+                    clients[0].title_en ||
+                    "Project"
+                  : clients[0].title_en ||
+                    clients[0].title_ar ||
+                    "Project"
+              }
+              className="
+                group
+                relative
+                flex
+                h-24
+                w-24
+                items-center
+                justify-center
+                rounded-full
+                border-2
+                border-brand-200/70
+                bg-white
+                p-1.5
+                shadow-soft
+                ring-2
+                ring-brand-500/10
+                transition-[border-color,box-shadow,ring-color]
+                duration-300
+                hover:border-brand-400
+                hover:shadow-glow
+                hover:ring-brand-500/25
+                sm:h-26
+                sm:w-26
+                md:h-28
+                md:w-28
+              "
+            >
+              <span
+                aria-hidden="true"
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-1
+                  rounded-full
+                  border
+                  border-dashed
+                  border-brand-200/60
+                "
+              />
+
+              <span
+                className="
+                  relative
+                  flex
+                  h-full
+                  w-full
+                  items-center
+                  justify-center
+                  overflow-hidden
+                  rounded-full
+                "
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    clients[0].logo ||
+                    ""
+                  }
+                  alt=""
+                  draggable={false}
+                  className="
+                    max-h-full
+                    max-w-full
+                    select-none
+                    object-contain
+                    transition-transform
+                    duration-300
+                    group-hover:scale-105
+                  "
+                />
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
     );
@@ -1293,12 +1507,12 @@ export function ClientLogos({
       </h2>
 
       {/*
-       * Important:
+       * Slider viewport.
        *
-       * - py-8 gives the shadow enough breathing room.
-       * - overflow-x-hidden clips only horizontal overflow.
-       * - touch-pan-y allows normal vertical page scrolling.
-       * - No duplicated track.
+       * IMPORTANT:
+       * - Extra vertical space for shadows.
+       * - No horizontal scrollbar.
+       * - Vertical page scrolling remains native.
        */}
       <div
         ref={viewportRef}
@@ -1329,17 +1543,19 @@ export function ClientLogos({
           relative
           h-40
           w-full
-          overflow-x-hidden
-          overflow-y-visible
+          overflow-hidden
           py-8
           outline-none
-          touch-pan-y
           select-none
         "
         style={{
-          touchAction: "pan-y",
+          touchAction:
+            "pan-y",
         }}
       >
+        {/*
+         * Real logos only.
+         */
         {clients.map(
           (project, index) =>
             renderLogo(
@@ -1347,6 +1563,98 @@ export function ClientLogos({
               index
             )
         )}
+
+        {/*
+         * ====================================
+         * LEFT CLOUD / FOG EDGE
+         * ====================================
+         *
+         * White gradient with blur creates a
+         * soft cloudy entrance/exit.
+         *
+         * It does NOT affect the movement.
+         */
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            left-0
+            z-30
+            w-16
+            bg-gradient-to-r
+            from-white
+            via-white/90
+            to-transparent
+            blur-[1px]
+            sm:w-24
+            md:w-32
+          "
+        />
+
+        {/*
+         * ====================================
+         * RIGHT CLOUD / FOG EDGE
+         * ====================================
+         */}
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            right-0
+            z-30
+            w-16
+            bg-gradient-to-l
+            from-white
+            via-white/90
+            to-transparent
+            blur-[1px]
+            sm:w-24
+            md:w-32
+          "
+        />
+
+        {/*
+         * Very soft additional glow at the
+         * edges to make the transition look
+         * more like white mist/cloud.
+         */}
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            inset-y-4
+            left-0
+            z-20
+            w-10
+            rounded-full
+            bg-white/70
+            blur-xl
+            sm:w-16
+            md:w-20
+          "
+        />
+
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            inset-y-4
+            right-0
+            z-20
+            w-10
+            rounded-full
+            bg-white/70
+            blur-xl
+            sm:w-16
+            md:w-20
+          "
+        />
       </div>
     </section>
   );
