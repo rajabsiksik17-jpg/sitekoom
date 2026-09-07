@@ -9,7 +9,6 @@ import { useToast } from "@/components/admin/toast";
 import { Field, Bilingual } from "@/components/admin/fields";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { RichText } from "@/components/admin/rich-text";
-import { SeoFields } from "@/components/admin/seo-fields";
 import { Spinner } from "@/components/admin/ui";
 import { slugify } from "@/lib/utils";
 import { PortfolioEditor, type PortfolioItemDraft } from "@/components/admin/portfolio-editor";
@@ -345,13 +344,6 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
         <p className="mb-4 text-sm text-gray-500">أضف مميزات العمل التي تظهر في صفحة العمل. إن تُركت فارغة لن يظهر القسم.</p>
         <ProjectFeaturesEditor value={features} onChange={setFeatures} />
       </div>
-
-      {isEdit && projectId && (
-        <div className="card p-6">
-          <h2 className="mb-4 text-lg font-bold text-ink-900">SEO</h2>
-          <SeoFields entityType="project" entityId={projectId} />
-        </div>
-      )}
     </div>
   );
 }

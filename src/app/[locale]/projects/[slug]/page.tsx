@@ -13,28 +13,22 @@ import { ProjectPortfolio } from "@/components/project-portfolio";
 import { ProjectFeatures } from "@/components/project-features";
 import { ProjectCta } from "@/components/project-cta";
 import { getSettings, projectPreviewSettings } from "@/lib/settings";
-import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const project = await getProjectBySlug((await params).slug);
   if (!project) return {};
-  const supabase = await createClient();
-  const { data: seo } = await supabase
-    .from("seo_metadata")
-    .select("*")
-    .eq("entity_type", "project")
-    .eq("entity_id", project.id)
-    .eq("locale", (await params).locale)
-    .maybeSingle();
-  const title = (await params).locale === "ar" ? project.title_ar : project.title_en;
-  const canonical = (await params).locale === "ar" ? `/projects/${project.slug}` : `/en/projects/${project.slug}`;
+  const locale = (await params).locale;
+  const title = locale === "ar" ? project.title_ar : project.title_en;
+  const canonical = locale === "ar" ? `/projects/${project.slug}` : `/en/projects/${project.slug}`;
+  // Project pages are a showcase only — noindex so they don't compete with the
+  // main site in search. OG metadata is kept for social sharing (not indexing).
   return {
-    title: seo?.seo_title || title,
-    description: seo?.meta_description || ((await params).locale === "ar" ? project.short_desc_ar : project.short_desc_en) || undefined,
+    title,
+    robots: { index: false, follow: true },
     openGraph: {
-      title: seo?.og_title || title,
-      images: (seo?.og_image || project.cover_image || project.thumbnail)
-        ? [{ url: seo?.og_image || project.cover_image || project.thumbnail! }]
+      title,
+      images: (project.cover_image || project.thumbnail)
+        ? [{ url: project.cover_image || project.thumbnail! }]
         : undefined,
     },
     alternates: {

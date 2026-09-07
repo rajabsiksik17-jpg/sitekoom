@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Eye, RotateCcw } from "lucide-react";
 import { useLocale } from "@/components/providers";
@@ -13,6 +13,9 @@ export interface ProjectPreviewSettings {
   mode: "hover" | "button";
   hoverDelay: number; // seconds
   scrollSpeed: number; // px/s (mapped to animation duration)
+  scrollSpeedDesktop?: number;
+  scrollSpeedTablet?: number;
+  scrollSpeedMobile?: number;
 }
 
 export function ProjectCard({
@@ -36,7 +39,17 @@ export function ProjectCard({
   const previewOn = Boolean(preview?.enabled && screenshot);
   const mode = preview?.mode ?? "hover";
   const hoverDelayMs = (preview?.hoverDelay ?? 3) * 1000;
-  const scrollDuration = Math.max(4, Math.min(30, Math.round(1400 / (preview?.scrollSpeed || 240))));
+
+  // Per-device scroll speed (px/s) selected by viewport width; constant
+  // regardless of the screenshot height.
+  const currentScrollSpeed = useMemo(() => {
+    if (typeof window === "undefined") return preview?.scrollSpeed ?? 240;
+    const w = window.innerWidth;
+    if (w < 640) return preview?.scrollSpeedMobile ?? preview?.scrollSpeed ?? 180;
+    if (w < 1024) return preview?.scrollSpeedTablet ?? preview?.scrollSpeed ?? 160;
+    return preview?.scrollSpeedDesktop ?? preview?.scrollSpeed ?? 140;
+  }, [preview]);
+  const scrollDuration = Math.max(4, Math.min(30, Math.round(1400 / currentScrollSpeed)));
 
   const reducedMotion = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

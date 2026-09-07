@@ -40,6 +40,11 @@ export interface GeneralSettings {
   website_preview_mode: string; // hover | button
   website_preview_hover_delay: number; // seconds
   website_preview_scroll_speed: number; // px per second
+  scroll_speed_desktop: number;
+  scroll_speed_tablet: number;
+  scroll_speed_mobile: number;
+  homepage_projects_display: string; // grid | slider
+  works_page_size: number;
 }
 
 export interface SeoSettings {
@@ -123,6 +128,11 @@ const defaults = {
     website_preview_mode: "hover",
     website_preview_hover_delay: 3,
     website_preview_scroll_speed: 240,
+    scroll_speed_desktop: 140,
+    scroll_speed_tablet: 160,
+    scroll_speed_mobile: 180,
+    homepage_projects_display: "grid",
+    works_page_size: 9,
   } as GeneralSettings,
   seo: {
     site_title: "سايتكم | حلول رقمية",
@@ -204,11 +214,17 @@ export function projectPreviewSettings(g: GeneralSettings): {
   mode: "hover" | "button";
   hoverDelay: number;
   scrollSpeed: number;
+  scrollSpeedDesktop: number;
+  scrollSpeedTablet: number;
+  scrollSpeedMobile: number;
 } {
   return {
     enabled: g.website_preview_enabled !== false,
     mode: g.website_preview_mode === "button" ? "button" : "hover",
     hoverDelay: Number(g.website_preview_hover_delay ?? 3) || 3,
     scrollSpeed: Number(g.website_preview_scroll_speed ?? 240) || 240,
+    scrollSpeedDesktop: Number(g.scroll_speed_desktop ?? 140) || 140,
+    scrollSpeedTablet: Number(g.scroll_speed_tablet ?? 160) || 160,
+    scrollSpeedMobile: Number(g.scroll_speed_mobile ?? 180) || 180,
   };
 }
